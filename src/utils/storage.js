@@ -1,0 +1,98 @@
+// LocalStorage utility functions for the Time Tracking Application
+
+const STORAGE_KEYS = {
+  TIMESHEET_DATA: 'kronos_timesheet_data',
+  SELECTED_TIMEZONE: 'kronos_selected_timezone',
+  SELECTED_WEEK: 'kronos_selected_week',
+  WEEKLY_TIMESHEET: 'kronos_weekly_timesheet'
+};
+
+// Save timesheet data to LocalStorage
+export const saveTimesheetData = (data) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.TIMESHEET_DATA, JSON.stringify(data));
+  } catch (error) {
+    console.error('Error saving timesheet data:', error);
+  }
+};
+
+// Load timesheet data from LocalStorage
+export const loadTimesheetData = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.TIMESHEET_DATA);
+    return stored ? JSON.parse(stored) : {};
+  } catch (error) {
+    console.error('Error loading timesheet data:', error);
+    return {};
+  }
+};
+
+// Save selected timezone to LocalStorage
+export const saveTimezone = (timezone) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SELECTED_TIMEZONE, timezone);
+  } catch (error) {
+    console.error('Error saving timezone:', error);
+  }
+};
+
+// Load selected timezone from LocalStorage
+export const loadTimezone = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.SELECTED_TIMEZONE) || 'UTC';
+  } catch (error) {
+    console.error('Error loading timezone:', error);
+    return 'UTC';
+  }
+};
+
+// Save selected week to LocalStorage
+export const saveSelectedWeek = (date) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SELECTED_WEEK, date.toISOString());
+  } catch (error) {
+    console.error('Error saving selected week:', error);
+  }
+};
+
+// Load selected week from LocalStorage
+export const loadSelectedWeek = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.SELECTED_WEEK);
+    return stored ? new Date(stored) : new Date();
+  } catch (error) {
+    console.error('Error loading selected week:', error);
+    return new Date();
+  }
+};
+
+// Clear all application data from LocalStorage
+export const clearAllData = () => {
+  try {
+    Object.values(STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+    });
+  } catch (error) {
+    console.error('Error clearing data:', error);
+  }
+};
+
+// Save weekly timesheet data to LocalStorage
+export const saveWeeklyTimesheet = (data) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.WEEKLY_TIMESHEET, JSON.stringify(data));
+  } catch (error) {
+    console.error('Error saving weekly timesheet data:', error);
+  }
+};
+
+// Load weekly timesheet data from LocalStorage
+export const loadWeeklyTimesheet = () => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.WEEKLY_TIMESHEET);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error loading weekly timesheet data:', error);
+    return null;
+  }
+};
