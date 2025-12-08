@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  format, 
-  startOfWeek, 
-  addDays, 
+import {
+  format,
+  startOfWeek,
+  addDays,
   differenceInMinutes,
   parse,
-  isValid 
+  isValid
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
 const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChange }) => {
   const [localData, setLocalData] = useState(timesheetData || {});
-  
+
   // Helper function to get storage date key (same as DailyTracker)
   const getStorageDateKey = (date) => {
     if (date) {
@@ -21,33 +21,33 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     const nowInTimezone = new Date(new Date().toLocaleString("en-US", {timeZone: timezone}));
     return format(nowInTimezone, 'yyyy-MM-dd');
   };
-  
+
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   // Calculate total hours for a single day
   const calculateDayTotal = (timeIn, timeOut, breakHours) => {
     if (!timeIn || !timeOut) return 0;
-    
+
     try {
       // Handle both HH:mm and HH:mm:ss formats
       const timeFormat = timeIn.includes(':') && timeIn.split(':').length === 3 ? 'HH:mm:ss' : 'HH:mm';
       const timeInDate = parse(timeIn, timeFormat, new Date());
       const timeOutDate = parse(timeOut, timeFormat, new Date());
-      
+
       if (!isValid(timeInDate) || !isValid(timeOutDate)) return 0;
-      
+
       // Calculate difference in minutes
       let totalMinutes = differenceInMinutes(timeOutDate, timeInDate);
-      
+
       // Handle overnight shifts (if time out is earlier than time in)
       if (totalMinutes < 0) {
         totalMinutes = differenceInMinutes(timeOutDate, timeInDate) + (24 * 60);
       }
-      
+
       // Convert to hours and subtract break hours
       const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
-      
+
       // Don't allow negative hours
       return Math.max(0, totalHours);
     } catch (error) {
@@ -62,8 +62,8 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       const dayKey = getStorageDateKey(day);
       const dayData = localData[dayKey] || {};
       const dayTotal = calculateDayTotal(
-        dayData.timeIn, 
-        dayData.timeOut, 
+        dayData.timeIn,
+        dayData.timeOut,
         dayData.breakHours
       );
       return total + dayTotal;
@@ -125,17 +125,17 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
             const dayKey = getStorageDateKey(day);
             const dayData = localData[dayKey] || {};
             const dayTotal = calculateDayTotal(
-              dayData.timeIn, 
-              dayData.timeOut, 
+              dayData.timeIn,
+              dayData.timeOut,
               dayData.breakHours
             );
-            
+
             const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             const isWeekend = index >= 5; // Saturday and Sunday
-            
+
             return (
-              <tr 
-                key={dayKey} 
+              <tr
+                key={dayKey}
                 className={isWeekend ? 'bg-gray-50' : 'hover:bg-gray-50'}
               >
                 <td className="px-4 py-3 text-sm font-medium text-gray-900">
