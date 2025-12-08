@@ -30,9 +30,9 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     if (!timeIn || !timeOut) return 0;
     
     try {
-      // Parse times in HH:MM format
-      const timeInDate = parse(timeIn, 'HH:mm', new Date());
-      const timeOutDate = parse(timeOut, 'HH:mm', new Date());
+      // Parse times in HH:mm:ss format
+      const timeInDate = parse(timeIn, 'HH:mm:ss', new Date());
+      const timeOutDate = parse(timeOut, 'HH:mm:ss', new Date());
       
       if (!isValid(timeInDate) || !isValid(timeOutDate)) return 0;
       
@@ -160,18 +160,20 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                 </td>
                 <td className="px-4 py-3">
                   <input
-                    type="time"
+                    type="text"
                     value={dayData.timeIn || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
-                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="HH:MM:SS"
+                    className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </td>
                 <td className="px-4 py-3">
                   <input
-                    type="time"
+                    type="text"
                     value={dayData.timeOut || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
-                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="HH:MM:SS"
+                    className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </td>
                 <td className="px-4 py-3">
