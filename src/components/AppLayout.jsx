@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Clock, Calendar, Menu, X, Globe } from 'lucide-react';
+import { Clock, Calendar, Menu, X, Globe, Database } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import TimezoneSelect from './TimezoneSelect';
+import DataImportExport from './DataImportExport';
 
 const AppLayout = ({ children, currentView, onViewChange }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -19,6 +20,12 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
       label: 'Weekly Timesheet',
       icon: Calendar,
       description: 'View weekly summary'
+    },
+    {
+      id: 'data',
+      label: 'Data Management',
+      icon: Database,
+      description: 'Import/Export data'
     }
   ];
 
@@ -95,18 +102,24 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                   {currentView === 'tracker' ? (
                     <Clock className="w-5 h-5 text-blue-600" />
-                  ) : (
+                  ) : currentView === 'timesheet' ? (
                     <Calendar className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <Database className="w-5 h-5 text-blue-600" />
                   )}
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
-                    {currentView === 'tracker' ? 'Daily Tracker' : 'Weekly Timesheet'}
+                    {currentView === 'tracker' ? 'Daily Tracker' : 
+                     currentView === 'timesheet' ? 'Weekly Timesheet' : 
+                     'Data Management'}
                   </h2>
                   <p className="text-sm text-gray-500">
                     {currentView === 'tracker' 
                       ? 'Track your time in real-time' 
-                      : 'View your weekly time summary'
+                      : currentView === 'timesheet'
+                      ? 'View your weekly time summary'
+                      : 'Import and export your data'
                     }
                   </p>
                 </div>

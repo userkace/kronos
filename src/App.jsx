@@ -3,6 +3,7 @@ import WeekNavigator from './components/WeekNavigator';
 import TimesheetTable from './components/TimesheetTable';
 import DailyTracker from './components/DailyTracker';
 import AppLayout from './components/AppLayout';
+import DataImportExport from './components/DataImportExport';
 import { 
   saveSelectedWeek, 
   loadSelectedWeek,
@@ -10,13 +11,14 @@ import {
   loadWeeklyTimesheet
 } from './utils/storage';
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
+import { ToastProvider } from './contexts/ToastContext';
 import './App.css';
 
 function AppContent() {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
-  const [currentView, setCurrentView] = useState('tracker'); // 'tracker' or 'timesheet'
+  const [currentView, setCurrentView] = useState('tracker'); // 'tracker', 'timesheet', or 'data'
   const [isInitialized, setIsInitialized] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for refreshing weekly data
 
@@ -56,8 +58,14 @@ function AppContent() {
     setCurrentDate(newDate);
   };
 
-  const handleTimesheetChange = (newData) => {
-    setTimesheetData(newData);
+  const handleImportSuccess = () => {
+    // Refresh all data after import
+    const loadedDate = loadSelectedWeek();
+    const loadedData = loadWeeklyTimesheet();
+    
+    setCurrentDate(loadedDate);
+    setTimesheetData(loadedData || {});
+    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -72,7 +80,7 @@ function AppContent() {
           onTimezoneChange={changeTimezone}
           onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
         />
-      ) : (
+      ) : currentView === 'timesheet' ? (
         // Weekly Timesheet View
         <div className="p-6">
           <WeekNavigator 
@@ -84,10 +92,14 @@ function AppContent() {
             <TimesheetTable 
               currentDate={currentDate} 
               timesheetData={timesheetData} 
-              onTimesheetChange={handleTimesheetChange} 
               timezone={selectedTimezone} 
             />
           </div>
+        </div>
+      ) : (
+        // Data Management View
+        <div className="p-6">
+          <DataImportExport onImportSuccess={handleImportSuccess} />
         </div>
       )}
     </AppLayout>
@@ -96,9 +108,11 @@ function AppContent() {
 
 function AppWrapper() {
   return (
-    <TimezoneProvider>
-      <AppContent />
-    </TimezoneProvider>
+    <ToastProvider>
+      <TimezoneProvider>
+        <AppContent />
+      </TimezoneProvider>
+    </ToastProvider>
   );
 }
 

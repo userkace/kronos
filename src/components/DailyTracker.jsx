@@ -4,6 +4,7 @@ import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Play, Pause, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge } from 'lucide-react';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
+import { useToast } from '../contexts/ToastContext';
 import {
   saveTimesheetData,
   loadTimesheetData,
@@ -16,6 +17,7 @@ import {
 } from '../utils/storage';
 
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
+  const { success, error, warning } = useToast();
   const [currentTask, setCurrentTask] = useState('');
   const [activeEntry, setActiveEntry] = useState(null);
   const [todayEntries, setTodayEntries] = useState([]);
@@ -213,7 +215,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   const handleStart = () => {
     if (!currentTask.trim()) return;
     if (!isToday()) {
-      alert('You can only start timers for the current day');
+      warning('You can only start timers for the current day');
       return;
     }
 
@@ -291,7 +293,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Continue a previous task (only works on current date)
   const handleContinue = (entry) => {
     if (!isToday()) {
-      alert('You can only continue tasks for the current day');
+      warning('You can only continue tasks for the current day');
       return;
     }
 
@@ -361,7 +363,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const entriesToMerge = entries.filter(entry => entry.description === description);
 
     if (entriesToMerge.length < 2) {
-      alert('Need at least 2 entries to merge');
+      warning('Need at least 2 entries to merge');
       return;
     }
 
@@ -520,12 +522,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Save daily tasks to weekly timesheet
   const saveToWeeklyTimesheet = () => {
     if (activeEntry) {
-      alert('Please stop the active task before saving to weekly timesheet');
+      warning('Please stop the active task before saving to weekly timesheet');
       return;
     }
 
     if (todayEntries.length === 0) {
-      alert('No tasks to save for today');
+      warning('No tasks to save for today');
       return;
     }
 
@@ -533,7 +535,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const completedEntries = todayEntries.filter(entry => !entry.isActive && entry.endTime);
 
     if (completedEntries.length === 0) {
-      alert('No completed tasks to save for today');
+      warning('No completed tasks to save for today');
       return;
     }
 
@@ -598,7 +600,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       onWeeklyTimesheetSave();
     }
 
-    alert(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
+    success(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
   };
 
   return (
@@ -609,7 +611,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           <div className="flex justify-between items-start mb-4">
             <div>
               {/* Date Navigation */}
-              <div className="flex items-center space-x-4 mb-4">
+              <div className="flex items-center justify-center space-x-4 mb-4">
                 <button
                   onClick={handlePreviousDay}
                   className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
@@ -634,12 +636,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               </div>
 
               {!isToday() && (
-                <button
-                  onClick={handleToday}
-                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors mb-2"
-                >
-                  ← Back to Today
-                </button>
+                <div className="text-center">
+                  <button
+                    onClick={handleToday}
+                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    Back to Today
+                  </button>
+                </div>
               )}
 
               <div className="flex items-center space-x-2 text-gray-600">
@@ -765,19 +769,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           {/* Completed Entries */}
           {(() => {
             const completedEntries = todayEntries.filter(entry => !entry.isActive);
-            console.log('Rendering completed entries:', {
-              totalEntries: todayEntries.length,
-              completedCount: completedEntries.length,
-              entries: todayEntries,
-              completedEntries: completedEntries,
-              entryDetails: todayEntries.map(entry => ({
-                id: entry.id,
-                description: entry.description,
-                isActive: entry.isActive,
-                hasStartTime: !!entry.startTime,
-                hasEndTime: !!entry.endTime
-              }))
-            });
             return completedEntries.reverse().map((entry, index) => {
               // Convert both times to the selected timezone for accurate calculation
               const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
