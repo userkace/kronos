@@ -2,10 +2,10 @@ import React from 'react';
 
 const TIMEZONES = [
   { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
-  { value: 'America/New_York', label: 'EST (Eastern Standard Time)' },
+  { value: 'America/New York', label: 'EST (Eastern Standard Time)' },
   { value: 'America/Chicago', label: 'CST (Central Standard Time)' },
   { value: 'America/Denver', label: 'MST (Mountain Standard Time)' },
-  { value: 'America/Los_Angeles', label: 'PST (Pacific Standard Time)' },
+  { value: 'America/Los Angeles', label: 'PST (Pacific Standard Time)' },
   { value: 'Europe/London', label: 'GMT (Greenwich Mean Time)' },
   { value: 'Europe/Paris', label: 'CET (Central European Time)' },
   { value: 'Asia/Tokyo', label: 'JST (Japan Standard Time)' },
