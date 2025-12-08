@@ -39,8 +39,8 @@ const TimeEntryModal = ({
   // Common timezones for dropdown
   const commonTimezones = [
     'UTC',
-    'America/New York',
-    'America/Los Angeles',
+    'America/New_York',
+    'America/Los_Angeles',
     'America/Chicago',
     'Europe/London',
     'Europe/Paris',
