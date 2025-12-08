@@ -30,9 +30,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     if (!timeIn || !timeOut) return 0;
     
     try {
-      // Parse times in HH:mm:ss format
-      const timeInDate = parse(timeIn, 'HH:mm:ss', new Date());
-      const timeOutDate = parse(timeOut, 'HH:mm:ss', new Date());
+      // Handle both HH:mm and HH:mm:ss formats
+      const timeFormat = timeIn.includes(':') && timeIn.split(':').length === 3 ? 'HH:mm:ss' : 'HH:mm';
+      const timeInDate = parse(timeIn, timeFormat, new Date());
+      const timeOutDate = parse(timeOut, timeFormat, new Date());
       
       if (!isValid(timeInDate) || !isValid(timeOutDate)) return 0;
       
