@@ -4,8 +4,8 @@ import TimesheetTable from './components/TimesheetTable';
 import DailyTracker from './components/DailyTracker';
 import AppLayout from './components/AppLayout';
 import DataImportExport from './components/DataImportExport';
-import { 
-  saveSelectedWeek, 
+import {
+  saveSelectedWeek,
   loadSelectedWeek,
   saveWeeklyTimesheet,
   loadWeeklyTimesheet
@@ -26,7 +26,7 @@ function AppContent() {
   useEffect(() => {
     const loadedDate = loadSelectedWeek();
     const loadedData = loadWeeklyTimesheet();
-    
+
     setCurrentDate(loadedDate);
     setTimesheetData(loadedData || {});
     setIsInitialized(true);
@@ -62,37 +62,37 @@ function AppContent() {
     // Refresh all data after import
     const loadedDate = loadSelectedWeek();
     const loadedData = loadWeeklyTimesheet();
-    
+
     setCurrentDate(loadedDate);
     setTimesheetData(loadedData || {});
     setRefreshTrigger(prev => prev + 1);
   };
 
   return (
-    <AppLayout 
-      currentView={currentView} 
+    <AppLayout
+      currentView={currentView}
       onViewChange={setCurrentView}
     >
       {currentView === 'tracker' ? (
         // Daily Tracker View
-        <DailyTracker 
-          timezone={selectedTimezone} 
+        <DailyTracker
+          timezone={selectedTimezone}
           onTimezoneChange={changeTimezone}
           onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
         />
       ) : currentView === 'timesheet' ? (
         // Weekly Timesheet View
         <div className="p-6">
-          <WeekNavigator 
-            currentDate={currentDate} 
-            onWeekChange={handleWeekChange} 
-            timezone={selectedTimezone} 
+          <WeekNavigator
+            currentDate={currentDate}
+            onWeekChange={handleWeekChange}
+            timezone={selectedTimezone}
           />
           <div className="mt-6">
-            <TimesheetTable 
-              currentDate={currentDate} 
-              timesheetData={timesheetData} 
-              timezone={selectedTimezone} 
+            <TimesheetTable
+              currentDate={currentDate}
+              timesheetData={timesheetData}
+              timezone={selectedTimezone}
             />
           </div>
         </div>
