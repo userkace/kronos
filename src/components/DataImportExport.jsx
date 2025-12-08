@@ -32,11 +32,11 @@ const DataImportExport = ({ onImportSuccess }) => {
   // Load available data for selection
   useEffect(() => {
     const loadData = () => {
-      const dailyData = loadTimesheetData();
-      const weeklyData = loadWeeklyTimesheet();
+      const dailyData = loadTimesheetData() || {};
+      const weeklyData = loadWeeklyTimesheet() || {};
       
       // Get available days with data
-      const days = Object.keys(dailyData)
+      const days = Object.keys(dailyData || {})
         .filter(date => dailyData[date] && dailyData[date].length > 0)
         .sort()
         .map(date => ({
@@ -46,7 +46,7 @@ const DataImportExport = ({ onImportSuccess }) => {
         }));
       
       // Get available weeks with data
-      const weeks = Object.keys(weeklyData)
+      const weeks = Object.keys(weeklyData || {})
         .filter(weekKey => {
           const weekData = weeklyData[weekKey];
           return weekData && Object.keys(weekData).some(day => weekData[day].tasks || weekData[day].workDetails);
@@ -76,8 +76,8 @@ const DataImportExport = ({ onImportSuccess }) => {
 
   const handleAdvancedExport = () => {
     try {
-      const dailyData = loadTimesheetData();
-      const weeklyData = loadWeeklyTimesheet();
+      const dailyData = loadTimesheetData() || {};
+      const weeklyData = loadWeeklyTimesheet() || {};
       const timezone = localStorage.getItem('kronos_selected_timezone');
       
       let exportData = {

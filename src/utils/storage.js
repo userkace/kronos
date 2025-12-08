@@ -90,9 +90,9 @@ export const saveWeeklyTimesheet = (data) => {
 export const loadWeeklyTimesheet = () => {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.WEEKLY_TIMESHEET);
-    return data ? JSON.parse(data) : null;
+    return data ? JSON.parse(data) : {};
   } catch (error) {
     console.error('Error loading weekly timesheet data:', error);
-    return null;
+    return {};
   }
 };
