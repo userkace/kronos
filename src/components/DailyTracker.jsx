@@ -567,7 +567,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const weeklyData = loadWeeklyTimesheet() || {};
     // Use the date from the first completed entry to ensure we save to the correct day
     const firstEntryDate = completedEntries.length > 0 ? new Date(completedEntries[0].startTime) : selectedDate;
-    
+
     // Simple approach: use the entry date directly with timezone formatting
     const storageKey = format(firstEntryDate, 'yyyy-MM-dd');
     const dayKey = storageKey;
@@ -611,40 +611,44 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           <div className="flex justify-between items-start mb-4">
             <div>
               {/* Date Navigation */}
-              <div className="flex items-center justify-center space-x-4 mb-4">
-                <button
-                  onClick={handlePreviousDay}
-                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                  title="Previous Day"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-
-                <div className="text-center">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1 text-center">
                   <h1 className="text-3xl font-bold text-gray-900">
                     {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}, {formatInTimezone(selectedDate, 'MMM d, yyyy')}
                   </h1>
                 </div>
 
-                <button
-                  onClick={handleNextDay}
-                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                  title="Next Day"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
+                <div className="flex items-center space-x-2 justify-end">
+                  <button
+                    onClick={handlePreviousDay}
+                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                    title="Previous Day"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
 
-              {!isToday() && (
-                <div className="text-center">
                   <button
                     onClick={handleToday}
-                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                    className={`p-2 rounded-lg transition-colors ${
+                      isToday()
+                        ? 'cursor-not-allowed'
+                        : 'hover:bg-gray-200'
+                    }`}
+                    title={isToday() ? "Current day" : "Back to Today"}
+                    disabled={isToday()}
                   >
-                    Back to Today
+                    <div className={`w-2 h-2 rounded-full ${isToday() ? 'bg-gray-400' : 'bg-blue-600'}`}></div>
+                  </button>
+
+                  <button
+                    onClick={handleNextDay}
+                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                    title="Next Day"
+                  >
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
-              )}
+              </div>
 
               <div className="flex items-center space-x-2 text-gray-600">
                 <Clock className="w-5 h-5" />
@@ -674,7 +678,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 disabled={!currentTask.trim()}
                 className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-colors ${
                   activeEntry
-                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
                     : 'bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed'
                 }`}
               >
