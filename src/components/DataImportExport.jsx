@@ -223,6 +223,22 @@ const DataImportExport = ({ onImportSuccess }) => {
     }
   };
 
+  const handleRevert = () => {
+    const success = revertImport();
+    if (success) {
+      success('Data reverted to previous state');
+      setShowRevertOption(false);
+      setImportInfo(null);
+      
+      // Trigger app refresh
+      if (onImportSuccess) {
+        onImportSuccess();
+      }
+    } else {
+      error('Failed to revert data');
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Management</h3>
