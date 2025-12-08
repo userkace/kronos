@@ -45,12 +45,12 @@ const EditEntryModal = ({ isOpen, onClose, entry, onSaveEntry }) => {
       alert('Please enter a description');
       return;
     }
-    
+
     if (!isRunningTimer && (!startTime || !endTime)) {
       alert('Please enter both start and end times');
       return;
     }
-    
+
     try {
       let updatedEntry = {
         ...entry,
@@ -63,33 +63,33 @@ const EditEntryModal = ({ isOpen, onClose, entry, onSaveEntry }) => {
       if (!isRunningTimer) {
         // Only update times for completed entries
         const originalDate = new Date(entry.startTime);
-        
+
         const [startHours, startMinutes] = startTime.split(':').map(Number);
         const [endHours, endMinutes] = endTime.split(':').map(Number);
-        
+
         if (isNaN(startHours) || isNaN(startMinutes) || isNaN(endHours) || isNaN(endMinutes)) {
           alert('Invalid time format');
           return;
         }
-        
+
         const updatedStartTime = new Date(originalDate);
         updatedStartTime.setHours(startHours, startMinutes, 0, 0);
-        
+
         const updatedEndTime = new Date(originalDate);
         updatedEndTime.setHours(endHours, endMinutes, 0, 0);
-        
+
         if (updatedEndTime < updatedStartTime) {
           updatedEndTime.setDate(updatedEndTime.getDate() + 1);
         }
-        
+
         updatedEntry.startTime = updatedStartTime;
         updatedEntry.endTime = updatedEndTime;
-        
+
         const duration = Math.floor((updatedEndTime - updatedStartTime) / 1000);
         updatedEntry.duration = duration;
         updatedEntry.durationFormatted = formatDuration(duration);
       }
-      
+
       onSaveEntry(updatedEntry);
       onClose();
     } catch (error) {
@@ -101,7 +101,7 @@ const EditEntryModal = ({ isOpen, onClose, entry, onSaveEntry }) => {
   const formatDuration = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
+
     if (hours > 0) {
       return `${hours} h ${minutes} min`;
     }
@@ -111,7 +111,7 @@ const EditEntryModal = ({ isOpen, onClose, entry, onSaveEntry }) => {
   if (!isOpen || !entry) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/10 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
