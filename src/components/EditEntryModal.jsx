@@ -90,7 +90,6 @@ const EditEntryModal = ({ isOpen, onClose, entry, onSaveEntry }) => {
         updatedEntry.durationFormatted = formatDuration(duration);
       }
       
-      console.log('Updated entry to save:', updatedEntry);
       onSaveEntry(updatedEntry);
       onClose();
     } catch (error) {

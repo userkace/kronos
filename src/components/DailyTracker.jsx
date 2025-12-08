@@ -27,11 +27,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     initialData: null
   });
 
-  // Debug: Log component mount
-  useEffect(() => {
-    console.log('DailyTracker component mounted with timezone:', timezone);
-  }, []);
-
   // Helper function to format date in selected timezone
   const formatInTimezone = (date, formatStr) => {
     // Use toLocaleString for reliable timezone conversion
@@ -71,23 +66,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Load data from localStorage on mount and when date changes
   useEffect(() => {
-    console.log('Loading useEffect triggered with timezone:', timezone);
     const loadedData = loadTimesheetData();
     const storageKey = getStorageDateKey(selectedDate);
     const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
-
-    console.log('Loading from localStorage:', {
-      storageKey,
-      displayDate,
-      loadedDataKeys: Object.keys(loadedData),
-      todayData: loadedData[storageKey]
-    });
 
     if (loadedData && loadedData[storageKey]) {
       const dayEntries = loadedData[storageKey] || [];
       // Sort entries by start time (earliest first)
       const sortedEntries = dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      console.log('Setting todayEntries to:', sortedEntries);
       setTodayEntries(sortedEntries);
 
       // Check for active entry (only for current date in selected timezone)
@@ -96,7 +82,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       if (isCurrentDate) {
         const active = dayEntries.find(entry => entry.isActive);
         if (active) {
-          console.log('Setting activeEntry to:', active);
           setActiveEntry(active);
         }
       } else {
@@ -107,15 +92,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       setActiveEntry(null);
     }
   }, [timezone, selectedDate]); // Re-load when timezone or selected date changes
-
-  // Debug: Log current state
-  useEffect(() => {
-    console.log('Current state:', {
-      todayEntriesCount: todayEntries.length,
-      todayEntries: todayEntries,
-      hasActiveEntry: !!activeEntry
-    });
-  }, [todayEntries, activeEntry]);
 
   // Date navigation functions
   const handlePreviousDay = () => {
@@ -149,11 +125,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Save entries to localStorage whenever they change (for timer entries only)
   useEffect(() => {
-    console.log('Saving useEffect triggered:', {
-      todayEntriesCount: todayEntries.length,
-      timezone
-    });
-
     // Only save if we have timer entries (active or recently completed)
     const hasTimerEntries = todayEntries.some(entry =>
       entry.isActive || (entry.startTime && !entry.date) // Timer entries don't have a date field
@@ -164,13 +135,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const displayDate = formatInTimezone(getCurrentDateInTimezone(), 'yyyy-MM-dd');
       const allData = loadTimesheetData() || {};
       allData[storageKey] = todayEntries;
-
-      console.log('Saving timer entries to localStorage:', {
-        storageKey,
-        displayDate,
-        entriesCount: todayEntries.length,
-        allDataKeys: Object.keys(allData)
-      });
 
       saveTimesheetData(allData);
     }
@@ -263,12 +227,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const currentTimeInTimezone = toZonedTime(now, timezone); // Show in selected timezone
     const utcTime = now; // Already UTC
 
-    console.log('Timer start times:', {
-      utcNow: now.toISOString(),
-      timezoneTime: formatInTimezone(now, 'yyyy-MM-dd HH:mm:ss'),
-      timezone
-    });
-
     const newEntry = {
       id: Date.now(),
       description: currentTask,
@@ -302,12 +260,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const now = new Date(); // Current UTC time
     const currentTimeInTimezone = toZonedTime(now, timezone); // Show in selected timezone
     const utcTime = now; // Already UTC
-
-    console.log('Timer stop times:', {
-      utcNow: now.toISOString(),
-      timezoneTime: formatInTimezone(now, 'yyyy-MM-dd HH:mm:ss'),
-      timezone
-    });
 
     const updatedEntry = {
       ...activeEntry,
@@ -352,12 +304,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const now = new Date(); // Current UTC time
     const currentTimeInTimezone = toZonedTime(now, timezone); // Show in selected timezone
     const utcTime = now; // Already UTC
-
-    console.log('Timer continue times:', {
-      utcNow: now.toISOString(),
-      timezoneTime: formatInTimezone(now, 'yyyy-MM-dd HH:mm:ss'),
-      timezone
-    });
 
     const newEntry = {
       id: Date.now(),
@@ -472,8 +418,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   };
 
   const handleSaveEntry = (entryData) => {
-    console.log('handleSaveEntry called with:', entryData);
-
     // Determine which timezone to use for conversion
     const timezoneToUse = entryData.timezoneMode === 'custom' ? entryData.entryTimezone : timezone;
 
@@ -653,25 +597,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Simple approach: use the entry date directly with timezone formatting
     const storageKey = format(firstEntryDate, 'yyyy-MM-dd');
     const dayKey = storageKey;
-    
-    // Debug logging
-    const nyTime = new Date(selectedDate.toLocaleString("en-US", {timeZone: timezone}));
-    console.log('Date conversion debug:', {
-      selectedDate: selectedDate.toISOString(),
-      selectedDateInTimezone: toZonedTime(selectedDate, timezone),
-      firstEntryDate: firstEntryDate.toISOString(),
-      firstEntryDateUTC: firstEntryDate.toUTCString(),
-      nyTime: nyTime.toISOString(),
-      nyTimeString: nyTime.toLocaleString("en-US", {timeZone: timezone}),
-      storageKey,
-      dayKey,
-      timezone,
-      'completedEntries[0].startTime': completedEntries[0]?.startTime,
-      'convertedStartTime': completedEntries[0] ? toZonedTime(parseISO(completedEntries[0].startTime), timezone) : null,
-      'todayEntries storage key': getStorageDateKey(selectedDate),
-      'timezone type': typeof timezone,
-      'timezone value': timezone
-    });
 
     // Update the day's data
     if (!weeklyData[dayKey]) {

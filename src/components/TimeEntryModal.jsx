@@ -207,7 +207,6 @@ const TimeEntryModal = ({
       entryTimezone: timezoneMode === 'custom' ? entryTimezone : timezone
     };
     
-    console.log('Saving entry data:', entryData);
     onSave(entryData);
   };
 

@@ -16,16 +16,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
   const getStorageDateKey = (date) => {
     if (date) {
       // Simple approach: use the date directly with formatting
-      const storageKey = format(date, 'yyyy-MM-dd');
-      
-      // Debug logging
-      console.log('TimesheetTable getStorageDateKey debug:', {
-        inputDate: date.toISOString(),
-        storageKey,
-        timezone
-      });
-      
-      return storageKey;
+      return format(date, 'yyyy-MM-dd');
     }
     const nowInTimezone = new Date(new Date().toLocaleString("en-US", {timeZone: timezone}));
     return format(nowInTimezone, 'yyyy-MM-dd');
