@@ -397,8 +397,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Update display
     setTodayEntries(remainingEntries);
-
-    console.log(`Merged ${entriesToMerge.length} entries into one`);
   };
 
   // Find entries that have duplicates
@@ -420,13 +418,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   const handleSaveEntry = (entryData) => {
     // Determine which timezone to use for conversion
     const timezoneToUse = entryData.timezoneMode === 'custom' ? entryData.entryTimezone : timezone;
-
-    console.log('Using timezone for conversion:', {
-      mode: entryData.timezoneMode,
-      timezoneToUse,
-      selectedTimezone: timezone,
-      customTimezone: entryData.entryTimezone
-    });
 
     // Create date objects appropriately based on timezone mode
     let startDateTime, endDateTime;
@@ -450,11 +441,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       endDateTime = toZonedTime(localEndDateTime, timezoneToUse);
     }
 
-    console.log('Converted times:', {
-      startDateTime: startDateTime.toISOString(),
-      endDateTime: endDateTime.toISOString()
-    });
-
     const newEntry = {
       id: modalState.mode === 'edit' ? modalState.initialData.id : Date.now(),
       ...entryData,
@@ -463,17 +449,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       endTime: endDateTime.toISOString()
     };
 
-    console.log('New entry to save:', newEntry);
-
     // Get the storage key for the entry's date
     const entryStorageKey = getStorageDateKey(entryData.date);
     const currentStorageKey = getStorageDateKey(selectedDate); // Use selected date for display
-
-    console.log('Storage keys:', {
-      entryStorageKey,
-      currentStorageKey,
-      sameDate: entryStorageKey === currentStorageKey
-    });
 
     // Load all existing data
     const allData = loadTimesheetData() || {};
@@ -505,18 +483,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       allData[entryStorageKey].push(newEntry);
     }
 
-    console.log('Final data to save:', allData);
-
     // Save all data
     saveTimesheetData(allData);
 
     // Refresh today's entries if it's the same date
     if (entryStorageKey === currentStorageKey) {
-      console.log('Refreshing todayEntries from saved data');
       const sortedEntries = [...allData[entryStorageKey]].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       setTodayEntries(sortedEntries);
-    } else {
-      console.log('Entry saved to different date, not refreshing todayEntries');
     }
 
     handleCloseModal();
@@ -535,7 +508,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         delete allData[storageKey];
       }
 
-      console.log('Updated data after delete:', allData);
       saveTimesheetData(allData);
     }
 
@@ -627,15 +599,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     alert(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
-    console.log('Saved to weekly timesheet:', {
-      dayKey,
-      tasksCount: completedEntries.length,
-      workDetails,
-      timeIn: weeklyData[dayKey].timeIn,
-      timeOut: weeklyData[dayKey].timeOut,
-      breakHours: weeklyData[dayKey].breakHours,
-      timezone
-    });
   };
 
   return (
