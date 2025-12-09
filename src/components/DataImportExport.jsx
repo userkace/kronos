@@ -227,18 +227,20 @@ const DataImportExport = ({ onImportSuccess }) => {
   };
 
   const handleRevert = () => {
-    const success = revertImport();
-    if (success) {
-      success('Data reverted to previous state');
-      setShowRevertOption(false);
-      setImportInfo(null);
-      
-      // Trigger app refresh
-      if (onImportSuccess) {
-        onImportSuccess();
+    if (window.confirm('Are you sure you want to revert the last import? This will restore all data to its previous state and cannot be undone.')) {
+      const success = revertImport();
+      if (success) {
+        success('Data reverted to previous state');
+        setShowRevertOption(false);
+        setImportInfo(null);
+        
+        // Trigger app refresh
+        if (onImportSuccess) {
+          onImportSuccess();
+        }
+      } else {
+        error('Failed to revert data');
       }
-    } else {
-      error('Failed to revert data');
     }
   };
 
