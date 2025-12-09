@@ -30,6 +30,7 @@ const DataImportExport = ({ onImportSuccess }) => {
   
   // Import mode states
   const [importMode, setImportMode] = useState('all'); // 'all', 'days', 'weeks'
+  const [showAdvancedImport, setShowAdvancedImport] = useState(false);
 
   // Load available data for selection
   useEffect(() => {
@@ -427,65 +428,93 @@ const DataImportExport = ({ onImportSuccess }) => {
               <Upload className="w-5 h-5 text-green-600" />
               <h4 className="font-medium text-gray-900">Import Data</h4>
             </div>
+            <button
+              onClick={() => setShowAdvancedImport(!showAdvancedImport)}
+              className="text-sm text-green-600 hover:text-green-700"
+            >
+              {showAdvancedImport ? 'Simple Import' : 'Advanced Import'}
+            </button>
           </div>
 
-          {/* Import Mode Selection */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Import Mode</label>
-            <div className="flex space-x-4">
-              <label className="flex items-center">
+          {!showAdvancedImport ? (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">Restore all your data from a backup file</p>
+              <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 cursor-pointer">
+                <Upload className="w-4 h-4" />
+                <span>{isImporting ? 'Importing...' : 'Import All'}</span>
                 <input
-                  type="radio"
-                  value="all"
-                  checked={importMode === 'all'}
-                  onChange={(e) => setImportMode(e.target.value)}
-                  className="mr-2"
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => {
+                    setImportMode('all');
+                    handleImport(e);
+                  }}
+                  disabled={isImporting}
+                  className="hidden"
                 />
-                <span>All Data</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="days"
-                  checked={importMode === 'days'}
-                  onChange={(e) => setImportMode(e.target.value)}
-                  className="mr-2"
-                />
-                <span>Daily Only</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="weeks"
-                  checked={importMode === 'weeks'}
-                  onChange={(e) => setImportMode(e.target.value)}
-                  className="mr-2"
-                />
-                <span>Weekly Only</span>
               </label>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Import Mode Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Import Mode</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="all"
+                      checked={importMode === 'all'}
+                      onChange={(e) => setImportMode(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span>All Data</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="days"
+                      checked={importMode === 'days'}
+                      onChange={(e) => setImportMode(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span>Daily Only</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="weeks"
+                      checked={importMode === 'weeks'}
+                      onChange={(e) => setImportMode(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span>Weekly Only</span>
+                  </label>
+                </div>
+              </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">
-                {importMode === 'all' ? 'Restore all data from backup file' :
-                 importMode === 'days' ? 'Restore only daily entries from backup file' :
-                 'Restore only weekly summaries from backup file'}
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {importMode === 'all' ? 'Restore all data from backup file' :
+                     importMode === 'days' ? 'Restore only daily entries from backup file' :
+                     'Restore only weekly summaries from backup file'}
+                  </p>
+                </div>
+                <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  <span>{isImporting ? 'Importing...' : 'Import'}</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    disabled={isImporting}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
-            <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 cursor-pointer">
-              <Upload className="w-4 h-4" />
-              <span>{isImporting ? 'Importing...' : 'Import'}</span>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                disabled={isImporting}
-                className="hidden"
-              />
-            </label>
-          </div>
+          )}
         </div>
 
         {/* Import Info */}
