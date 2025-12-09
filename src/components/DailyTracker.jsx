@@ -1000,7 +1000,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 onChange={(e) => setCurrentTask(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleStart()}
                 placeholder="What are you doing now?"
-                className="flex-1 bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-400"
+                className={`flex-1 bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 placeholder-gray-400 ${
+                  activeEntry 
+                    ? 'focus:ring-blue-500 focus:border-blue-500' 
+                    : 'focus:ring-green-500 focus:border-green-500'
+                }`}
                 disabled={false}
               />
               <button
