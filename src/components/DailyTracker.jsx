@@ -826,13 +826,21 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         {/* Manual Entry Button - Show for all dates */}
         {!isToday() && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex justify-center">
+            <div className="flex justify-center space-x-4">
               <button
                 onClick={() => handleOpenModal('add')}
                 className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 + Add Manual Entry for {formatInTimezone(selectedDate, 'MMM d')}
               </button>
+              {todayEntries.length > 0 && (
+                <button
+                  onClick={saveToWeeklyTimesheet}
+                  className="px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                >
+                  Save to Weekly Timesheet
+                </button>
+              )}
             </div>
           </div>
         )}
