@@ -943,55 +943,50 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              {/* Date Navigation */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex-1 text-center">
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}, {formatInTimezone(selectedDate, 'MMM d, yyyy')}
-                  </h1>
-                </div>
-
-                <div className="flex items-center space-x-2 justify-end">
-                  <button
-                    onClick={handlePreviousDay}
-                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                    title="Previous Day"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-
-                  <button
-                    onClick={handleToday}
-                    className={`p-2 rounded-lg transition-colors ${
-                      isToday()
-                        ? 'cursor-not-allowed'
-                        : 'hover:bg-gray-200'
-                    }`}
-                    title={isToday() ? "Current day" : "Back to Today"}
-                    disabled={isToday()}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${isToday() ? 'bg-gray-400' : 'bg-blue-600'}`}></div>
-                  </button>
-
-                  <button
-                    onClick={handleNextDay}
-                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                    title="Next Day"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Clock className="w-5 h-5" />
-                <span className="text-2xl font-semibold text-gray-900">
-                  {calculateDailyTotal()}
-                </span>
-              </div>
+          {/* Date Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">
+                {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}, {formatInTimezone(selectedDate, 'MMM d, yyyy')}
+              </h1>
             </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handlePreviousDay}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Previous Day"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={handleToday}
+                className={`p-2 rounded-lg transition-colors ${
+                  isToday()
+                    ? 'cursor-not-allowed'
+                    : 'hover:bg-gray-200'
+                }`}
+                title={isToday() ? "Current day" : "Back to Today"}
+                disabled={isToday()}
+              >
+                <div className={`w-2 h-2 rounded-full ${isToday() ? 'bg-gray-400' : 'bg-blue-600'}`}></div>
+              </button>
+
+              <button
+                onClick={handleNextDay}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Next Day"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 text-gray-600">
+            <Clock className="w-5 h-5" />
+            <span className="text-2xl font-semibold text-gray-900">
+              {calculateDailyTotal()}
+            </span>
           </div>
         </div>
 
