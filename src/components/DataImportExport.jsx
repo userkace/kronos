@@ -579,7 +579,8 @@ const DataImportExport = ({ onImportSuccess }) => {
           <ul className="text-sm text-gray-600 space-y-1">
             <li>• <strong>Simple Export:</strong> Downloads all your data at once</li>
             <li>• <strong>Advanced Export:</strong> Select specific days or weeks to export</li>
-            <li>• <strong>Import:</strong> Restores data from any backup file</li>
+            <li>• <strong>Simple Import:</strong> Restores all your data from a backup file</li>
+            <li>• <strong>Advanced Import:</strong> Select specific data types to restore (Daily Only, Weekly Only)</li>
             <li>• <strong>Revert:</strong> Undoes the last import operation</li>
             <li>• <strong>Clear All:</strong> Permanently deletes all data (cannot be undone)</li>
           </ul>
