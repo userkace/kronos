@@ -72,19 +72,19 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
   const navigationItems = [
     {
       id: 'tracker',
-      label: 'Daily Tracker',
+      label: 'Tracker',
       icon: Clock,
       description: 'Track time in real-time'
     },
     {
       id: 'timesheet',
-      label: 'Weekly Timesheet',
+      label: 'Timesheet',
       icon: Calendar,
       description: 'View weekly summary'
     },
     {
       id: 'data',
-      label: 'Data Management',
+      label: 'Data',
       icon: Database,
       description: 'Import/Export data'
     },
@@ -196,10 +196,10 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
-                    {currentView === 'tracker' ? 'Daily Tracker' :
-                     currentView === 'timesheet' ? 'Weekly Timesheet' :
+                    {currentView === 'tracker' ? 'Tracker' :
+                     currentView === 'timesheet' ? 'Timesheet' :
                      currentView === 'settings' ? 'Settings' :
-                     'Data Management'}
+                     'Data'}
                   </h2>
                   <p className="text-sm text-gray-500 hidden sm:block">
                     {currentView === 'tracker'

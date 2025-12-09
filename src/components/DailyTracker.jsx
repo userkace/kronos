@@ -1015,7 +1015,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 {activeEntry ? (
                   <>
                     <Plus className="w-5 h-5" />
-                    <span>Start New</span>
+                    <span>New</span>
                   </>
                 ) : (
                   <>
