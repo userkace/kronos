@@ -293,26 +293,25 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return () => clearInterval(timer);
   }, [timezone]); // Re-create timer when timezone changes
 
-  // Update page title with current time when Daily Tracker is active
+  // Update page title with cumulative work time when Daily Tracker is active
   useEffect(() => {
-    const updateTimeTitle = () => {
-      const now = getCurrentDateInTimezone();
-      const timeString = format(now, 'h:mm:ss a');
-      document.title = `${timeString} - Kronos`;
+    const updateWorkTimeTitle = () => {
+      const totalWorkTime = calculateDailyTotal();
+      document.title = `${totalWorkTime} - Kronos`;
     };
 
     // Update title immediately
-    updateTimeTitle();
+    updateWorkTimeTitle();
 
-    // Update title every second
-    const titleTimer = setInterval(updateTimeTitle, 1000);
+    // Update title every second to reflect active timer time
+    const titleTimer = setInterval(updateWorkTimeTitle, 1000);
 
     // Cleanup: restore original title when component unmounts
     return () => {
       clearInterval(titleTimer);
       document.title = 'Kronos';
     };
-  }, [timezone]); // Re-create timer when timezone changes
+  }, [timezone, selectedDateEntries, activeEntry]); // Re-create timer when dependencies change
 
   // Save entries to localStorage whenever they change (for timer entries only)
   useEffect(() => {
