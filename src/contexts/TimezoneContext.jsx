@@ -18,8 +18,11 @@ export const TimezoneProvider = ({ children }) => {
   // Load timezone from localStorage on mount
   useEffect(() => {
     const savedTimezone = loadTimezone();
+    console.log('=== TimezoneContext Debug ===');
+    console.log('Loaded timezone from storage:', savedTimezone);
     if (savedTimezone) {
       setSelectedTimezone(savedTimezone);
+      console.log('Set timezone to:', savedTimezone);
     }
     setIsInitialized(true);
   }, []);
@@ -27,11 +30,13 @@ export const TimezoneProvider = ({ children }) => {
   // Save timezone to localStorage whenever it changes (but not on initial load)
   useEffect(() => {
     if (isInitialized) {
+      console.log('Saving timezone to storage:', selectedTimezone);
       saveTimezone(selectedTimezone);
     }
   }, [selectedTimezone, isInitialized]);
 
   const changeTimezone = (timezone) => {
+    console.log('Changing timezone from', selectedTimezone, 'to', timezone);
     setSelectedTimezone(timezone);
   };
 
@@ -39,6 +44,8 @@ export const TimezoneProvider = ({ children }) => {
     selectedTimezone,
     changeTimezone,
   };
+
+  console.log('TimezoneContext current value:', value);
 
   return (
     <TimezoneContext.Provider value={value}>

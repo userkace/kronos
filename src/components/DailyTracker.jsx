@@ -18,9 +18,10 @@ import {
 
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
+  
   const [currentTask, setCurrentTask] = useState('');
   const [activeEntry, setActiveEntry] = useState(null);
-  const [todayEntries, setTodayEntries] = useState([]);
+  const [selectedDateEntries, setSelectedDateEntries] = useState([]); // Renamed from todayEntries
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date()); // Initialize to today in UTC
   const [modalState, setModalState] = useState({
@@ -57,9 +58,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const allData = loadTimesheetData();
     const cleanedData = {};
     const seenIds = new Set();
-    
-    console.log('=== Cleaning up duplicate entries ===');
-    console.log('Original data keys:', Object.keys(allData));
     
     Object.keys(allData).forEach(dateKey => {
       const entries = allData[dateKey];
@@ -115,51 +113,153 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return toZonedTime(now, timezone);
   };
 
+  // Debug logging for timezone (moved after function definitions)
+  console.log('=== Timezone Debug ===');
+  console.log('Received timezone prop:', timezone);
+  console.log('Current system timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+  console.log('Current system time:', new Date());
+  console.log('Current time in selected timezone:', getCurrentDateInTimezone());
+
   // Update selectedDate to today when timezone changes
   useEffect(() => {
     // Keep the date as UTC, only format for display
     setSelectedDate(new Date());
   }, [timezone]);
 
-  // Load data from localStorage on mount and when date changes
+  // Run cleanup only once on mount
   useEffect(() => {
     // Clean up duplicate entries first
-    const cleanedData = cleanupDuplicateEntries();
-    
+    cleanupDuplicateEntries();
+  }, []); // Empty dependency array - run only once on mount
+
+  // Load data from localStorage on mount and when date changes
+  useEffect(() => {
+    const loadedData = loadTimesheetData();
     const storageKey = getStorageDateKey(selectedDate);
     const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
     
     // Debug logging
     console.log('=== DailyTracker Debug ===');
-    console.log('Selected Date:', selectedDate);
+    console.log('Selected Date (raw):', selectedDate);
+    console.log('Selected Date (toString):', selectedDate.toString());
     console.log('Timezone:', timezone);
     console.log('Storage Key:', storageKey);
     console.log('Display Date:', displayDate);
     console.log('Is Today:', isToday());
-    console.log('Available keys in storage:', Object.keys(cleanedData || {}));
+    console.log('Available keys in storage:', Object.keys(loadedData || {}));
     
-    if (cleanedData && cleanedData[storageKey]) {
-      const dayEntries = cleanedData[storageKey] || [];
+    // Additional timezone debug
+    console.log('=== Date Calculation Debug ===');
+    console.log('Current system time:', new Date());
+    console.log('Current time in selected timezone:', getCurrentDateInTimezone());
+    console.log('Today in selected timezone:', formatInTimezone(new Date(), 'yyyy-MM-dd'));
+    console.log('Selected date in selected timezone:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
+    
+    // Check what's actually stored for each key
+    console.log('=== Storage Contents Debug ===');
+    Object.keys(loadedData || {}).forEach(key => {
+      console.log(`Key "${key}" has ${loadedData[key].length} entries`);
+      if (loadedData[key].length > 0) {
+        console.log(`  First entry:`, loadedData[key][0]);
+      }
+    });
+    
+    if (loadedData && loadedData[storageKey]) {
+      const dayEntries = loadedData[storageKey] || [];
       console.log('Entries found for storage key:', dayEntries.length, dayEntries);
+      console.log('=== State Update Debug ===');
+      console.log('About to setSelectedDateEntries with', dayEntries.length, 'entries for key:', storageKey);
       // Sort entries by start time (earliest first)
       const sortedEntries = dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      setTodayEntries(sortedEntries);
+      setSelectedDateEntries(sortedEntries);
+      console.log('setSelectedDateEntries called with sorted entries');
 
       // Check for active entry (only for current date in selected timezone)
       const todayInSelectedTimezone = formatInTimezone(new Date(), 'yyyy-MM-dd');
       const isCurrentDate = todayInSelectedTimezone === displayDate;
+      
+      console.log('=== Active Entry Debug ===');
+      console.log('Is Current Date:', isCurrentDate);
+      console.log('Current activeEntry:', activeEntry);
+      console.log('Day entries:', dayEntries);
+      console.log('Active entry in data:', dayEntries.find(entry => entry.isActive));
+      
+      // Log details of all entries to see their structure
+      console.log('=== Entry Details ===');
+      dayEntries.forEach((entry, index) => {
+        console.log(`Entry ${index}:`, {
+          id: entry.id,
+          description: entry.description,
+          isActive: entry.isActive,
+          startTime: entry.startTime,
+          endTime: entry.endTime
+        });
+      });
+      
       if (isCurrentDate) {
         const active = dayEntries.find(entry => entry.isActive);
         if (active) {
+          console.log('Setting activeEntry from data:', active);
           setActiveEntry(active);
+        } else if (activeEntry) {
+          console.log('Keeping existing activeEntry:', activeEntry);
+          // Keep existing activeEntry if no active found in today's entries
+          // This handles the case where we navigated away and back
+        } else {
+          // Look for active entry in all dates (for timers that might be stored under wrong date)
+          let foundActive = null;
+          Object.keys(loadedData).forEach(dateKey => {
+            const entries = loadedData[dateKey];
+            const activeInDate = entries.find(entry => entry.isActive);
+            if (activeInDate) {
+              foundActive = activeInDate;
+              console.log('Found active entry in different date key:', dateKey, activeInDate);
+            }
+          });
+          
+          if (foundActive) {
+            console.log('Setting activeEntry from different date:', foundActive);
+            setActiveEntry(foundActive);
+          } else {
+            console.log('No activeEntry found anywhere');
+            setActiveEntry(null);
+          }
         }
       } else {
-        setActiveEntry(null); // No active entries for other dates
+        // Don't clear activeEntry when viewing other dates - keep the timer running
+        // Only clear if there's no active timer at all
+        if (!activeEntry) {
+          console.log('Clearing activeEntry - no timer running');
+          setActiveEntry(null);
+        } else {
+          console.log('Keeping activeEntry on other day:', activeEntry);
+        }
       }
     } else {
       console.log('No entries found for storage key:', storageKey);
-      setTodayEntries([]);
-      setActiveEntry(null);
+      console.log('=== State Update Debug (Empty) ===');
+      console.log('About to setSelectedDateEntries with [] for key:', storageKey);
+      setSelectedDateEntries([]);
+      console.log('setSelectedDateEntries called with empty array');
+      
+      // Before clearing activeEntry, check if there's an active timer in any date
+      let foundActive = null;
+      Object.keys(loadedData).forEach(dateKey => {
+        const entries = loadedData[dateKey];
+        const activeInDate = entries.find(entry => entry.isActive);
+        if (activeInDate) {
+          foundActive = activeInDate;
+          console.log('Found active entry in different date key (no entries for current):', dateKey, activeInDate);
+        }
+      });
+      
+      if (foundActive) {
+        console.log('Setting activeEntry from different date (no entries for current):', foundActive);
+        setActiveEntry(foundActive);
+      } else {
+        console.log('No activeEntry found anywhere, clearing');
+        setActiveEntry(null);
+      }
     }
   }, [timezone, selectedDate]); // Re-load when timezone or selected date changes
 
@@ -216,20 +316,37 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Save entries to localStorage whenever they change (for timer entries only)
   useEffect(() => {
-    // Only save if we have timer entries (active or recently completed)
-    const hasTimerEntries = todayEntries.some(entry =>
+    console.log('=== Timer Save Triggered ===');
+    console.log('selectedDateEntries changed, length:', selectedDateEntries.length);
+    console.log('isToday():', isToday());
+    console.log('selectedDate:', selectedDate.toString());
+    
+    // Only save if we have timer entries AND we're viewing today
+    const hasTimerEntries = selectedDateEntries.some(entry =>
       entry.isActive || (entry.startTime && !entry.date) // Timer entries don't have a date field
     );
 
-    if (hasTimerEntries) {
+    console.log('hasTimerEntries:', hasTimerEntries);
+
+    if (hasTimerEntries && isToday()) {
       const storageKey = getStorageDateKey(); // Use current date in selected timezone
       const displayDate = formatInTimezone(getCurrentDateInTimezone(), 'yyyy-MM-dd');
+      console.log('=== Timer Save Debug ===');
+      console.log('Saving timer entries...');
+      console.log('Current selectedDateEntries:', selectedDateEntries);
+      console.log('Storage key for timer save:', storageKey);
+      console.log('Currently viewing date:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
+      console.log('Is today:', isToday());
+      
       const allData = loadTimesheetData() || {};
-      allData[storageKey] = todayEntries;
+      allData[storageKey] = selectedDateEntries;
 
       saveTimesheetData(allData);
+      console.log('Timer entries saved to key:', storageKey);
+    } else {
+      console.log('Timer save skipped - conditions not met');
     }
-  }, [todayEntries, timezone]); // Re-save when timezone changes
+  }, [selectedDateEntries, timezone]); // Re-save only when entries or timezone changes, NOT when selectedDate changes
 
   // Calculate duration for active entry
   const getActiveDuration = (entry) => {
@@ -281,7 +398,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     let totalSeconds = 0;
 
     // Add completed entries
-    todayEntries.forEach(entry => {
+    selectedDateEntries.forEach(entry => {
       if (!entry.isActive && entry.endTime) {
         // Convert both times to the selected timezone for accurate calculation
         const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
@@ -340,10 +457,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     saveTimesheetData(allData);
 
     setActiveEntry(newEntry);
-    // Only update todayEntries if we're viewing today
+    // Only update selectedDateEntries if we're viewing today
     if (isToday()) {
       const sortedEntries = [...allData[storageKey]].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      setTodayEntries(sortedEntries);
+      setSelectedDateEntries(sortedEntries);
     }
     setCurrentTask('');
   };
@@ -377,9 +494,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     allData[storageKey] = updatedEntries;
     saveTimesheetData(allData);
 
-    // Only update todayEntries if we're viewing today
+    // Only update selectedDateEntries if we're viewing today
     if (isToday()) {
-      setTodayEntries(updatedEntries);
+      setSelectedDateEntries(updatedEntries);
     }
     setActiveEntry(null);
   };
@@ -419,10 +536,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     saveTimesheetData(allData);
 
     setActiveEntry(newEntry);
-    // Only update todayEntries if we're viewing today
+    // Only update selectedDateEntries if we're viewing today
     if (isToday()) {
       const sortedEntries = [...allData[storageKey]].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      setTodayEntries(sortedEntries);
+      setSelectedDateEntries(sortedEntries);
     }
   };
 
@@ -492,13 +609,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     saveTimesheetData(allData);
 
     // Update display
-    setTodayEntries(remainingEntries);
+    setSelectedDateEntries(remainingEntries);
   };
 
   // Find entries that have duplicates
   const findDuplicateEntries = () => {
     const descriptionCounts = {};
-    todayEntries.forEach(entry => {
+    selectedDateEntries.forEach(entry => {
       const desc = entry.description;
       descriptionCounts[desc] = (descriptionCounts[desc] || 0) + 1;
     });
@@ -508,7 +625,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   };
 
   const getDuplicateCount = (description) => {
-    return todayEntries.filter(entry => entry.description === description).length;
+    return selectedDateEntries.filter(entry => entry.description === description).length;
   };
 
   const handleSaveEntry = (entryData) => {
@@ -585,7 +702,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Refresh today's entries if it's the same date
     if (entryStorageKey === currentStorageKey) {
       const sortedEntries = [...allData[entryStorageKey]].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      setTodayEntries(sortedEntries);
+      setSelectedDateEntries(sortedEntries);
     }
 
     handleCloseModal();
@@ -608,8 +725,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     // Update local state
-    const updatedEntries = todayEntries.filter(e => e.id !== entry.id);
-    setTodayEntries(updatedEntries);
+    const updatedEntries = selectedDateEntries.filter(e => e.id !== entry.id);
+    setSelectedDateEntries(updatedEntries);
     handleCloseModal();
   };
 
@@ -620,13 +737,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       return;
     }
 
-    if (todayEntries.length === 0) {
+    if (selectedDateEntries.length === 0) {
       warning('No tasks to save for today');
       return;
     }
 
     // Get completed entries for today
-    const completedEntries = todayEntries.filter(entry => !entry.isActive && entry.endTime);
+    const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
 
     if (completedEntries.length === 0) {
       warning('No completed tasks to save for today');
@@ -833,7 +950,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               >
                 + Add Manual Entry for {formatInTimezone(selectedDate, 'MMM d')}
               </button>
-              {todayEntries.length > 0 && (
+              {selectedDateEntries.length > 0 && (
                 <button
                   onClick={saveToWeeklyTimesheet}
                   className="px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
@@ -852,9 +969,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
             <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-lg">
-                    {activeEntry.description}
-                  </h3>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 text-lg">
+                      {activeEntry.description}
+                    </h3>
+                    {!isToday() && (
+                      <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                        From Today
+                      </span>
+                    )}
+                  </div>
                   <p className="text-green-700 text-sm mb-2">
                     {activeEntry.project || ''}
                   </p>
@@ -880,7 +1004,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
           {/* Completed Entries */}
           {(() => {
-            const completedEntries = todayEntries.filter(entry => !entry.isActive);
+            const completedEntries = selectedDateEntries.filter(entry => !entry.isActive);
             return completedEntries.reverse().map((entry, index) => {
               // Convert both times to the selected timezone for accurate calculation
               const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
@@ -960,7 +1084,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         </div>
 
         {/* Empty State */}
-        {todayEntries.length === 0 && !activeEntry && (
+        {selectedDateEntries.length === 0 && !activeEntry && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <Clock className="w-16 h-16 mx-auto mb-4" />
