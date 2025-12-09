@@ -75,24 +75,26 @@ export const getEndOfDayInTimezone = (date, timezone) => {
 };
 
 /**
- * Get the start of week in the selected timezone (Monday)
+ * Get the start of week in the selected timezone
  * @param {Date} date - The date (can be UTC or local)
  * @param {string} timezone - The target timezone
+ * @param {number} weekStartsOn - Day week starts on (0 = Sunday, 1 = Monday)
  * @returns {Date} - The start of week in the target timezone
  */
-export const getStartOfWeekInTimezone = (date, timezone) => {
+export const getStartOfWeekInTimezone = (date, timezone, weekStartsOn = 1) => {
   const zonedDate = toZonedTime(date, timezone);
-  return startOfWeek(zonedDate, { weekStartsOn: 1 });
+  return startOfWeek(zonedDate, { weekStartsOn });
 };
 
 /**
  * Get the days of the week in the selected timezone
  * @param {Date} date - The date (can be UTC or local)
  * @param {string} timezone - The target timezone
- * @returns {Date[]} - Array of 7 days starting from Monday
+ * @param {number} weekStartsOn - Day week starts on (0 = Sunday, 1 = Monday)
+ * @returns {Date[]} - Array of 7 days starting from the specified week start
  */
-export const getWeekDaysInTimezone = (date, timezone) => {
-  const weekStart = getStartOfWeekInTimezone(date, timezone);
+export const getWeekDaysInTimezone = (date, timezone, weekStartsOn = 1) => {
+  const weekStart = getStartOfWeekInTimezone(date, timezone, weekStartsOn);
   return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 };
 

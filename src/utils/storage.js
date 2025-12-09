@@ -4,7 +4,9 @@ const STORAGE_KEYS = {
   TIMESHEET_DATA: 'kronos_timesheet_data',
   SELECTED_TIMEZONE: 'kronos_selected_timezone',
   SELECTED_WEEK: 'kronos_selected_week',
-  WEEKLY_TIMESHEET: 'kronos_weekly_timesheet'
+  WEEKLY_TIMESHEET: 'kronos_weekly_timesheet',
+  WEEK_START: 'kronos_week_start',
+  ONBOARDING_COMPLETED: 'kronos_onboarding_completed'
 };
 
 // Save timesheet data to LocalStorage
@@ -39,10 +41,11 @@ export const saveTimezone = (timezone) => {
 // Load selected timezone from LocalStorage
 export const loadTimezone = () => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.SELECTED_TIMEZONE) || 'UTC';
+    const stored = localStorage.getItem(STORAGE_KEYS.SELECTED_TIMEZONE);
+    return stored || null; // Return null instead of 'UTC' default
   } catch (error) {
     console.error('Error loading timezone:', error);
-    return 'UTC';
+    return null;
   }
 };
 
@@ -94,5 +97,43 @@ export const loadWeeklyTimesheet = () => {
   } catch (error) {
     console.error('Error loading weekly timesheet data:', error);
     return {};
+  }
+};
+
+// Save week start preference to LocalStorage
+export const saveWeekStart = (weekStart) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.WEEK_START, weekStart);
+  } catch (error) {
+    console.error('Error saving week start:', error);
+  }
+};
+
+// Load week start preference from LocalStorage
+export const loadWeekStart = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.WEEK_START) || 'sunday';
+  } catch (error) {
+    console.error('Error loading week start:', error);
+    return 'sunday';
+  }
+};
+
+// Save onboarding completion status to LocalStorage
+export const saveOnboardingCompleted = () => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETED, 'true');
+  } catch (error) {
+    console.error('Error saving onboarding status:', error);
+  }
+};
+
+// Load onboarding completion status from LocalStorage
+export const loadOnboardingCompleted = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED) === 'true';
+  } catch (error) {
+    console.error('Error loading onboarding status:', error);
+    return false;
   }
 };

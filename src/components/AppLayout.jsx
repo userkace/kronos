@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Calendar, Menu, X, Globe, Database } from 'lucide-react';
+import { Clock, Calendar, Menu, X, Globe, Database, Settings } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import TimezoneSelect from './TimezoneSelect';
 import DataImportExport from './DataImportExport';
@@ -26,6 +26,12 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
       label: 'Data Management',
       icon: Database,
       description: 'Import/Export data'
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: Settings,
+      description: 'App preferences'
     }
   ];
 
@@ -104,6 +110,8 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                     <Clock className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'timesheet' ? (
                     <Calendar className="w-5 h-5 text-blue-600" />
+                  ) : currentView === 'settings' ? (
+                    <Settings className="w-5 h-5 text-blue-600" />
                   ) : (
                     <Database className="w-5 h-5 text-blue-600" />
                   )}
@@ -112,6 +120,7 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                   <h2 className="text-lg font-semibold text-gray-900">
                     {currentView === 'tracker' ? 'Daily Tracker' : 
                      currentView === 'timesheet' ? 'Weekly Timesheet' : 
+                     currentView === 'settings' ? 'Settings' :
                      'Data Management'}
                   </h2>
                   <p className="text-sm text-gray-500">
@@ -119,6 +128,8 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                       ? 'Track your time in real-time' 
                       : currentView === 'timesheet'
                       ? 'View your weekly time summary'
+                      : currentView === 'settings'
+                      ? 'Manage your app preferences'
                       : 'Import and export your data'
                     }
                   </p>

@@ -11,9 +11,11 @@ import {
 } from '../utils/dataImportExport';
 import { loadTimesheetData, loadWeeklyTimesheet } from '../utils/storage';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 const DataImportExport = ({ onImportSuccess }) => {
   const { success, error, warning } = useToast();
+  const { weekStart } = useUserPreferences();
   const [isImporting, setIsImporting] = useState(false);
   const [importInfo, setImportInfo] = useState(null);
   const [showRevertOption, setShowRevertOption] = useState(hasImportBackup());
@@ -54,8 +56,9 @@ const DataImportExport = ({ onImportSuccess }) => {
         .sort()
         .map(weekKey => {
           const [year, weekNum] = weekKey.split('-W');
-          const weekStart = startOfWeek(new Date(year, 0, (weekNum - 1) * 7 + 1), { weekStartsOn: 1 });
-          const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+          const weekStartsOn = weekStart === 'sunday' ? 0 : 1;
+          const weekStart = startOfWeek(new Date(year, 0, (weekNum - 1) * 7 + 1), { weekStartsOn });
+          const weekEnd = endOfWeek(weekStart, { weekStartsOn });
           
           return {
             weekKey,

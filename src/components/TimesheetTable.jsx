@@ -8,9 +8,24 @@ import {
   isValid
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChange }) => {
   const [localData, setLocalData] = useState(timesheetData || {});
+  const { weekStart: userWeekStart } = useUserPreferences();
+  const [weekDays, setWeekDays] = useState([]);
+
+  // Recalculate week days when userWeekStart or currentDate changes
+  useEffect(() => {
+    const weekStartsOn = userWeekStart === 'sunday' ? 0 : 1; // 0 = Sunday, 1 = Monday
+    const weekStart = startOfWeek(currentDate, { weekStartsOn });
+    const newWeekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    setWeekDays(newWeekDays);
+    console.log('=== TimesheetTable Week Recalculation ===');
+    console.log('User week start:', userWeekStart);
+    console.log('Week starts on:', weekStartsOn);
+    console.log('New week days:', newWeekDays);
+  }, [userWeekStart, currentDate]);
 
   // Helper function to get storage date key (same as DailyTracker)
   const getStorageDateKey = (date) => {
@@ -21,9 +36,6 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     // Use current date without timezone conversion
     return format(new Date(), 'yyyy-MM-dd');
   };
-
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   // Calculate total hours for a single day
   const calculateDayTotal = (timeIn, timeOut, breakHours) => {
@@ -148,7 +160,9 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
               dayData.breakHours
             );
 
-            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const dayNames = userWeekStart === 'sunday' 
+    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             const isWeekend = index >= 5; // Saturday and Sunday
 
             return (

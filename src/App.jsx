@@ -4,35 +4,47 @@ import TimesheetTable from './components/TimesheetTable';
 import DailyTracker from './components/DailyTracker';
 import AppLayout from './components/AppLayout';
 import DataImportExport from './components/DataImportExport';
+import Onboarding from './components/Onboarding';
+import Settings from './components/Settings';
 import {
   saveSelectedWeek,
   loadSelectedWeek,
   saveWeeklyTimesheet,
-  loadWeeklyTimesheet
+  loadWeeklyTimesheet,
+  saveOnboardingCompleted,
+  loadOnboardingCompleted,
+  saveWeekStart,
+  saveTimezone
 } from './utils/storage';
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
+import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
 import { ToastProvider } from './contexts/ToastContext';
 import './App.css';
 
 function AppContent() {
   const { selectedTimezone, changeTimezone } = useTimezone();
+  const { changeWeekStart } = useUserPreferences();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
   const [currentView, setCurrentView] = useState('tracker'); // 'tracker', 'timesheet', or 'data'
   const [isInitialized, setIsInitialized] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for refreshing weekly data
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Load data from LocalStorage on component mount
   useEffect(() => {
     const loadedDate = loadSelectedWeek();
     const loadedData = loadWeeklyTimesheet();
+    const hasCompletedOnboarding = loadOnboardingCompleted();
 
     console.log('=== App Load Debug ===');
     console.log('Loaded weekly data:', loadedData);
     console.log('Selected timezone:', selectedTimezone);
+    console.log('Onboarding completed:', hasCompletedOnboarding);
     
     setCurrentDate(loadedDate);
     setTimesheetData(loadedData || {});
+    setShowOnboarding(!hasCompletedOnboarding);
     setIsInitialized(true);
   }, []);
 
@@ -72,41 +84,74 @@ function AppContent() {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const handleOnboardingComplete = (preferences) => {
+    console.log('=== Onboarding Complete ===');
+    console.log('Preferences received:', preferences);
+    console.log('Current selectedTimezone before change:', selectedTimezone);
+    
+    // Save preferences
+    changeTimezone(preferences.timezone);
+    console.log('Called changeTimezone with:', preferences.timezone);
+    changeWeekStart(preferences.weekStart);
+    console.log('Called changeWeekStart with:', preferences.weekStart);
+    saveOnboardingCompleted();
+    
+    // Also save timezone directly to ensure it's persisted
+    saveTimezone(preferences.timezone);
+    
+    console.log('Current selectedTimezone after change:', selectedTimezone);
+    
+    // Hide onboarding
+    setShowOnboarding(false);
+  };
+
   return (
-    <AppLayout
-      currentView={currentView}
-      onViewChange={setCurrentView}
-    >
-      {currentView === 'tracker' ? (
-        // Daily Tracker View
-        <DailyTracker
-          timezone={selectedTimezone}
-          onTimezoneChange={changeTimezone}
-          onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
+    <>
+      {showOnboarding ? (
+        <Onboarding 
+          onComplete={handleOnboardingComplete}
+          initialTimezone={selectedTimezone}
         />
-      ) : currentView === 'timesheet' ? (
-        // Weekly Timesheet View
-        <div className="p-6">
-          <WeekNavigator
-            currentDate={currentDate}
-            onWeekChange={handleWeekChange}
-            timezone={selectedTimezone}
-          />
-          <div className="mt-6">
-            <TimesheetTable
-              currentDate={currentDate}
-              timesheetData={timesheetData}
-              timezone={selectedTimezone}
-            />
-          </div>
-        </div>
       ) : (
-        // Data Management View
-        <div className="p-6">
-          <DataImportExport onImportSuccess={handleImportSuccess} />
-        </div>
+        <AppLayout
+          currentView={currentView}
+          onViewChange={setCurrentView}
+        >
+          {currentView === 'tracker' ? (
+            // Daily Tracker View
+            <DailyTracker
+              timezone={selectedTimezone}
+              onTimezoneChange={changeTimezone}
+              onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
+            />
+          ) : currentView === 'timesheet' ? (
+            // Weekly Timesheet View
+            <div className="p-6">
+              <WeekNavigator
+                currentDate={currentDate}
+                onWeekChange={handleWeekChange}
+                timezone={selectedTimezone}
+              />
+              <div className="mt-6">
+                <TimesheetTable
+                  currentDate={currentDate}
+                  timesheetData={timesheetData}
+                  timezone={selectedTimezone}
+                />
+              </div>
+            </div>
+          ) : currentView === 'settings' ? (
+            // Settings View
+            <Settings />
+          ) : (
+            // Data Management View
+            <div className="p-6">
+              <DataImportExport onImportSuccess={handleImportSuccess} />
+            </div>
+          )}
+        </AppLayout>
       )}
-    </AppLayout>
+    </>
   );
 }
 
@@ -114,7 +159,9 @@ function AppWrapper() {
   return (
     <ToastProvider>
       <TimezoneProvider>
-        <AppContent />
+        <UserPreferencesProvider>
+          <AppContent />
+        </UserPreferencesProvider>
       </TimezoneProvider>
     </ToastProvider>
   );

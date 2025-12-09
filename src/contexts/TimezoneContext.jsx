@@ -23,6 +23,9 @@ export const TimezoneProvider = ({ children }) => {
     if (savedTimezone) {
       setSelectedTimezone(savedTimezone);
       console.log('Set timezone to:', savedTimezone);
+    } else {
+      // No timezone saved, keep default UTC
+      console.log('No saved timezone, using default UTC');
     }
     setIsInitialized(true);
   }, []);

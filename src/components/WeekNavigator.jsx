@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { format, startOfWeek, addWeeks, subWeeks, addDays } from 'date-fns';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 const WeekNavigator = ({ currentDate, onWeekChange, timezone }) => {
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
-  const weekEnd = addDays(weekStart, 6); // Sunday
+  const { weekStart: userWeekStart } = useUserPreferences();
+  const [weekRange, setWeekRange] = useState({ start: null, end: null });
+
+  // Recalculate week range when userWeekStart or currentDate changes
+  useEffect(() => {
+    const weekStartsOn = userWeekStart === 'sunday' ? 0 : 1; // 0 = Sunday, 1 = Monday
+    const weekStart = startOfWeek(currentDate, { weekStartsOn });
+    const weekEnd = addDays(weekStart, 6);
+    setWeekRange({ start: weekStart, end: weekEnd });
+    console.log('=== WeekNavigator Week Recalculation ===');
+    console.log('User week start:', userWeekStart);
+    console.log('Week starts on:', weekStartsOn);
+    console.log('Week range:', { start: weekStart, end: weekEnd });
+  }, [userWeekStart, currentDate]);
   
   const handlePreviousWeek = () => {
     onWeekChange(subWeeks(currentDate, 1));
@@ -40,7 +53,10 @@ const WeekNavigator = ({ currentDate, onWeekChange, timezone }) => {
         </button>
       </div>
       <div className="text-lg font-semibold text-gray-900">
-        {format(weekStart, 'MMM d, yyyy')} - {format(weekEnd, 'MMM d, yyyy')}
+        {weekRange.start && weekRange.end ? 
+          `${format(weekRange.start, 'MMM d, yyyy')} - ${format(weekRange.end, 'MMM d, yyyy')}` : 
+          'Loading...'
+        }
       </div>
     </div>
   );
