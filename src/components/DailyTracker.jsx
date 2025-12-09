@@ -318,7 +318,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       clearInterval(titleTimer);
       document.title = 'Kronos';
     };
-  }, [timezone, selectedDateEntries, activeEntry, isTimezoneInitialized]); // Re-create timer when dependencies change or timezone initializes
+  }, [timezone, selectedDateEntries, activeEntry, currentTime, isTimezoneInitialized]); // Re-create timer when dependencies change or timezone initializes
 
   // Save entries to localStorage whenever they change (for timer entries only)
   useEffect(() => {
