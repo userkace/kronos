@@ -7,16 +7,10 @@ import TimezoneSelect from './TimezoneSelect';
 import DataImportExport from './DataImportExport';
 
 const AppLayout = ({ children, currentView, onViewChange }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { clockFormat } = useUserPreferences();
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Load sidebar state from localStorage on mount
-  useEffect(() => {
-    const savedSidebarState = loadSidebarState();
-    setSidebarOpen(savedSidebarState);
-  }, []);
 
   // Save sidebar state to localStorage whenever it changes
   useEffect(() => {
