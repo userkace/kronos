@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { Play, Pause, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, Calendar } from 'lucide-react';
+import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, Calendar } from 'lucide-react';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
@@ -1056,7 +1056,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   onClick={handleStop}
                   className="px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white transition-colors"
                 >
-                  <Pause className="w-5 h-5" />
+                  <Square className="w-5 h-5" />
                   <span>Stop</span>
                 </button>
               )}
@@ -1139,7 +1139,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   {!isToday() && (
                     <button
                       onClick={handleToday}
-                      className="px-4 py-2 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
+                      className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2 transition-all"
                       title="Back to Today"
                     >
                       <Calendar className="w-4 h-4" />
