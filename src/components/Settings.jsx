@@ -159,22 +159,27 @@ const Settings = () => {
         </div>
 
         {/* Save Settings Button */}
-        <div className="flex justify-end pt-4">
-          <button
-            onClick={handleSaveSettings}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-          >
-            <SettingsIcon className="w-4 h-4" />
-            <span>Save Settings</span>
-          </button>
+        <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <SettingsIcon className="w-5 h-5 text-blue-600" />
+              <div>
+                <h4 className="font-medium text-blue-900">Save Changes</h4>
+                <p className="text-sm text-blue-700">Apply your updated settings</p>
+              </div>
+            </div>
+            <button
+              onClick={handleSaveSettings}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            >
+              <SettingsIcon className="w-4 h-4" />
+              <span>Save Settings</span>
+            </button>
+          </div>
         </div>
 
         {/* Reset Options */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
-            <SettingsIcon className="w-5 h-5 text-orange-600" />
-            <h4 className="font-medium text-gray-900">Reset Options</h4>
-          </div>
+
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -187,7 +192,7 @@ const Settings = () => {
               </div>
               <button
                 onClick={handleResetOnboarding}
-                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2 border border-yellow-300"
+                className="px-4 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2 border border-yellow-300"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Reset</span>
@@ -212,7 +217,7 @@ const Settings = () => {
               </button>
             </div>
           </div>
-        </div>
+
       </div>
     </div>
   );

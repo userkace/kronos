@@ -516,7 +516,7 @@ const DataImportExport = ({ onImportSuccess }) => {
             </div>
             <button
               onClick={handleRevert}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2"
+              className="px-4 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Revert</span>
