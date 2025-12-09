@@ -31,8 +31,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Helper function to format date in selected timezone
   const formatInTimezone = (date, formatStr) => {
-    // Use toLocaleString for reliable timezone conversion
-    const dateInTimezone = new Date(date.toLocaleString("en-US", {timeZone: timezone}));
+    // Convert the date to the selected timezone, then format
+    const dateInTimezone = toZonedTime(date, timezone);
     return format(dateInTimezone, formatStr);
   };
 
@@ -44,13 +44,68 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
     if (date) {
       // Use the provided date in the selected timezone for storage key
-      // Use toLocaleString for reliable timezone conversion
-      const dateInTimezone = new Date(date.toLocaleString("en-US", {timeZone: timezone}));
+      const dateInTimezone = toZonedTime(date, timezone);
       return format(dateInTimezone, 'yyyy-MM-dd');
     }
     // If no date provided, use current date in selected timezone
-    const nowInTimezone = new Date(new Date().toLocaleString("en-US", {timeZone: timezone}));
+    const nowInTimezone = getCurrentDateInTimezone();
     return format(nowInTimezone, 'yyyy-MM-dd');
+  };
+
+  // Helper function to clean up duplicate entries caused by timezone conversion bugs
+  const cleanupDuplicateEntries = () => {
+    const allData = loadTimesheetData();
+    const cleanedData = {};
+    const seenIds = new Set();
+    
+    console.log('=== Cleaning up duplicate entries ===');
+    console.log('Original data keys:', Object.keys(allData));
+    
+    Object.keys(allData).forEach(dateKey => {
+      const entries = allData[dateKey];
+      const validEntries = [];
+      
+      entries.forEach(entry => {
+        // Skip if we've already seen this ID
+        if (seenIds.has(entry.id)) {
+          console.log(`Skipping duplicate entry ${entry.id} from ${dateKey}`);
+          return;
+        }
+        
+        seenIds.add(entry.id);
+        
+        // Calculate the correct date key for this entry based on its start time
+        if (entry.startTime) {
+          const entryDateInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
+          const correctDateKey = format(entryDateInTimezone, 'yyyy-MM-dd');
+          
+          // If the entry is in the wrong date key, move it
+          if (correctDateKey !== dateKey) {
+            console.log(`Moving entry ${entry.id} from ${dateKey} to ${correctDateKey}`);
+            if (!cleanedData[correctDateKey]) {
+              cleanedData[correctDateKey] = [];
+            }
+            cleanedData[correctDateKey].push(entry);
+          } else {
+            // Entry is in the correct place
+            if (!cleanedData[dateKey]) {
+              cleanedData[dateKey] = [];
+            }
+            cleanedData[dateKey].push(entry);
+          }
+        } else {
+          // No start time, keep as is
+          if (!cleanedData[dateKey]) {
+            cleanedData[dateKey] = [];
+          }
+          cleanedData[dateKey].push(entry);
+        }
+      });
+    });
+    
+    console.log('Cleaned data keys:', Object.keys(cleanedData));
+    saveTimesheetData(cleanedData);
+    return cleanedData;
   };
 
   // Helper function to get current date in selected timezone
@@ -68,12 +123,24 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Load data from localStorage on mount and when date changes
   useEffect(() => {
-    const loadedData = loadTimesheetData();
+    // Clean up duplicate entries first
+    const cleanedData = cleanupDuplicateEntries();
+    
     const storageKey = getStorageDateKey(selectedDate);
     const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
-
-    if (loadedData && loadedData[storageKey]) {
-      const dayEntries = loadedData[storageKey] || [];
+    
+    // Debug logging
+    console.log('=== DailyTracker Debug ===');
+    console.log('Selected Date:', selectedDate);
+    console.log('Timezone:', timezone);
+    console.log('Storage Key:', storageKey);
+    console.log('Display Date:', displayDate);
+    console.log('Is Today:', isToday());
+    console.log('Available keys in storage:', Object.keys(cleanedData || {}));
+    
+    if (cleanedData && cleanedData[storageKey]) {
+      const dayEntries = cleanedData[storageKey] || [];
+      console.log('Entries found for storage key:', dayEntries.length, dayEntries);
       // Sort entries by start time (earliest first)
       const sortedEntries = dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       setTodayEntries(sortedEntries);
@@ -90,6 +157,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         setActiveEntry(null); // No active entries for other dates
       }
     } else {
+      console.log('No entries found for storage key:', storageKey);
       setTodayEntries([]);
       setActiveEntry(null);
     }
@@ -259,6 +327,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Save directly to localStorage for today's date (in selected timezone)
     const storageKey = getStorageDateKey(); // Use current date in selected timezone for timers
+    console.log('=== Timer Save Debug ===');
+    console.log('Saving timer with storage key:', storageKey);
+    console.log('Current date:', new Date());
+    console.log('Current date in timezone:', getCurrentDateInTimezone());
+    
     const allData = loadTimesheetData() || {};
     if (!allData[storageKey]) {
       allData[storageKey] = [];
@@ -561,16 +634,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     // Find earliest start time and latest end time in selected timezone
-    const startTimes = completedEntries.map(entry => new Date(entry.startTime.toLocaleString("en-US", {timeZone: timezone})));
-    const endTimes = completedEntries.map(entry => new Date(entry.endTime.toLocaleString("en-US", {timeZone: timezone})));
+    const startTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.startTime), timezone));
+    const endTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.endTime), timezone));
 
     const earliestStart = new Date(Math.min(...startTimes));
     const latestEnd = new Date(Math.max(...endTimes));
 
     // Calculate total work hours and break hours in selected timezone
     const totalWorkMinutes = completedEntries.reduce((total, entry) => {
-      const start = new Date(entry.startTime.toLocaleString("en-US", {timeZone: timezone}));
-      const end = new Date(entry.endTime.toLocaleString("en-US", {timeZone: timezone}));
+      const start = toZonedTime(parseISO(entry.startTime), timezone);
+      const end = toZonedTime(parseISO(entry.endTime), timezone);
       return total + differenceInMinutes(end, start);
     }, 0);
 
@@ -587,11 +660,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Get current weekly timesheet data
     const weeklyData = loadWeeklyTimesheet() || {};
     // Use the date from the first completed entry to ensure we save to the correct day
-    const firstEntryDate = completedEntries.length > 0 ? new Date(completedEntries[0].startTime) : selectedDate;
+    const firstEntryDate = completedEntries.length > 0 ? toZonedTime(parseISO(completedEntries[0].startTime), timezone) : selectedDate;
 
-    // Simple approach: use the entry date directly with timezone formatting
+    // Use the entry date in the selected timezone for storage key
     const storageKey = format(firstEntryDate, 'yyyy-MM-dd');
     const dayKey = storageKey;
+    
+    console.log('=== Weekly Save Debug ===');
+    console.log('First entry start time (ISO):', completedEntries[0]?.startTime);
+    console.log('First entry date in timezone:', firstEntryDate);
+    console.log('Storage key for weekly:', storageKey);
+    console.log('Selected date:', selectedDate);
 
     // Update the day's data
     if (!weeklyData[dayKey]) {
