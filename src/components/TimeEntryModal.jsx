@@ -58,9 +58,9 @@ const TimeEntryModal = ({
   // Initialize form with initialData if editing
   useEffect(() => {
     if (initialData && mode === 'edit') {
-      // Convert UTC storage times to selected timezone for display
-      const startTimeInTimezone = initialData.startTime ? format(toZonedTime(parseISO(initialData.startTime), timezone), 'HH:mm:ss') : '';
-      const endTimeInTimezone = initialData.endTime ? format(toZonedTime(parseISO(initialData.endTime), timezone), 'HH:mm:ss') : '';
+      // Convert UTC storage times to selected timezone for display (HH:mm format)
+      const startTimeInTimezone = initialData.startTime ? format(toZonedTime(parseISO(initialData.startTime), timezone), 'HH:mm') : '';
+      const endTimeInTimezone = initialData.endTime ? format(toZonedTime(parseISO(initialData.endTime), timezone), 'HH:mm') : '';
       
       // Determine the entry date - use stored date if available, otherwise derive from startTime
       let entryDate = initialData.date;
@@ -124,8 +124,8 @@ const TimeEntryModal = ({
     if (!startTime || !endTime) return '';
     
     try {
-      const start = parse(startTime, 'HH:mm:ss', new Date());
-      const end = parse(endTime, 'HH:mm:ss', new Date());
+      const start = parse(startTime, 'HH:mm', new Date());
+      const end = parse(endTime, 'HH:mm', new Date());
       
       if (!isValid(start) || !isValid(end)) return '';
       
@@ -147,13 +147,13 @@ const TimeEntryModal = ({
     if (!startTime || !durationStr) return '';
     
     try {
-      const start = parse(startTime, 'HH:mm:ss', new Date());
+      const start = parse(startTime, 'HH:mm', new Date());
       const durationMinutes = parseDuration(durationStr);
       
       if (!isValid(start) || durationMinutes < 0) return '';
       
       const end = addMinutes(start, durationMinutes);
-      return format(end, 'HH:mm:ss');
+      return format(end, 'HH:mm');
     } catch (error) {
       return '';
     }
@@ -193,10 +193,10 @@ const TimeEntryModal = ({
     
     // Validate time format
     try {
-      parse(formData.startTime, 'HH:mm:ss', new Date());
-      parse(formData.endTime, 'HH:mm:ss', new Date());
+      parse(formData.startTime, 'HH:mm', new Date());
+      parse(formData.endTime, 'HH:mm', new Date());
     } catch (error) {
-      alert('Invalid time format. Please use HH:MM:SS format');
+      alert('Invalid time format. Please use HH:MM format');
       return;
     }
     
@@ -414,7 +414,6 @@ const TimeEntryModal = ({
                   type="time"
                   value={formData.startTime}
                   onChange={(e) => handleInputChange('startTime', e.target.value)}
-                  step="1"
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -432,7 +431,6 @@ const TimeEntryModal = ({
                   type="time"
                   value={formData.endTime}
                   onChange={(e) => handleInputChange('endTime', e.target.value)}
-                  step="1"
                   className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>

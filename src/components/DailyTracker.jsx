@@ -644,16 +644,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     if (entryData.timezoneMode === 'selected') {
       // When using selected timezone, create the date object directly in that timezone
       // This means the times are already in the selected timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm:ss', parse(entryData.date, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryData.date, 'yyyy-MM-dd', new Date()));
+      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
+      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
 
       // Convert from selected timezone to UTC
       startDateTime = fromZonedTime(localStartDateTime, timezone);
       endDateTime = fromZonedTime(localEndDateTime, timezone);
     } else {
       // When using custom timezone, create date object and convert from that timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm:ss', parse(entryData.date, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryData.date, 'yyyy-MM-dd', new Date()));
+      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
+      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
 
       // Convert from custom timezone to UTC
       startDateTime = toZonedTime(localStartDateTime, timezoneToUse);
@@ -736,6 +736,55 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     handleCloseModal();
   };
 
+  // Merge overlapping time periods to calculate accurate total work time
+  const mergeOverlappingPeriods = (entries) => {
+    if (entries.length === 0) return [];
+    
+    // Convert entries to time periods in selected timezone, normalized to minutes
+    const periods = entries.map(entry => {
+      const start = toZonedTime(parseISO(entry.startTime), timezone);
+      const end = toZonedTime(parseISO(entry.endTime), timezone);
+      
+      // Normalize to minute precision (zero out seconds and milliseconds)
+      const normalizedStart = new Date(start);
+      normalizedStart.setSeconds(0, 0);
+      
+      const normalizedEnd = new Date(end);
+      normalizedEnd.setSeconds(0, 0);
+      
+      return {
+        start: normalizedStart,
+        end: normalizedEnd
+      };
+    });
+    
+    // Sort by start time
+    periods.sort((a, b) => a.start - b.start);
+    
+    // Merge overlapping periods
+    const merged = [];
+    let current = periods[0];
+    
+    for (let i = 1; i < periods.length; i++) {
+      const next = periods[i];
+      
+      // If next period overlaps or touches current period (within the same minute)
+      if (next.start <= current.end) {
+        // Extend current period to include the next one
+        current.end = new Date(Math.max(current.end, next.end));
+      } else {
+        // No overlap, push current and start new one
+        merged.push(current);
+        current = next;
+      }
+    }
+    
+    // Push the last period
+    merged.push(current);
+    
+    return merged;
+  };
+
   // Save daily tasks to weekly timesheet
   const saveToWeeklyTimesheet = () => {
     if (activeEntry) {
@@ -762,17 +811,34 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     const earliestStart = new Date(Math.min(...startTimes));
     const latestEnd = new Date(Math.max(...endTimes));
+    
+    // Normalize to minute precision for consistency
+    earliestStart.setSeconds(0, 0);
+    latestEnd.setSeconds(0, 0);
 
-    // Calculate total work hours and break hours in selected timezone
-    const totalWorkMinutes = completedEntries.reduce((total, entry) => {
-      const start = toZonedTime(parseISO(entry.startTime), timezone);
-      const end = toZonedTime(parseISO(entry.endTime), timezone);
-      return total + differenceInMinutes(end, start);
+    // Calculate total work hours using merged overlapping periods
+    const mergedPeriods = mergeOverlappingPeriods(completedEntries);
+    
+    console.log('=== Break Calculation Debug ===');
+    console.log('Original entries:', completedEntries.length);
+    console.log('Merged periods:', mergedPeriods.length);
+    mergedPeriods.forEach((period, index) => {
+      console.log(`Period ${index}: ${period.start.toISOString()} - ${period.end.toISOString()}`);
+    });
+    
+    const totalWorkMinutes = mergedPeriods.reduce((total, period) => {
+      return total + differenceInMinutes(period.end, period.start);
     }, 0);
 
     const totalWorkHours = totalWorkMinutes / 60;
     const timeSpanMinutes = differenceInMinutes(latestEnd, earliestStart);
     const breakHoursDecimal = Math.max(0, (timeSpanMinutes - totalWorkMinutes) / 60);
+    
+    console.log('Earliest start:', earliestStart.toISOString());
+    console.log('Latest end:', latestEnd.toISOString());
+    console.log('Time span minutes:', timeSpanMinutes);
+    console.log('Total work minutes:', totalWorkMinutes);
+    console.log('Break hours decimal:', breakHoursDecimal);
 
     // Create work details from task descriptions separated by semicolons
     const workDetails = completedEntries

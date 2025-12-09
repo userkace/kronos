@@ -30,10 +30,19 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     if (!timeIn || !timeOut) return 0;
 
     try {
+      console.log('=== Day Total Calculation Debug ===');
+      console.log('Time In:', timeIn);
+      console.log('Time Out:', timeOut);
+      console.log('Break Hours:', breakHours);
+
       // Handle both HH:mm and HH:mm:ss formats
       const timeFormat = timeIn.includes(':') && timeIn.split(':').length === 3 ? 'HH:mm:ss' : 'HH:mm';
       const timeInDate = parse(timeIn, timeFormat, new Date());
       const timeOutDate = parse(timeOut, timeFormat, new Date());
+
+      console.log('Time Format:', timeFormat);
+      console.log('Parsed Time In:', timeInDate);
+      console.log('Parsed Time Out:', timeOutDate);
 
       if (!isValid(timeInDate) || !isValid(timeOutDate)) return 0;
 
@@ -45,8 +54,14 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
         totalMinutes = differenceInMinutes(timeOutDate, timeInDate) + (24 * 60);
       }
 
+      console.log('Total Minutes:', totalMinutes);
+      console.log('Total Hours (raw):', totalMinutes / 60);
+
       // Convert to hours and subtract break hours
       const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
+
+      console.log('Total Hours (after break):', totalHours);
+      console.log('Final Result:', Math.max(0, totalHours));
 
       // Don't allow negative hours
       return Math.max(0, totalHours);
@@ -164,7 +179,6 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     type="time"
                     value={dayData.timeIn || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
-                    step="1"
                     className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </td>
@@ -173,7 +187,6 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     type="time"
                     value={dayData.timeOut || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
-                    step="1"
                     className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </td>
