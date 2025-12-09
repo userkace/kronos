@@ -192,7 +192,7 @@ const Settings = () => {
               </div>
               <button
                 onClick={handleResetOnboarding}
-                className="px-4 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2 border border-yellow-300"
+                className="px-4 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Reset</span>

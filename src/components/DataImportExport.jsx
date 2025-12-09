@@ -19,7 +19,7 @@ const DataImportExport = ({ onImportSuccess }) => {
   const [isImporting, setIsImporting] = useState(false);
   const [importInfo, setImportInfo] = useState(null);
   const [showRevertOption, setShowRevertOption] = useState(hasImportBackup());
-  
+
   // Advanced export states
   const [exportMode, setExportMode] = useState('all'); // 'all', 'days', 'weeks'
   const [availableDays, setAvailableDays] = useState([]);
@@ -27,7 +27,7 @@ const DataImportExport = ({ onImportSuccess }) => {
   const [selectedDays, setSelectedDays] = useState([]);
   const [selectedWeeks, setSelectedWeeks] = useState([]);
   const [showAdvancedExport, setShowAdvancedExport] = useState(false);
-  
+
   // Import mode states
   const [importMode, setImportMode] = useState('all'); // 'all', 'days', 'weeks'
   const [showAdvancedImport, setShowAdvancedImport] = useState(false);
@@ -37,7 +37,7 @@ const DataImportExport = ({ onImportSuccess }) => {
     const loadData = () => {
       const dailyData = loadTimesheetData() || {};
       const weeklyData = loadWeeklyTimesheet() || {};
-      
+
       // Get available days with data
       const days = Object.keys(dailyData || {})
         .filter(date => dailyData[date] && dailyData[date].length > 0)
@@ -47,7 +47,7 @@ const DataImportExport = ({ onImportSuccess }) => {
           entries: dailyData[date].length,
           formatted: format(parseISO(date), 'MMM d, yyyy')
         }));
-      
+
       // Get available weeks with data
       const weeks = Object.keys(weeklyData || {})
         .filter(weekKey => {
@@ -60,7 +60,7 @@ const DataImportExport = ({ onImportSuccess }) => {
           const weekStartsOn = weekStart === 'sunday' ? 0 : 1;
           const weekStart = startOfWeek(new Date(year, 0, (weekNum - 1) * 7 + 1), { weekStartsOn });
           const weekEnd = endOfWeek(weekStart, { weekStartsOn });
-          
+
           return {
             weekKey,
             weekNum: parseInt(weekNum),
@@ -70,11 +70,11 @@ const DataImportExport = ({ onImportSuccess }) => {
             formatted: `Week ${weekNum} (${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d')})`
           };
         });
-      
+
       setAvailableDays(days);
       setAvailableWeeks(weeks);
     };
-    
+
     loadData();
   }, []);
 
@@ -83,14 +83,14 @@ const DataImportExport = ({ onImportSuccess }) => {
       const dailyData = loadTimesheetData() || {};
       const weeklyData = loadWeeklyTimesheet() || {};
       const timezone = localStorage.getItem('kronos_selected_timezone');
-      
+
       let exportData = {
         timezone: timezone || 'UTC',
         exportDate: new Date().toISOString(),
         version: '1.0',
         exportMode
       };
-      
+
       if (exportMode === 'all') {
         exportData.dailyData = dailyData;
         exportData.weeklyData = weeklyData;
@@ -113,18 +113,18 @@ const DataImportExport = ({ onImportSuccess }) => {
         exportData.dailyData = {};
         exportData.weeklyData = filteredWeeklyData;
       }
-      
+
       // Create and download JSON file
       const dataStr = JSON.stringify(exportData, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
-      
-      const filename = exportMode === 'all' 
+
+      const filename = exportMode === 'all'
         ? `timesheet-backup-${new Date().toISOString().split('T')[0]}.json`
         : exportMode === 'days'
         ? `timesheet-days-${selectedDays.length}-${new Date().toISOString().split('T')[0]}.json`
         : `timesheet-weeks-${selectedWeeks.length}-${new Date().toISOString().split('T')[0]}.json`;
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
@@ -132,7 +132,7 @@ const DataImportExport = ({ onImportSuccess }) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+
       success(`Exported ${exportMode === 'all' ? 'all data' : exportMode} successfully!`);
     } catch (error) {
       error('Export failed: ' + error.message);
@@ -161,12 +161,12 @@ const DataImportExport = ({ onImportSuccess }) => {
         setImportInfo(result.imported);
         setShowRevertOption(true);
         success(result.message);
-        
+
         // Trigger app refresh
         if (onImportSuccess) {
           onImportSuccess();
         }
-        
+
         // Reset file input
         event.target.value = '';
       })
@@ -178,16 +178,16 @@ const DataImportExport = ({ onImportSuccess }) => {
   };
 
   const toggleDaySelection = (date) => {
-    setSelectedDays(prev => 
-      prev.includes(date) 
+    setSelectedDays(prev =>
+      prev.includes(date)
         ? prev.filter(d => d !== date)
         : [...prev, date]
     );
   };
 
   const toggleWeekSelection = (weekKey) => {
-    setSelectedWeeks(prev => 
-      prev.includes(weekKey) 
+    setSelectedWeeks(prev =>
+      prev.includes(weekKey)
         ? prev.filter(w => w !== weekKey)
         : [...prev, weekKey]
     );
@@ -216,7 +216,7 @@ const DataImportExport = ({ onImportSuccess }) => {
         warning('All timesheet data has been cleared');
         setShowRevertOption(false);
         setImportInfo(null);
-        
+
         // Trigger app refresh
         if (onImportSuccess) {
           onImportSuccess();
@@ -234,7 +234,7 @@ const DataImportExport = ({ onImportSuccess }) => {
         success('Data reverted to previous state');
         setShowRevertOption(false);
         setImportInfo(null);
-        
+
         // Trigger app refresh
         if (onImportSuccess) {
           onImportSuccess();
@@ -248,7 +248,7 @@ const DataImportExport = ({ onImportSuccess }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Management</h3>
-      
+
       <div className="space-y-6">
         {/* Export Section */}
         <div className="border border-gray-200 rounded-lg p-4">
