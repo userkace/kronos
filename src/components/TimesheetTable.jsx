@@ -18,8 +18,8 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       // Simple approach: use the date directly with formatting
       return format(date, 'yyyy-MM-dd');
     }
-    const nowInTimezone = new Date(new Date().toLocaleString("en-US", {timeZone: timezone}));
-    return format(nowInTimezone, 'yyyy-MM-dd');
+    // Use current date without timezone conversion
+    return format(new Date(), 'yyyy-MM-dd');
   };
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
@@ -35,23 +35,26 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       console.log('Time Out:', timeOut);
       console.log('Break Hours:', breakHours);
 
-      // Handle both HH:mm and HH:mm:ss formats
-      const timeFormat = timeIn.includes(':') && timeIn.split(':').length === 3 ? 'HH:mm:ss' : 'HH:mm';
-      const timeInDate = parse(timeIn, timeFormat, new Date());
-      const timeOutDate = parse(timeOut, timeFormat, new Date());
+      // Split time strings to get hours and minutes
+      const [inHours, inMinutes] = timeIn.split(':').map(Number);
+      const [outHours, outMinutes] = timeOut.split(':').map(Number);
 
-      console.log('Time Format:', timeFormat);
-      console.log('Parsed Time In:', timeInDate);
-      console.log('Parsed Time Out:', timeOutDate);
+      console.log('In Hours/Minutes:', inHours, inMinutes);
+      console.log('Out Hours/Minutes:', outHours, outMinutes);
 
-      if (!isValid(timeInDate) || !isValid(timeOutDate)) return 0;
+      // Convert to total minutes
+      const inTotalMinutes = (inHours * 60) + inMinutes;
+      const outTotalMinutes = (outHours * 60) + outMinutes;
 
-      // Calculate difference in minutes
-      let totalMinutes = differenceInMinutes(timeOutDate, timeInDate);
+      console.log('In Total Minutes:', inTotalMinutes);
+      console.log('Out Total Minutes:', outTotalMinutes);
 
-      // Handle overnight shifts (if time out is earlier than time in)
+      // Calculate difference
+      let totalMinutes = outTotalMinutes - inTotalMinutes;
+
+      // Handle overnight shifts
       if (totalMinutes < 0) {
-        totalMinutes = differenceInMinutes(timeOutDate, timeInDate) + (24 * 60);
+        totalMinutes = totalMinutes + (24 * 60);
       }
 
       console.log('Total Minutes:', totalMinutes);

@@ -27,6 +27,10 @@ function AppContent() {
     const loadedDate = loadSelectedWeek();
     const loadedData = loadWeeklyTimesheet();
 
+    console.log('=== App Load Debug ===');
+    console.log('Loaded weekly data:', loadedData);
+    console.log('Selected timezone:', selectedTimezone);
+    
     setCurrentDate(loadedDate);
     setTimesheetData(loadedData || {});
     setIsInitialized(true);

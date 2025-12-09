@@ -809,8 +809,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const startTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.startTime), timezone));
     const endTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.endTime), timezone));
 
-    const earliestStart = new Date(Math.min(...startTimes));
-    const latestEnd = new Date(Math.max(...endTimes));
+    // Find the earliest and latest times while preserving timezone
+    const earliestStart = startTimes.reduce((earliest, current) => 
+      current < earliest ? current : earliest, startTimes[0]);
+    const latestEnd = endTimes.reduce((latest, current) => 
+      current > latest ? current : latest, endTimes[0]);
     
     // Normalize to minute precision for consistency
     earliestStart.setSeconds(0, 0);
@@ -876,10 +879,18 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       ...weeklyData[dayKey],
       tasks: completedEntries.length > 0 ? `${completedEntries.length} task(s)` : '',
       workDetails: workDetails,
-      timeIn: formatInTimezone(earliestStart, 'HH:mm'),
-      timeOut: formatInTimezone(latestEnd, 'HH:mm'),
+      timeIn: format(earliestStart, 'HH:mm'),
+      timeOut: format(latestEnd, 'HH:mm'),
       breakHours: breakHoursDecimal.toFixed(2)
     };
+
+    console.log('=== Weekly Timesheet Save Debug ===');
+    console.log('Earliest start (raw):', earliestStart.toISOString());
+    console.log('Latest end (raw):', latestEnd.toISOString());
+    console.log('Timezone:', timezone);
+    console.log('Time In (saved):', format(earliestStart, 'HH:mm'));
+    console.log('Time Out (saved):', format(latestEnd, 'HH:mm'));
+    console.log('Break Hours (saved):', breakHoursDecimal.toFixed(2));
 
     // Save the updated weekly timesheet
     saveWeeklyTimesheet(weeklyData);
