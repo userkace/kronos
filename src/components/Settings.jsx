@@ -187,9 +187,10 @@ const Settings = () => {
               </div>
               <button
                 onClick={handleResetOnboarding}
-                className="px-3 py-1 text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2 border border-yellow-300"
               >
-                Reset
+                <RotateCcw className="w-4 h-4" />
+                <span>Reset</span>
               </button>
             </div>
 
@@ -204,9 +205,10 @@ const Settings = () => {
               <button
                 onClick={handleClearAllData}
                 disabled={isResetting}
-                className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
-                {isResetting ? 'Clearing...' : 'Clear All'}
+                <Trash2 className="w-4 h-4" />
+                <span>{isResetting ? 'Clearing...' : 'Clear All'}</span>
               </button>
             </div>
           </div>

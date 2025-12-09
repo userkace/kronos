@@ -506,7 +506,7 @@ const DataImportExport = ({ onImportSuccess }) => {
 
         {/* Revert Option */}
         {showRevertOption && (
-          <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center space-x-3">
               <RotateCcw className="w-5 h-5 text-yellow-600" />
               <div>
@@ -525,7 +525,7 @@ const DataImportExport = ({ onImportSuccess }) => {
         )}
 
         {/* Clear All Data */}
-        <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center space-x-3">
             <AlertTriangle className="w-5 h-5 text-red-600" />
             <div>

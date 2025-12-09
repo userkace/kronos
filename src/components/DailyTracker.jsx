@@ -1087,9 +1087,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       {activeEntry.description}
                     </h3>
                     {!isToday() && (
-                      <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                      <button
+                        onClick={handleToday}
+                        className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200 transition-colors cursor-pointer"
+                        title="Back to Today"
+                      >
                         From Today
-                      </span>
+                      </button>
                     )}
                   </div>
                   <p className="text-green-700 text-sm mb-2">
