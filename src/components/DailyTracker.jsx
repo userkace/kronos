@@ -18,7 +18,7 @@ import {
 
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
-  
+
   const [currentTask, setCurrentTask] = useState('');
   const [activeEntry, setActiveEntry] = useState(null);
   const [selectedDateEntries, setSelectedDateEntries] = useState([]); // Renamed from todayEntries
@@ -29,7 +29,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     mode: 'add',
     initialData: null
   });
-  
+
   // Check if timezone is properly initialized
   const isTimezoneInitialized = timezone && timezone !== 'UTC';
 
@@ -61,25 +61,25 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const allData = loadTimesheetData();
     const cleanedData = {};
     const seenIds = new Set();
-    
+
     Object.keys(allData).forEach(dateKey => {
       const entries = allData[dateKey];
       const validEntries = [];
-      
+
       entries.forEach(entry => {
         // Skip if we've already seen this ID
         if (seenIds.has(entry.id)) {
           console.log(`Skipping duplicate entry ${entry.id} from ${dateKey}`);
           return;
         }
-        
+
         seenIds.add(entry.id);
-        
+
         // Calculate the correct date key for this entry based on its start time
         if (entry.startTime) {
           const entryDateInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
           const correctDateKey = format(entryDateInTimezone, 'yyyy-MM-dd');
-          
+
           // If the entry is in the wrong date key, move it
           if (correctDateKey !== dateKey) {
             console.log(`Moving entry ${entry.id} from ${dateKey} to ${correctDateKey}`);
@@ -103,7 +103,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         }
       });
     });
-    
+
     console.log('Cleaned data keys:', Object.keys(cleanedData));
     saveTimesheetData(cleanedData);
     return cleanedData;
@@ -140,7 +140,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const loadedData = loadTimesheetData();
     const storageKey = getStorageDateKey(selectedDate);
     const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
-    
+
     // Debug logging
     console.log('=== DailyTracker Debug ===');
     console.log('Selected Date (raw):', selectedDate);
@@ -150,14 +150,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     console.log('Display Date:', displayDate);
     console.log('Is Today:', isToday());
     console.log('Available keys in storage:', Object.keys(loadedData || {}));
-    
+
     // Additional timezone debug
     console.log('=== Date Calculation Debug ===');
     console.log('Current system time:', new Date());
     console.log('Current time in selected timezone:', getCurrentDateInTimezone());
     console.log('Today in selected timezone:', formatInTimezone(new Date(), 'yyyy-MM-dd'));
     console.log('Selected date in selected timezone:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
-    
+
     // Check what's actually stored for each key
     console.log('=== Storage Contents Debug ===');
     Object.keys(loadedData || {}).forEach(key => {
@@ -166,7 +166,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         console.log(`  First entry:`, loadedData[key][0]);
       }
     });
-    
+
     if (loadedData && loadedData[storageKey]) {
       const dayEntries = loadedData[storageKey] || [];
       console.log('Entries found for storage key:', dayEntries.length, dayEntries);
@@ -180,13 +180,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       // Check for active entry (only for current date in selected timezone)
       const todayInSelectedTimezone = formatInTimezone(new Date(), 'yyyy-MM-dd');
       const isCurrentDate = todayInSelectedTimezone === displayDate;
-      
+
       console.log('=== Active Entry Debug ===');
       console.log('Is Current Date:', isCurrentDate);
       console.log('Current activeEntry:', activeEntry);
       console.log('Day entries:', dayEntries);
       console.log('Active entry in data:', dayEntries.find(entry => entry.isActive));
-      
+
       // Log details of all entries to see their structure
       console.log('=== Entry Details ===');
       dayEntries.forEach((entry, index) => {
@@ -198,7 +198,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           endTime: entry.endTime
         });
       });
-      
+
       if (isCurrentDate) {
         const active = dayEntries.find(entry => entry.isActive);
         if (active) {
@@ -219,7 +219,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               console.log('Found active entry in different date key:', dateKey, activeInDate);
             }
           });
-          
+
           if (foundActive) {
             console.log('Setting activeEntry from different date:', foundActive);
             setActiveEntry(foundActive);
@@ -244,7 +244,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       console.log('About to setSelectedDateEntries with [] for key:', storageKey);
       setSelectedDateEntries([]);
       console.log('setSelectedDateEntries called with empty array');
-      
+
       // Before clearing activeEntry, check if there's an active timer in any date
       let foundActive = null;
       Object.keys(loadedData).forEach(dateKey => {
@@ -255,7 +255,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           console.log('Found active entry in different date key (no entries for current):', dateKey, activeInDate);
         }
       });
-      
+
       if (foundActive) {
         console.log('Setting activeEntry from different date (no entries for current):', foundActive);
         setActiveEntry(foundActive);
@@ -290,7 +290,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Update current time every second for real-time display (only after timezone is initialized)
   useEffect(() => {
     if (!isTimezoneInitialized) return;
-    
+
     const timer = setInterval(() => {
       setCurrentTime(getCurrentDateInTimezone());
     }, 1000);
@@ -301,7 +301,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Update page title with cumulative work time when Daily Tracker is active (only after timezone is initialized)
   useEffect(() => {
     if (!isTimezoneInitialized) return;
-    
+
     const updateWorkTimeTitle = () => {
       const totalWorkTime = calculateDailyTotal();
       document.title = `${totalWorkTime} - Kronos`;
@@ -326,7 +326,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     console.log('selectedDateEntries changed, length:', selectedDateEntries.length);
     console.log('isToday():', isToday());
     console.log('selectedDate:', selectedDate.toString());
-    
+
     // Only save if we have timer entries AND we're viewing today
     const hasTimerEntries = selectedDateEntries.some(entry =>
       entry.isActive || (entry.startTime && !entry.date) // Timer entries don't have a date field
@@ -343,7 +343,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       console.log('Storage key for timer save:', storageKey);
       console.log('Currently viewing date:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
       console.log('Is today:', isToday());
-      
+
       const allData = loadTimesheetData() || {};
       allData[storageKey] = selectedDateEntries;
 
@@ -454,7 +454,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     console.log('Saving timer with storage key:', storageKey);
     console.log('Current date:', new Date());
     console.log('Current date in timezone:', getCurrentDateInTimezone());
-    
+
     const allData = loadTimesheetData() || {};
     if (!allData[storageKey]) {
       allData[storageKey] = [];
@@ -566,7 +566,42 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     });
   };
 
-  // Merge entries with the same description
+  // Check if merging should be disabled for a description
+  const shouldDisableMerge = (description) => {
+    const storageKey = getStorageDateKey(selectedDate);
+    const allData = loadTimesheetData() || {};
+    const entries = allData[storageKey] || [];
+    
+    // Find all entries with the same description
+    const entriesToMerge = entries.filter(entry => entry.description === description);
+    
+    if (entriesToMerge.length < 2) return true;
+    
+    // Check if any entry is active
+    if (entriesToMerge.some(entry => entry.isActive)) return true;
+    
+    // Sort entries by start time
+    const sortedEntries = entriesToMerge.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    
+    // Check if entries are split by other entries
+    for (let i = 0; i < sortedEntries.length - 1; i++) {
+      const currentEntry = sortedEntries[i];
+      const nextEntry = sortedEntries[i + 1];
+      
+      // Find any entry that overlaps the time gap between current and next entry
+      const hasSplittingEntry = entries.some(entry => 
+        entry.description !== description &&
+        new Date(entry.startTime) >= new Date(currentEntry.endTime) &&
+        new Date(entry.startTime) < new Date(nextEntry.startTime)
+      );
+      
+      if (hasSplittingEntry) return true;
+    }
+    
+    return false;
+  };
+
+// Merge entries with the same description
   const handleMergeEntries = (description) => {
     if (!window.confirm(`Merge all entries named "${description}"? This will combine them into a single entry.`)) {
       return;
@@ -739,35 +774,35 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Merge overlapping time periods to calculate accurate total work time
   const mergeOverlappingPeriods = (entries) => {
     if (entries.length === 0) return [];
-    
+
     // Convert entries to time periods in selected timezone, normalized to minutes
     const periods = entries.map(entry => {
       const start = toZonedTime(parseISO(entry.startTime), timezone);
       const end = toZonedTime(parseISO(entry.endTime), timezone);
-      
+
       // Normalize to minute precision (zero out seconds and milliseconds)
       const normalizedStart = new Date(start);
       normalizedStart.setSeconds(0, 0);
-      
+
       const normalizedEnd = new Date(end);
       normalizedEnd.setSeconds(0, 0);
-      
+
       return {
         start: normalizedStart,
         end: normalizedEnd
       };
     });
-    
+
     // Sort by start time
     periods.sort((a, b) => a.start - b.start);
-    
+
     // Merge overlapping periods
     const merged = [];
     let current = periods[0];
-    
+
     for (let i = 1; i < periods.length; i++) {
       const next = periods[i];
-      
+
       // If next period overlaps or touches current period (within the same minute)
       if (next.start <= current.end) {
         // Extend current period to include the next one
@@ -778,10 +813,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         current = next;
       }
     }
-    
+
     // Push the last period
     merged.push(current);
-    
+
     return merged;
   };
 
@@ -810,25 +845,25 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const endTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.endTime), timezone));
 
     // Find the earliest and latest times while preserving timezone
-    const earliestStart = startTimes.reduce((earliest, current) => 
+    const earliestStart = startTimes.reduce((earliest, current) =>
       current < earliest ? current : earliest, startTimes[0]);
-    const latestEnd = endTimes.reduce((latest, current) => 
+    const latestEnd = endTimes.reduce((latest, current) =>
       current > latest ? current : latest, endTimes[0]);
-    
+
     // Normalize to minute precision for consistency
     earliestStart.setSeconds(0, 0);
     latestEnd.setSeconds(0, 0);
 
     // Calculate total work hours using merged overlapping periods
     const mergedPeriods = mergeOverlappingPeriods(completedEntries);
-    
+
     console.log('=== Break Calculation Debug ===');
     console.log('Original entries:', completedEntries.length);
     console.log('Merged periods:', mergedPeriods.length);
     mergedPeriods.forEach((period, index) => {
       console.log(`Period ${index}: ${period.start.toISOString()} - ${period.end.toISOString()}`);
     });
-    
+
     const totalWorkMinutes = mergedPeriods.reduce((total, period) => {
       return total + differenceInMinutes(period.end, period.start);
     }, 0);
@@ -836,7 +871,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const totalWorkHours = totalWorkMinutes / 60;
     const timeSpanMinutes = differenceInMinutes(latestEnd, earliestStart);
     const breakHoursDecimal = Math.max(0, (timeSpanMinutes - totalWorkMinutes) / 60);
-    
+
     console.log('Earliest start:', earliestStart.toISOString());
     console.log('Latest end:', latestEnd.toISOString());
     console.log('Time span minutes:', timeSpanMinutes);
@@ -857,7 +892,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Use the entry date in the selected timezone for storage key
     const storageKey = format(firstEntryDate, 'yyyy-MM-dd');
     const dayKey = storageKey;
-    
+
     console.log('=== Weekly Save Debug ===');
     console.log('First entry start time (ISO):', completedEntries[0]?.startTime);
     console.log('First entry date in timezone:', firstEntryDate);
@@ -1150,8 +1185,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       {getDuplicateCount(entry.description) > 1 && (
                         <button
                           onClick={() => handleMergeEntries(entry.description)}
-                          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-1"
-                          title={`Merge ${getDuplicateCount(entry.description)} entries`}
+                          disabled={shouldDisableMerge(entry.description)}
+                          className={`px-3 py-2 rounded-lg flex items-center space-x-1 ${
+                            shouldDisableMerge(entry.description)
+                              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                              : 'bg-purple-600 hover:bg-purple-700 text-white'
+                          }`}
+                          title={
+                            shouldDisableMerge(entry.description)
+                              ? 'Cannot merge: entries are split by other tasks or contain active entries'
+                              : `Merge ${getDuplicateCount(entry.description)} entries`
+                          }
                         >
                           <Merge className="w-4 h-4" />
                           <span>Merge ({getDuplicateCount(entry.description)})</span>
