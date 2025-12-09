@@ -97,9 +97,21 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 relative">
+      {/* Sidebar Overlay for Mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 bg-white border-r border-gray-200 overflow-hidden`}>
+      <div className={`fixed lg:relative z-50 ${
+        sidebarOpen
+          ? 'translate-x-0 w-64'
+          : '-translate-x-full lg:translate-x-0 w-0'
+      } transition-all duration-300 ease-in-out h-full bg-white border-r border-gray-200 flex-col lg:flex overflow-hidden`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="p-6 border-b border-gray-200">
@@ -120,11 +132,16 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentView === item.id;
-                
+
                 return (
                   <button
                     key={item.id}
-                    onClick={() => onViewChange(item.id)}
+                    onClick={() => {
+                      onViewChange(item.id);
+                      if (window.innerWidth < 1024) {
+                        setSidebarOpen(false);
+                      }
+                    }}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
                         ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
@@ -164,7 +181,7 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              
+
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                   {currentView === 'tracker' ? (
@@ -179,14 +196,14 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
-                    {currentView === 'tracker' ? 'Daily Tracker' : 
-                     currentView === 'timesheet' ? 'Weekly Timesheet' : 
+                    {currentView === 'tracker' ? 'Daily Tracker' :
+                     currentView === 'timesheet' ? 'Weekly Timesheet' :
                      currentView === 'settings' ? 'Settings' :
                      'Data Management'}
                   </h2>
-                  <p className="text-sm text-gray-500">
-                    {currentView === 'tracker' 
-                      ? 'Track your time in real-time' 
+                  <p className="text-sm text-gray-500 hidden sm:block">
+                    {currentView === 'tracker'
+                      ? 'Track your time in real-time'
                       : currentView === 'timesheet'
                       ? 'View your weekly time summary'
                       : currentView === 'settings'
