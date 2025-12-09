@@ -111,10 +111,6 @@ All your time tracking data is stored locally in your browser using localStorage
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License.
-
 ## Support
 
 If you encounter any issues or have suggestions for improvements, please open an issue on the GitHub repository.
