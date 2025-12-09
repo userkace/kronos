@@ -29,6 +29,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     mode: 'add',
     initialData: null
   });
+  
+  // Check if timezone is properly initialized
+  const isTimezoneInitialized = timezone && timezone !== 'UTC';
 
   // Helper function to format date in selected timezone
   const formatInTimezone = (date, formatStr) => {
@@ -284,17 +287,21 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return todayInSelectedTimezone === selectedDateInTimezone;
   };
 
-  // Update current time every second for real-time display
+  // Update current time every second for real-time display (only after timezone is initialized)
   useEffect(() => {
+    if (!isTimezoneInitialized) return;
+    
     const timer = setInterval(() => {
       setCurrentTime(getCurrentDateInTimezone());
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timezone]); // Re-create timer when timezone changes
+  }, [timezone, isTimezoneInitialized]); // Re-create timer when timezone changes or initializes
 
-  // Update page title with cumulative work time when Daily Tracker is active
+  // Update page title with cumulative work time when Daily Tracker is active (only after timezone is initialized)
   useEffect(() => {
+    if (!isTimezoneInitialized) return;
+    
     const updateWorkTimeTitle = () => {
       const totalWorkTime = calculateDailyTotal();
       document.title = `${totalWorkTime} - Kronos`;
@@ -311,7 +318,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       clearInterval(titleTimer);
       document.title = 'Kronos';
     };
-  }, [timezone, selectedDateEntries, activeEntry]); // Re-create timer when dependencies change
+  }, [timezone, selectedDateEntries, activeEntry, isTimezoneInitialized]); // Re-create timer when dependencies change or timezone initializes
 
   // Save entries to localStorage whenever they change (for timer entries only)
   useEffect(() => {
