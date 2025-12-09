@@ -902,11 +902,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     console.log('Total work minutes:', totalWorkMinutes);
     console.log('Break hours decimal:', breakHoursDecimal);
 
-    // Create work details from task descriptions separated by semicolons
-    const workDetails = completedEntries
-      .map(entry => entry.description)
-      .filter(desc => desc.trim())
-      .join('; ');
+    // Create work details from unique task descriptions separated by semicolons
+    // This avoids duplicates when entries with the same description are split apart
+    const uniqueDescriptions = [...new Set(
+      completedEntries
+        .map(entry => entry.description)
+        .filter(desc => desc.trim())
+    )];
+    const workDetails = uniqueDescriptions.join('; ');
 
     // Get current weekly timesheet data
     const weeklyData = loadWeeklyTimesheet() || {};
