@@ -3,18 +3,20 @@ import TimezoneSelect from './TimezoneSelect';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
-import { 
-  saveOnboardingCompleted, 
-  clearAllData 
+import {
+  saveOnboardingCompleted,
+  clearAllData
 } from '../utils/storage';
+import { Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon } from 'lucide-react';
 
 const Settings = () => {
   const { selectedTimezone, changeTimezone } = useTimezone();
-  const { weekStart, changeWeekStart } = useUserPreferences();
+  const { weekStart, changeWeekStart, clockFormat, changeClockFormat } = useUserPreferences();
   const { success, error, warning } = useToast();
-  
+
   const [timezone, setTimezone] = useState(selectedTimezone);
   const [weekStartValue, setWeekStartValue] = useState(weekStart);
+  const [clockFormatValue, setClockFormatValue] = useState(clockFormat);
   const [isResetting, setIsResetting] = useState(false);
 
   const handleTimezoneChange = (newTimezone) => {
@@ -25,10 +27,15 @@ const Settings = () => {
     setWeekStartValue(newWeekStart);
   };
 
+  const handleClockFormatChange = (newClockFormat) => {
+    setClockFormatValue(newClockFormat);
+  };
+
   const handleSaveSettings = () => {
     try {
       changeTimezone(timezone);
       changeWeekStart(weekStartValue);
+      changeClockFormat(clockFormatValue);
       success('Settings saved successfully!');
     } catch (err) {
       error('Failed to save settings');
@@ -54,7 +61,7 @@ const Settings = () => {
           setIsResetting(true);
           clearAllData();
           warning('All data cleared. The app will reload in 3 seconds...');
-          
+
           // Reload the page after clearing data
           setTimeout(() => {
             window.location.reload();
@@ -68,97 +75,139 @@ const Settings = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your application preferences</p>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 m-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Settings</h3>
+
+      <div className="space-y-6">
+        {/* Timezone Settings */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <Globe className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Timezone Settings</h4>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">
+                Your Timezone
+              </label>
+              <TimezoneSelect
+                timezone={timezone}
+                onTimezoneChange={handleTimezoneChange}
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Select your local timezone for accurate time tracking
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="p-6 space-y-8">
-          {/* Timezone Settings */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Timezone</h2>
-            <div className="space-y-3">
-              <div>
-                <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Timezone
-                </label>
-                <TimezoneSelect
-                  timezone={timezone}
-                  onTimezoneChange={handleTimezoneChange}
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  Select your local timezone for accurate time tracking
-                </p>
-              </div>
+        {/* Week Settings */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Week Settings</h4>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="weekStart" className="block text-sm font-medium text-gray-700 mb-2">
+                Start of the Week
+              </label>
+              <select
+                id="weekStart"
+                value={weekStartValue}
+                onChange={(e) => handleWeekStartChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="sunday">Sunday</option>
+                <option value="monday">Monday</option>
+              </select>
+              <p className="mt-1 text-sm text-gray-500">
+                Choose which day your week starts on
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* Week Settings */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Week Settings</h2>
-            <div className="space-y-3">
-              <div>
-                <label htmlFor="weekStart" className="block text-sm font-medium text-gray-700 mb-2">
-                  Start of the Week
-                </label>
-                <select
-                  id="weekStart"
-                  value={weekStartValue}
-                  onChange={(e) => handleWeekStartChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="sunday">Sunday</option>
-                  <option value="monday">Monday</option>
-                </select>
-                <p className="mt-1 text-sm text-gray-500">
-                  Choose which day your week starts on
-                </p>
-              </div>
+        {/* Clock Format Settings */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <Clock className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Clock Format</h4>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="clockFormat" className="block text-sm font-medium text-gray-700 mb-2">
+                Clock Display Format
+              </label>
+              <select
+                id="clockFormat"
+                value={clockFormatValue}
+                onChange={(e) => handleClockFormatChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="12hour">12-hour (AM/PM)</option>
+                <option value="24hour">24-hour</option>
+              </select>
+              <p className="mt-1 text-sm text-gray-500">
+                Choose how time is displayed in the navigation bar
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* Save Settings Button */}
-          <div className="flex justify-end">
-            <button
-              onClick={handleSaveSettings}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
-            >
-              Save Settings
-            </button>
+        {/* Save Settings Button */}
+        <div className="flex justify-end pt-4">
+          <button
+            onClick={handleSaveSettings}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <SettingsIcon className="w-4 h-4" />
+            <span>Save Settings</span>
+          </button>
+        </div>
+
+        {/* Reset Options */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <SettingsIcon className="w-5 h-5 text-orange-600" />
+            <h4 className="font-medium text-gray-900">Reset Options</h4>
           </div>
 
-          {/* Reset Options */}
-          <div className="border-t border-gray-200 pt-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Reset Options</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <RotateCcw className="w-5 h-5 text-yellow-600" />
                 <div>
-                  <h3 className="font-medium text-gray-900">Reset Onboarding</h3>
-                  <p className="text-sm text-gray-600">Show the setup screen again on next app start</p>
+                  <h5 className="font-medium text-yellow-900">Reset Onboarding</h5>
+                  <p className="text-sm text-yellow-700">Show the setup screen again on next app start</p>
                 </div>
-                <button
-                  onClick={handleResetOnboarding}
-                  className="px-3 py-1 text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
-                >
-                  Reset
-                </button>
               </div>
+              <button
+                onClick={handleResetOnboarding}
+                className="px-3 py-1 text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+              >
+                Reset
+              </button>
+            </div>
 
-              <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <Trash2 className="w-5 h-5 text-red-600" />
                 <div>
-                  <h3 className="font-medium text-red-900">Clear All Data</h3>
-                  <p className="text-sm text-red-600">Delete all timesheet entries and reset app</p>
+                  <h5 className="font-medium text-red-900">Clear All Data</h5>
+                  <p className="text-sm text-red-700">Delete all timesheet entries and reset app</p>
                 </div>
-                <button
-                  onClick={handleClearAllData}
-                  disabled={isResetting}
-                  className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isResetting ? 'Clearing...' : 'Clear All'}
-                </button>
               </div>
+              <button
+                onClick={handleClearAllData}
+                disabled={isResetting}
+                className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isResetting ? 'Clearing...' : 'Clear All'}
+              </button>
             </div>
           </div>
         </div>

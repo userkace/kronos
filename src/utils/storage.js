@@ -6,7 +6,9 @@ const STORAGE_KEYS = {
   SELECTED_WEEK: 'kronos_selected_week',
   WEEKLY_TIMESHEET: 'kronos_weekly_timesheet',
   WEEK_START: 'kronos_week_start',
-  ONBOARDING_COMPLETED: 'kronos_onboarding_completed'
+  ONBOARDING_COMPLETED: 'kronos_onboarding_completed',
+  CLOCK_FORMAT: 'kronos_clock_format',
+  SIDEBAR_STATE: 'kronos_sidebar_state'
 };
 
 // Save timesheet data to LocalStorage
@@ -135,5 +137,44 @@ export const loadOnboardingCompleted = () => {
   } catch (error) {
     console.error('Error loading onboarding status:', error);
     return false;
+  }
+};
+
+// Save clock format preference to LocalStorage
+export const saveClockFormat = (clockFormat) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CLOCK_FORMAT, clockFormat);
+  } catch (error) {
+    console.error('Error saving clock format:', error);
+  }
+};
+
+// Load clock format preference from LocalStorage
+export const loadClockFormat = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.CLOCK_FORMAT) || '12hour'; // Default to 12-hour format
+  } catch (error) {
+    console.error('Error loading clock format:', error);
+    return '12hour';
+  }
+};
+
+// Save sidebar state to LocalStorage
+export const saveSidebarState = (isOpen) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_STATE, JSON.stringify(isOpen));
+  } catch (error) {
+    console.error('Error saving sidebar state:', error);
+  }
+};
+
+// Load sidebar state from LocalStorage
+export const loadSidebarState = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_STATE);
+    return stored !== null ? JSON.parse(stored) : true; // Default to open
+  } catch (error) {
+    console.error('Error loading sidebar state:', error);
+    return true;
   }
 };

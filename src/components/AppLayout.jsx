@@ -1,12 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, Menu, X, Globe, Database, Settings } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
+import { loadSidebarState, saveSidebarState } from '../utils/storage';
 import TimezoneSelect from './TimezoneSelect';
 import DataImportExport from './DataImportExport';
 
 const AppLayout = ({ children, currentView, onViewChange }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { selectedTimezone, changeTimezone } = useTimezone();
+  const { clockFormat } = useUserPreferences();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Load sidebar state from localStorage on mount
+  useEffect(() => {
+    const savedSidebarState = loadSidebarState();
+    setSidebarOpen(savedSidebarState);
+  }, []);
+
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    saveSidebarState(sidebarOpen);
+  }, [sidebarOpen]);
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Format time in 12-hour AM/PM format with timezone
+  const formatTimeInTimezone = (date, timezone, format) => {
+    try {
+      const formatOptions = {
+        timeZone: timezone,
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      };
+
+      if (format === '12hour') {
+        formatOptions.hour = 'numeric';
+        formatOptions.minute = '2-digit';
+        formatOptions.hour12 = true;
+      } else if (format === '24hour') {
+        formatOptions.hour = '2-digit';
+        formatOptions.minute = '2-digit';
+        formatOptions.hour12 = false;
+      }
+
+      return new Intl.DateTimeFormat('en-US', formatOptions).format(date);
+    } catch (error) {
+      // Fallback to local time if timezone is invalid
+      const formatOptions = {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      };
+
+      if (format === '12hour') {
+        formatOptions.hour = 'numeric';
+        formatOptions.minute = '2-digit';
+        formatOptions.hour12 = true;
+      } else if (format === '24hour') {
+        formatOptions.hour = '2-digit';
+        formatOptions.minute = '2-digit';
+        formatOptions.hour12 = false;
+      }
+
+      return date.toLocaleString('en-US', formatOptions);
+    }
+  };
 
   const navigationItems = [
     {
@@ -137,11 +204,13 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
               </div>
             </div>
 
-            {/* Timezone Selector */}
-            <TimezoneSelect 
-              timezone={selectedTimezone} 
-              onTimezoneChange={changeTimezone} 
-            />
+            {/* Current Time Display */}
+            <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+              <Clock className="w-4 h-4" />
+              <span className="font-medium">
+                {formatTimeInTimezone(currentTime, selectedTimezone, clockFormat)}
+              </span>
+            </div>
           </div>
         </header>
 
