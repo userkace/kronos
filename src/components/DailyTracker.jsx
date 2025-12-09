@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { Play, Pause, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge } from 'lucide-react';
+import { Play, Pause, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, Calendar } from 'lucide-react';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
@@ -32,6 +32,25 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Check if timezone is properly initialized
   const isTimezoneInitialized = timezone && timezone !== 'UTC';
+
+  // Array of funny default task descriptions
+  const funnyDefaultTasks = [
+    "Sure... work!",
+    "Doing important things!",
+    "Adulting responsibly!",
+    "Pretending to be productive!",
+    "Making magic happen!",
+    "Turning coffee into code!",
+    "Solving world problems!",
+    "Being a professional!",
+    "Doing the needful!",
+    "Working hard hardly working!",
+    "Manifesting success!",
+    "Crushing it (probably)!",
+    "Business stuff!",
+    "Very busy vibes!",
+    "Productivity performance!"
+  ];
 
   // Helper function to format date in selected timezone
   const formatInTimezone = (date, formatStr) => {
@@ -425,7 +444,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Start new timer (only works on current date)
   const handleStart = () => {
-    if (!currentTask.trim()) return;
+    const taskToStart = currentTask.trim() || funnyDefaultTasks[Math.floor(Math.random() * funnyDefaultTasks.length)];
+
+    if (!taskToStart) return;
     if (!isToday()) {
       warning('You can only start timers for the current day');
       return;
@@ -443,7 +464,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     const newEntry = {
       id: Date.now(),
-      description: currentTask,
+      description: taskToStart,
       startTime: utcTime.toISOString(),
       isActive: true
     };
@@ -468,7 +489,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const sortedEntries = [...allData[storageKey]].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       setSelectedDateEntries(sortedEntries);
     }
-    setCurrentTask('');
+    // Only clear input if it was empty (using funny default)
+    if (!currentTask.trim()) {
+      setCurrentTask('');
+    }
   };
 
   // Stop active timer
@@ -571,33 +595,33 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const storageKey = getStorageDateKey(selectedDate);
     const allData = loadTimesheetData() || {};
     const entries = allData[storageKey] || [];
-    
+
     // Find all entries with the same description
     const entriesToMerge = entries.filter(entry => entry.description === description);
-    
+
     if (entriesToMerge.length < 2) return true;
-    
+
     // Check if any entry is active
     if (entriesToMerge.some(entry => entry.isActive)) return true;
-    
+
     // Sort entries by start time
     const sortedEntries = entriesToMerge.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-    
+
     // Check if entries are split by other entries
     for (let i = 0; i < sortedEntries.length - 1; i++) {
       const currentEntry = sortedEntries[i];
       const nextEntry = sortedEntries[i + 1];
-      
+
       // Find any entry that overlaps the time gap between current and next entry
-      const hasSplittingEntry = entries.some(entry => 
+      const hasSplittingEntry = entries.some(entry =>
         entry.description !== description &&
         new Date(entry.startTime) >= new Date(currentEntry.endTime) &&
         new Date(entry.startTime) < new Date(nextEntry.startTime)
       );
-      
+
       if (hasSplittingEntry) return true;
     }
-    
+
     return false;
   };
 
@@ -1001,19 +1025,18 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 onKeyPress={(e) => e.key === 'Enter' && handleStart()}
                 placeholder="What are you doing now?"
                 className={`flex-1 bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 placeholder-gray-400 ${
-                  activeEntry 
-                    ? 'focus:ring-blue-500 focus:border-blue-500' 
+                  activeEntry
+                    ? 'focus:ring-blue-500 focus:border-blue-500'
                     : 'focus:ring-green-500 focus:border-green-500'
                 }`}
                 disabled={false}
               />
               <button
                 onClick={handleStart}
-                disabled={!currentTask.trim()}
                 className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-colors ${
                   activeEntry
                     ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
               >
                 {activeEntry ? (
@@ -1090,15 +1113,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     <h3 className="font-semibold text-gray-900 text-lg">
                       {activeEntry.description}
                     </h3>
-                    {!isToday() && (
-                      <button
-                        onClick={handleToday}
-                        className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200 transition-colors cursor-pointer"
-                        title="Back to Today"
-                      >
-                        From Today
-                      </button>
-                    )}
                   </div>
                   <p className="text-green-700 text-sm mb-2">
                     {activeEntry.project || ''}
@@ -1112,13 +1126,27 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={handleStop}
-                  className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all"
-                >
-                  <Pause className="w-4 h-4" />
-                  <span>Pause</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <div className="opacity-0 group-hover:opacity-100 transition-all">
+                    <button
+                      onClick={handleStop}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all"
+                    >
+                      <Pause className="w-4 h-4" />
+                      <span>Pause</span>
+                    </button>
+                  </div>
+                  {!isToday() && (
+                    <button
+                      onClick={handleToday}
+                      className="px-4 py-2 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
+                      title="Back to Today"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>Today</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
