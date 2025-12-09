@@ -1118,6 +1118,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     {activeEntry.project || ''}
                   </p>
                   <div className="flex items-center space-x-4 text-green-600">
+                    {!isToday() && (
+                      <>
+                        <span className="text-sm font-medium">
+                          {formatInTimezone(currentTime, 'MMMM d')}
+                        </span>
+                      </>
+                    )}
                     <span className="text-sm">
                       {formatInTimezone(parseISO(activeEntry.startTime), 'h:mm a')} - now
                     </span>
