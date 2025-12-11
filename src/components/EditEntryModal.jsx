@@ -72,9 +72,11 @@ const EditEntryModal = ({ isOpen, onClose, entry, onSaveEntry }) => {
           return;
         }
 
-        const updatedStartTime = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate(), startHours, startMinutes, 0, 0);
+        const updatedStartTime = new Date(originalDate);
+        updatedStartTime.setHours(startHours, startMinutes, 0, 0);
 
-        const updatedEndTime = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate(), endHours, endMinutes, 0, 0);
+        const updatedEndTime = new Date(originalDate);
+        updatedEndTime.setHours(endHours, endMinutes, 0, 0);
 
         if (updatedEndTime < updatedStartTime) {
           updatedEndTime.setDate(updatedEndTime.getDate() + 1);
