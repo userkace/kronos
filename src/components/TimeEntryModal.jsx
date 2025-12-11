@@ -8,8 +8,7 @@ import {
   Tag, 
   Trash2, 
   X, 
-  Clock,
-  Calendar
+  Clock
 } from 'lucide-react';
 
 const TimeEntryModal = ({ 
@@ -19,7 +18,8 @@ const TimeEntryModal = ({
   onSave, 
   onDelete, 
   onClose,
-  timezone
+  timezone,
+  selectedDate
 }) => {
   const [formData, setFormData] = useState({
     description: '',
@@ -28,8 +28,7 @@ const TimeEntryModal = ({
     tags: '',
     startTime: '',
     endTime: '',
-    duration: '',
-    date: timezone ? format(toZonedTime(new Date(), timezone), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
+    duration: ''
   });
 
   // Timezone mode state
@@ -76,8 +75,7 @@ const TimeEntryModal = ({
         tags: initialData.tags || '',
         startTime: startTimeInTimezone,
         endTime: endTimeInTimezone,
-        duration: initialData.duration || '',
-        date: entryDate || format(toZonedTime(new Date(), timezone), 'yyyy-MM-dd')
+        duration: initialData.duration || ''
       });
     } else if (mode === 'add') {
       // Reset form for new entry
@@ -88,8 +86,7 @@ const TimeEntryModal = ({
         tags: '',
         startTime: '',
         endTime: '',
-        duration: '',
-        date: timezone ? format(toZonedTime(new Date(), timezone), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
+        duration: ''
       });
     }
   }, [initialData, mode]);
@@ -252,9 +249,16 @@ const TimeEntryModal = ({
       <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {mode === 'edit' ? 'Edit Time Entry' : 'New Time Entry'}
-          </h2>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {mode === 'edit' ? 'Edit Time Entry' : 'New Time Entry'}
+            </h2>
+            {mode === 'add' && selectedDate && (
+              <p className="text-sm text-gray-500 mt-1">
+                for {format(toZonedTime(selectedDate, timezone), 'MMM d, yyyy')}
+              </p>
+            )}
+          </div>
           <div className="flex items-center space-x-3">
             {mode === 'edit' && (
               <button
@@ -450,20 +454,7 @@ const TimeEntryModal = ({
               </div>
             </div>
 
-            {/* Date Input */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                <Calendar className="w-4 h-4 mr-2" />
-                Date
-              </label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleInputChange('date', e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
+                      </div>
         </div>
 
         {/* Footer */}

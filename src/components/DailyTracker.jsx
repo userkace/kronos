@@ -578,7 +578,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     setModalState({
       isOpen: true,
       mode,
-      initialData: entry
+      initialData: entry,
+      selectedDate: selectedDate // Pass selected date to modal
     });
   };
 
@@ -697,22 +698,25 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Determine which timezone to use for conversion
     const timezoneToUse = entryData.timezoneMode === 'custom' ? entryData.entryTimezone : timezone;
 
+    // Use the selected date instead of entryData.date
+    const entryDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
+
     // Create date objects appropriately based on timezone mode
     let startDateTime, endDateTime;
 
     if (entryData.timezoneMode === 'selected') {
       // When using selected timezone, create the date object directly in that timezone
       // This means the times are already in the selected timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
+      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
 
       // Convert from selected timezone to UTC
       startDateTime = fromZonedTime(localStartDateTime, timezone);
       endDateTime = fromZonedTime(localEndDateTime, timezone);
     } else {
       // When using custom timezone, create date object and convert from that timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryData.date, 'yyyy-MM-dd', new Date()));
+      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
 
       // Convert from custom timezone to UTC
       startDateTime = toZonedTime(localStartDateTime, timezoneToUse);
@@ -727,8 +731,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       endTime: endDateTime.toISOString()
     };
 
-    // Get the storage key for the entry's date
-    const entryStorageKey = getStorageDateKey(entryData.date);
+    // Remove date field from entry to match timer format
+    delete newEntry.date;
+
+    // Get the storage key for the selected date
+    const entryStorageKey = getStorageDateKey(entryDate);
     const currentStorageKey = getStorageDateKey(selectedDate); // Use selected date for display
 
     // Load all existing data
@@ -741,9 +748,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Handle edit vs add
     if (modalState.mode === 'edit') {
+      // For editing, we need to find the original entry's date from startTime
+      const originalDate = format(toZonedTime(parseISO(modalState.initialData.startTime), timezone), 'yyyy-MM-dd');
+      const oldStorageKey = getStorageDateKey(originalDate);
+      
       // If editing and the date changed, remove from old date
-      if (modalState.initialData.date !== entryData.date) {
-        const oldStorageKey = getStorageDateKey(modalState.initialData.date);
+      if (oldStorageKey !== entryStorageKey) {
         if (allData[oldStorageKey]) {
           allData[oldStorageKey] = allData[oldStorageKey].filter(entry => entry.id !== modalState.initialData.id);
         }
@@ -775,7 +785,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Remove from localStorage
   const handleDeleteEntry = (entry) => {
-    const storageKey = getStorageDateKey(entry.date || new Date());
+    // Use startTime to determine the storage key instead of date field
+    const entryDate = format(toZonedTime(parseISO(entry.startTime), timezone), 'yyyy-MM-dd');
+    const storageKey = getStorageDateKey(entryDate);
     const allData = loadTimesheetData() || {};
 
     if (allData[storageKey]) {
@@ -1140,7 +1152,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   <div className="opacity-0 group-hover:opacity-100 transition-all">
                     <button
                       onClick={handleStop}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all"
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
                     >
                       <Pause className="w-4 h-4" />
                       <span>Pause</span>
@@ -1149,7 +1161,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   {!isToday() && (
                     <button
                       onClick={handleToday}
-                      className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2 transition-all"
+                      className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
                       title="Back to Today"
                     >
                       <Calendar className="w-4 h-4" />
@@ -1276,6 +1288,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         onDelete={handleDeleteEntry}
         onClose={handleCloseModal}
         timezone={timezone}
+        selectedDate={selectedDate}
       />
     </div>
   );
