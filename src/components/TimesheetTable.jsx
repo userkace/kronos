@@ -9,11 +9,14 @@ import {
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
+import { useToast } from '../contexts/ToastContext';
 
 const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChange }) => {
   const [localData, setLocalData] = useState(timesheetData || {});
   const { weekStart: userWeekStart } = useUserPreferences();
   const [weekDays, setWeekDays] = useState([]);
+  const [copiedField, setCopiedField] = useState(null);
+  const { success, error } = useToast();
 
   // Recalculate week days when userWeekStart or currentDate changes
   useEffect(() => {
@@ -117,6 +120,44 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     onTimesheetChange(newData);
   };
 
+  // Handle copy to clipboard
+  const handleCopyToClipboard = async (text, fieldIdentifier) => {
+    if (!text) {
+      error('Nothing to copy');
+      return;
+    }
+
+    // Convert time format if it's a time field
+    let textToCopy = text;
+    if (fieldIdentifier.includes('timeIn') || fieldIdentifier.includes('timeOut')) {
+      textToCopy = convertTo12HourFormat(text);
+    }
+    
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedField(fieldIdentifier);
+      success('Copied to clipboard!');
+      setTimeout(() => setCopiedField(null), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      error('Failed to copy text');
+    }
+  };
+
+  // Convert 24-hour time to 12-hour format with AM/PM
+  const convertTo12HourFormat = (time24) => {
+    if (!time24) return time24;
+    
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours);
+    const minute = minutes;
+    
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12; // Convert 0 to 12
+    
+    return `${hour12}:${minute} ${period}`;
+  };
+
   // Sync with props
   useEffect(() => {
     setLocalData(timesheetData);
@@ -187,8 +228,14 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     type="text"
                     value={dayData.workDetails || ''}
                     onChange={(e) => handleInputChange(dayKey, 'workDetails', e.target.value)}
+                    onClick={() => handleCopyToClipboard(dayData.workDetails, `${dayKey}-workDetails`)}
                     placeholder="Describe work done..."
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      copiedField === `${dayKey}-workDetails` 
+                        ? 'bg-green-100 border-green-400' 
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                    title="Click to copy"
                   />
                 </td>
                 <td className="px-4 py-3">
@@ -196,7 +243,13 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     type="time"
                     value={dayData.timeIn || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
-                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
+                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      copiedField === `${dayKey}-timeIn` 
+                        ? 'bg-green-100 border-green-400' 
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                    title="Click to copy"
                   />
                 </td>
                 <td className="px-4 py-3">
@@ -204,7 +257,13 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     type="time"
                     value={dayData.timeOut || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
-                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
+                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      copiedField === `${dayKey}-timeOut` 
+                        ? 'bg-green-100 border-green-400' 
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                    title="Click to copy"
                   />
                 </td>
                 <td className="px-4 py-3">
