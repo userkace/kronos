@@ -405,7 +405,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Calculate break time between two consecutive entries
   const calculateBreakTime = (currentEntry, previousEntry) => {
-    if (!previousEntry || !previousEntry.endTime || !currentEntry.startTime) return null;
+    if (!currentEntry || !previousEntry || !previousEntry.endTime || !currentEntry.startTime) return null;
 
     const prevEndInTimezone = toZonedTime(parseISO(previousEntry.endTime), timezone);
     const currentStartInTimezone = toZonedTime(parseISO(currentEntry.startTime), timezone);
@@ -1173,32 +1173,43 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
             </div>
           )}
 
+          {/* Break Time Display between running and previous entry */}
+          {(() => {
+            const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+            if (activeEntry && completedEntriesAsc.length > 0) {
+              const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
+              const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
+              if (breakTimeBetweenActiveAndLast) {
+                return (
+                  <div className="text-center py-2">
+                    <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
+                      <span className="font-medium">Break</span>
+                      <span>•</span>
+                      <span>{formatDisplayDuration(breakTimeBetweenActiveAndLast)}</span>
+                    </div>
+                  </div>
+                );
+              }
+            }
+            return null;
+          })()}
+
           {/* Completed Entries */}
           {(() => {
-            const completedEntries = selectedDateEntries.filter(entry => !entry.isActive);
-            return completedEntries.reverse().map((entry, index) => {
+            const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+            const displayEntries = completedEntriesAsc.slice().reverse();
+
+            return displayEntries.map((entry, index) => {
               // Convert both times to the selected timezone for accurate calculation
               const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
               const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
               const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
 
-              // Calculate break time from previous entry
-              const previousEntry = index < completedEntries.length - 1 ? completedEntries[index + 1] : null;
+              const previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
               const breakTime = calculateBreakTime(entry, previousEntry);
 
               return (
                 <React.Fragment key={entry.id}>
-                  {/* Break Time Display */}
-                  {breakTime && (
-                    <div className="text-center py-2">
-                      <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
-                        <span className="font-medium">Break</span>
-                        <span>•</span>
-                        <span>{formatDisplayDuration(breakTime)}</span>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Entry Card */}
                   <div
                     className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all"
@@ -1257,6 +1268,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     </div>
                   </div>
                 </div>
+
+                {/* Break Time Display between this entry and the previous older entry */}
+                {breakTime && (
+                  <div className="text-center py-2">
+                    <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
+                      <span className="font-medium">Break</span>
+                      <span>•</span>
+                      <span>{formatDisplayDuration(breakTime)}</span>
+                    </div>
+                  </div>
+                )}
                 </React.Fragment>
               );
             });
