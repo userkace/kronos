@@ -379,7 +379,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Convert both times to the selected timezone for accurate calculation
     const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-    const currentTimeInTimezone = currentTime; // currentTime is already in timezone
+    const currentTimeInTimezone = currentTime; // Use the updated currentTime state
 
     const seconds = differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
     return formatDuration(seconds);
@@ -435,7 +435,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Add active entry time
     if (activeEntry) {
       const startTimeInTimezone = toZonedTime(parseISO(activeEntry.startTime), timezone);
-      const currentTimeInTimezone = currentTime; // currentTime is already in timezone
+      const currentTimeInTimezone = toZonedTime(new Date(), timezone); // Always convert fresh for timezone consistency
       totalSeconds += differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
     }
 
