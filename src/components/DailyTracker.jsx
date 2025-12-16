@@ -86,7 +86,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const validEntries = [];
 
       entries.forEach(entry => {
-        // Skip if we've already seen this ID
+        // Skip if we've already seen this ID (true duplicates)
         if (seenIds.has(entry.id)) {
           console.log(`Skipping duplicate entry ${entry.id} from ${dateKey}`);
           return;
@@ -94,32 +94,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
         seenIds.add(entry.id);
 
-        // Calculate the correct date key for this entry based on its start time
-        if (entry.startTime) {
-          const entryDateInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-          const correctDateKey = format(entryDateInTimezone, 'yyyy-MM-dd');
-
-          // If the entry is in the wrong date key, move it
-          if (correctDateKey !== dateKey) {
-            console.log(`Moving entry ${entry.id} from ${dateKey} to ${correctDateKey}`);
-            if (!cleanedData[correctDateKey]) {
-              cleanedData[correctDateKey] = [];
-            }
-            cleanedData[correctDateKey].push(entry);
-          } else {
-            // Entry is in the correct place
-            if (!cleanedData[dateKey]) {
-              cleanedData[dateKey] = [];
-            }
-            cleanedData[dateKey].push(entry);
-          }
-        } else {
-          // No start time, keep as is
-          if (!cleanedData[dateKey]) {
-            cleanedData[dateKey] = [];
-          }
-          cleanedData[dateKey].push(entry);
+        // Keep entries in their original date keys - don't recalculate based on timezone
+        // This prevents entries from moving between dates on page reload
+        if (!cleanedData[dateKey]) {
+          cleanedData[dateKey] = [];
         }
+        cleanedData[dateKey].push(entry);
       });
     });
 
