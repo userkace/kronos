@@ -484,18 +484,34 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const currentTimeInTimezone = toZonedTime(now, timezone); // Show in selected timezone
     const utcTime = now; // Already UTC
 
-    const updatedEntry = {
-      ...activeEntry,
-      endTime: utcTime.toISOString(),
-      isActive: false
-    };
-
-    // Save directly to localStorage for today's date (in selected timezone)
-    const storageKey = getStorageDateKey(); // Use current date in selected timezone for timers
+    // Use the timer's start time to determine the correct storage date key
+    // This prevents issues when timezone rolls over to a new day
+    const timerStartDate = format(toZonedTime(parseISO(activeEntry.startTime), timezone), 'yyyy-MM-dd');
+    const currentDateInTimezone = format(currentTimeInTimezone, 'yyyy-MM-dd');
+    const storageKey = getStorageDateKey(timerStartDate);
+    
     const allData = loadTimesheetData() || {};
     if (!allData[storageKey]) {
       allData[storageKey] = [];
     }
+
+    // Stop the current day's task at midnight if timezone rolled over
+    let stopTime = utcTime;
+    let shouldCreateNewTask = false;
+
+    if (timerStartDate !== currentDateInTimezone) {
+      // Timezone rolled over - stop the task at midnight (end of previous day)
+      const midnightInTimezone = parse('00:00', 'HH:mm', parse(currentDateInTimezone, 'yyyy-MM-dd', new Date()));
+      const midnightUTC = fromZonedTime(midnightInTimezone, timezone);
+      stopTime = midnightUTC;
+      shouldCreateNewTask = true;
+    }
+
+    const updatedEntry = {
+      ...activeEntry,
+      endTime: stopTime.toISOString(),
+      isActive: false
+    };
 
     const updatedEntries = allData[storageKey].map(entry =>
       entry.id === activeEntry.id ? updatedEntry : entry
@@ -504,11 +520,46 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     allData[storageKey] = updatedEntries;
     saveTimesheetData(allData);
 
-    // Only update selectedDateEntries if we're viewing today
-    if (isToday()) {
+    // Create new task for the new day if timezone rolled over
+    if (shouldCreateNewTask) {
+      const newEntry = {
+        id: Date.now(),
+        description: activeEntry.description,
+        project: activeEntry.project,
+        task: activeEntry.task,
+        tags: activeEntry.tags,
+        startTime: utcTime.toISOString(), // Start from current time
+        isActive: true
+      };
+
+      const newStorageKey = getStorageDateKey(currentDateInTimezone);
+      if (!allData[newStorageKey]) {
+        allData[newStorageKey] = [];
+      }
+      allData[newStorageKey].push(newEntry);
+      saveTimesheetData(allData);
+
+      // Update active entry to the new one
+      setActiveEntry(newEntry);
+      
+      // Update display to show the new day's entries
+      const newDateEntries = allData[newStorageKey] || [];
+      const sortedNewEntries = newDateEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      setSelectedDateEntries(sortedNewEntries);
+      
+      // Navigate to the new day
+      setSelectedDate(parse(currentDateInTimezone, 'yyyy-MM-dd', new Date()));
+      
+      success(`Task continued on ${currentDateInTimezone}`);
+    } else {
+      setActiveEntry(null);
+    }
+
+    // Update display if we're viewing the timer's original date
+    const selectedDateKey = getStorageDateKey(selectedDate);
+    if (selectedDateKey === storageKey && !shouldCreateNewTask) {
       setSelectedDateEntries(updatedEntries);
     }
-    setActiveEntry(null);
   };
 
   // Continue a previous task (only works on current date)
