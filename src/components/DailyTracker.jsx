@@ -81,6 +81,109 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return format(nowInTimezone, 'yyyy-MM-dd');
   };
 
+  /********************************************************************/
+  /*                    Dropdown Suggestion Handler                   */
+  /********************************************************************/
+
+  // Get unique task descriptions from all entries for autofill
+  const getUniqueTaskDescriptions = () => {
+    const allData = loadTimesheetData() || {};
+    const allDescriptions = new Set();
+
+    Object.values(allData).forEach(entries => {
+      entries.forEach(entry => {
+        if (entry.description && entry.description.trim()) {
+          allDescriptions.add(entry.description.trim());
+        }
+      });
+    });
+
+    return Array.from(allDescriptions).sort();
+  };
+
+  // Dropdown state
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+
+  // Handle input change with filtering
+  const handleTaskInputChange = (e) => {
+    const value = e.target.value;
+    setCurrentTask(value);
+
+    if (value.trim()) {
+      const allDescriptions = getUniqueTaskDescriptions();
+      const filtered = allDescriptions.filter(desc =>
+        desc.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+      setSelectedSuggestionIndex(-1);
+    } else {
+      setShowDropdown(false);
+      setFilteredSuggestions([]);
+    }
+  };
+
+  // Handle keyboard navigation
+  const handleTaskInputKeyDown = (e) => {
+    if (!showDropdown) {
+      if (e.key === 'Enter') {
+        handleStart();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev =>
+          prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          setCurrentTask(filteredSuggestions[selectedSuggestionIndex]);
+          setShowDropdown(false);
+          setSelectedSuggestionIndex(-1);
+        } else {
+          handleStart();
+        }
+        break;
+      case 'Escape':
+        setShowDropdown(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (suggestion) => {
+    setCurrentTask(suggestion);
+    setShowDropdown(false);
+    setSelectedSuggestionIndex(-1);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showDropdown && !e.target.closest('.task-input-container')) {
+        setShowDropdown(false);
+        setSelectedSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDropdown]);
+
   // Helper function to clean up duplicate entries caused by timezone conversion bugs
   const cleanupDuplicateEntries = () => {
     const allData = loadTimesheetData();
@@ -793,7 +896,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       // For editing, we need to find the original entry's date from startTime
       const originalDate = format(toZonedTime(parseISO(modalState.initialData.startTime), timezone), 'yyyy-MM-dd');
       const oldStorageKey = getStorageDateKey(originalDate);
-      
+
       // If editing and the date changed, remove from old date
       if (oldStorageKey !== entryStorageKey) {
         if (allData[oldStorageKey]) {
@@ -1074,20 +1177,47 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         {/* Input Bar - Only show on current date */}
         {isToday() && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex space-x-3 mb-3">
-              <input
-                type="text"
-                value={currentTask}
-                onChange={(e) => setCurrentTask(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleStart()}
-                placeholder="What are you doing now?"
-                className={`flex-1 bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 placeholder-gray-400 ${
-                  activeEntry
-                    ? 'focus:ring-blue-500 focus:border-blue-500'
-                    : 'focus:ring-green-500 focus:border-green-500'
-                }`}
+            <div className="flex items-start space-x-3 mb-3">
+              <div className="flex-1 relative task-input-container">
+                <input
+                  type="text"
+                  value={currentTask}
+                  onChange={handleTaskInputChange}
+                  onKeyDown={handleTaskInputKeyDown}
+                  onFocus={() => {
+                    if (currentTask.trim() && filteredSuggestions.length > 0) {
+                      setShowDropdown(true);
+                    }
+                  }}
+                  placeholder="What are you doing now?"
+                  className={`w-full bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 placeholder-gray-400 ${
+                    activeEntry
+                      ? 'focus:ring-blue-500 focus:border-blue-500'
+                      : 'focus:ring-green-500 focus:border-green-500'
+                  }`}
                 disabled={false}
-              />
+                autoComplete="off"
+                />
+
+                {/* Custom Dropdown */}
+                {showDropdown && filteredSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredSuggestions.map((suggestion, index) => (
+                      <div
+                        key={suggestion}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className={`px-4 py-2 cursor-pointer transition-colors ${
+                          index === selectedSuggestionIndex
+                            ? 'bg-blue-50 text-blue-900'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleStart}
                 className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-colors ${
