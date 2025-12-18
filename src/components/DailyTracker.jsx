@@ -1190,7 +1190,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     }
                   }}
                   placeholder="What are you doing now?"
-                  className={`w-full bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 placeholder-gray-400 ${
+                  className={`w-full bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-offset-0 focus:ring-offset-white relative z-20 placeholder-gray-400 ${
                     activeEntry
                       ? 'focus:ring-blue-500 focus:border-blue-500'
                       : 'focus:ring-green-500 focus:border-green-500'
