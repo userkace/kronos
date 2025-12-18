@@ -15,9 +15,15 @@ import {
   saveWeeklyTimesheet,
   loadWeeklyTimesheet
 } from '../utils/storage';
+import faviconManager from '../utils/faviconManager';
 
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
+
+  // Initialize favicon manager
+  useEffect(() => {
+    faviconManager.init();
+  }, []);
 
   const [currentTask, setCurrentTask] = useState('');
   const [activeEntry, setActiveEntry] = useState(null);
@@ -318,6 +324,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       document.title = 'Kronos';
     };
   }, [timezone, selectedDateEntries, activeEntry, currentTime, isTimezoneInitialized]); // Re-create timer when dependencies change or timezone initializes
+
+  // Update favicon based on active entry state
+  useEffect(() => {
+    faviconManager.setActive(!!activeEntry);
+  }, [activeEntry]);
 
   // Save entries to localStorage whenever they change (for timer entries only)
   useEffect(() => {
