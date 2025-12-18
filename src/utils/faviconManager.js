@@ -1,6 +1,6 @@
 class FaviconManager {
   constructor() {
-    this.defaultFavicon = '/vite.svg';
+    this.defaultFavicon = '/stop.svg';
     this.activeFavicon = '/active-spinning.svg';
     this.currentFavicon = null;
     this.isActive = false;
