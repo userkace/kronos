@@ -12,15 +12,20 @@ A modern, intuitive time tracking application built with React and Tailwind CSS.
 - **Manual Entries**: Add or edit time entries manually
 - **Task Merging**: Combine duplicate entries with the same description
 - **Responsive Design**: Works perfectly on desktop and mobile devices
+- **Onboarding Flow**: Guided setup for new users
+- **Settings Management**: Configure timezone, week start, and clock format
+- **Toast Notifications**: User-friendly feedback system
+- **Today Page**: Quick overview of current day's activities
 
 ## Technologies Used
 
-- **React 19** - Modern UI framework
-- **Vite** - Fast build tool and development server
-- **Tailwind CSS 4** - Utility-first CSS framework
-- **date-fns** - Date manipulation and formatting
-- **date-fns-tz** - Timezone handling
-- **Lucide React** - Beautiful icon library
+- **React 19.2.0** - Modern UI framework with latest features
+- **Vite 7.2.4** - Fast build tool and development server
+- **Tailwind CSS 4.1.17** - Utility-first CSS framework with Vite plugin
+- **date-fns 4.1.0** - Date manipulation and formatting
+- **date-fns-tz 3.2.0** - Timezone handling
+- **Lucide React 0.556.0** - Beautiful icon library
+- **ESLint 9.39.1** - Code linting and quality assurance
 
 ## Getting Started
 
@@ -57,6 +62,22 @@ npm run build
 
 The built files will be in the `dist` directory.
 
+### Linting
+
+```bash
+npm run lint
+```
+
+Run ESLint to check code quality and style.
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+Preview the production build locally.
+
 ## Usage
 
 ### Starting a Timer
@@ -77,6 +98,14 @@ The built files will be in the `dist` directory.
 - **Previous/Next Day**: Use the arrow buttons to navigate between days
 - **Today Button**: Quickly return to the current date
 - **Date Selection**: View and manage entries for any specific day
+- **View Switching**: Toggle between Daily Tracker, Weekly Timesheet, Settings, and Data Management views
+
+### Settings & Preferences
+
+- **Timezone Configuration**: Set your preferred timezone
+- **Week Start Day**: Choose Sunday or Monday as the start of your week
+- **Clock Format**: Switch between 12-hour and 24-hour time display
+- **Data Management**: Clear all data or reset onboarding
 
 ### Data Management
 
@@ -102,6 +131,23 @@ All your time tracking data is stored locally in your browser using localStorage
 
 - `Enter`: Start timer with current task description
 - `Escape`: Close modals and cancel actions
+
+## Application Structure
+
+Kronos is built with a modular component architecture:
+
+- **App.jsx**: Main application with routing and state management
+- **Components**: Reusable UI components for different features
+  - `DailyTracker`: Main time tracking interface
+  - `TimesheetTable`: Weekly timesheet view
+  - `Onboarding`: User setup flow
+  - `Settings`: Application preferences
+  - `DataImportExport`: Data management utilities
+- **Contexts**: React contexts for global state management
+  - `TimezoneContext`: Timezone management
+  - `UserPreferencesContext`: User settings
+  - `ToastContext`: Notification system
+- **Utils**: Helper functions for storage and data operations
 
 ## Contributing
 
