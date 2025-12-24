@@ -614,10 +614,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     let shouldCreateNewTask = false;
 
     if (timerStartDate !== currentDateInTimezone) {
-      // Timezone rolled over - stop the task at midnight (end of previous day)
-      const midnightInTimezone = parse('00:00', 'HH:mm', parse(currentDateInTimezone, 'yyyy-MM-dd', new Date()));
-      const midnightUTC = fromZonedTime(midnightInTimezone, timezone);
-      stopTime = midnightUTC;
+      // Timezone rolled over - stop the task at 23:59:59 of the previous day
+      const timerStartBaseDate = parse(timerStartDate, 'yyyy-MM-dd', new Date());
+      const endOfPreviousDayInTimezone = parse('23:59:59', 'HH:mm:ss', timerStartBaseDate);
+      const endOfPreviousDayUTC = fromZonedTime(endOfPreviousDayInTimezone, timezone);
+      stopTime = endOfPreviousDayUTC;
       shouldCreateNewTask = true;
     }
 
