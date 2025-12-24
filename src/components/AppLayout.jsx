@@ -166,11 +166,11 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
             </div>
           </nav>
 
+          {/* Show Pomodoro progress bar only when not on Pomodoro view */}
+          {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} className="mx-4"/>}
+
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-gray-200">
-            {/* Show Pomodoro progress bar only when not on Pomodoro view */}
-            {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} />}
-            
             {/* Timezone Display */}
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Globe className="w-4 h-4" />

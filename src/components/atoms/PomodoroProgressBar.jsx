@@ -2,7 +2,7 @@ import React from 'react';
 import { usePomodoro } from '../../contexts/PomodoroContext';
 import { Brain, Coffee, Timer } from 'lucide-react';
 
-const PomodoroProgressBar = ({ onViewChange }) => {
+const PomodoroProgressBar = ({ onViewChange, className }) => {
   const {
     isRunning,
     isPaused,
@@ -98,7 +98,7 @@ const PomodoroProgressBar = ({ onViewChange }) => {
 
   return (
     <div 
-      className="mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+      className={`mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${className}`}
       onClick={() => onViewChange && onViewChange('pomodoro')}
     >
       {/* Header */}
