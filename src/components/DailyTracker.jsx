@@ -668,7 +668,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         setSelectedDateEntries(sortedNewEntries);
       }
       
-      success(`Rollover task completed across ${timerStartDate} and ${currentDateInTimezone}`);
+      success(`Task time recorded for both ${timerStartDate} and ${currentDateInTimezone}`);
     }
     
     setActiveEntry(null);
