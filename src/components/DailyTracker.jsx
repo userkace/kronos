@@ -635,40 +635,43 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     allData[storageKey] = updatedEntries;
     saveTimesheetData(allData);
 
-    // Create new task for the new day if timezone rolled over
+    // Create completed task for the new day if timezone rolled over
     if (shouldCreateNewTask) {
-      const newEntry = {
+      // Calculate midnight of the current day in timezone
+      const currentDateBase = parse(currentDateInTimezone, 'yyyy-MM-dd', new Date());
+      const midnightInTimezone = parse('00:00:00', 'HH:mm:ss', currentDateBase);
+      const midnightUTC = fromZonedTime(midnightInTimezone, timezone);
+      
+      // Create the today/present segment (midnight to current time)
+      const todayEntry = {
         id: Date.now(),
         description: activeEntry.description,
         project: activeEntry.project,
         task: activeEntry.task,
         tags: activeEntry.tags,
-        startTime: utcTime.toISOString(), // Start from current time
-        isActive: true
+        startTime: midnightUTC.toISOString(), // Start from midnight
+        endTime: utcTime.toISOString(), // End at current time
+        isActive: false // Not active - completed in one operation
       };
 
       const newStorageKey = getStorageDateKey(currentDateInTimezone);
       if (!allData[newStorageKey]) {
         allData[newStorageKey] = [];
       }
-      allData[newStorageKey].push(newEntry);
+      allData[newStorageKey].push(todayEntry);
       saveTimesheetData(allData);
-
-      // Update active entry to the new one
-      setActiveEntry(newEntry);
       
-      // Update display to show the new day's entries
-      const newDateEntries = allData[newStorageKey] || [];
-      const sortedNewEntries = newDateEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      setSelectedDateEntries(sortedNewEntries);
+      // Update display to show the current day's entries if we're viewing today
+      if (isToday()) {
+        const newDateEntries = allData[newStorageKey] || [];
+        const sortedNewEntries = newDateEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        setSelectedDateEntries(sortedNewEntries);
+      }
       
-      // Navigate to the new day
-      setSelectedDate(parse(currentDateInTimezone, 'yyyy-MM-dd', new Date()));
-      
-      success(`Task continued on ${currentDateInTimezone}`);
-    } else {
-      setActiveEntry(null);
+      success(`Task time recorded for both ${timerStartDate} and ${currentDateInTimezone}`);
     }
+    
+    setActiveEntry(null);
 
     // Update display if we're viewing the timer's original date
     const selectedDateKey = getStorageDateKey(selectedDate);
