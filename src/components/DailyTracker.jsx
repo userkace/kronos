@@ -615,7 +615,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     if (timerStartDate !== currentDateInTimezone) {
       // Timezone rolled over - stop the task at 23:59:59 of the previous day
-      const endOfPreviousDayInTimezone = parse('23:59:59', 'HH:mm:ss', parse(timerStartDate, 'yyyy-MM-dd', new Date()));
+      const timerStartBaseDate = parse(timerStartDate, 'yyyy-MM-dd', new Date());
+      const endOfPreviousDayInTimezone = parse('23:59:59', 'HH:mm:ss', timerStartBaseDate);
       const endOfPreviousDayUTC = fromZonedTime(endOfPreviousDayInTimezone, timezone);
       stopTime = endOfPreviousDayUTC;
       shouldCreateNewTask = true;
