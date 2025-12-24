@@ -101,7 +101,7 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
       {/* Sidebar Overlay for Mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-[1px] bg-opacity-50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
