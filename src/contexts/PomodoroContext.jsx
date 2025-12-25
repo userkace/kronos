@@ -172,10 +172,12 @@ export const PomodoroProvider = ({ children }) => {
   }, [timeLeft]);
 
   useEffect(() => {
+    console.log('Saving currentSet to localStorage:', currentSet);
     localStorage.setItem('kronos_pomodoro_current_set', currentSet.toString());
   }, [currentSet]);
 
   useEffect(() => {
+    console.log('Saving completedSets to localStorage:', completedSets);
     localStorage.setItem('kronos_pomodoro_completed_sets', completedSets.toString());
   }, [completedSets]);
 
@@ -292,7 +294,7 @@ export const PomodoroProvider = ({ children }) => {
       const newCompletedSets = completedSets + 1;
       setCompletedSets(newCompletedSets);
       
-      if (currentSet >= totalSets) {
+      if (newCompletedSets >= totalSets) {
         // Completed all sets
         nextPhase = 'longBreak';
         setCurrentPhase('longBreak');
@@ -309,6 +311,14 @@ export const PomodoroProvider = ({ children }) => {
       // Break completed, back to work
       if (currentPhase === 'shortBreak') {
         setCurrentSet(currentSet + 1);
+      } else if (currentPhase === 'longBreak') {
+        // Reset sets after long break
+        console.log('Long break completed - resetting sets from', currentSet, 'to 1');
+        // Clear localStorage to ensure reset takes effect
+        // localStorage.removeItem('kronos_pomodoro_current_set');
+        // localStorage.removeItem('kronos_pomodoro_completed_sets');
+        setCurrentSet(1);
+        setCompletedSets(0);
       }
       nextPhase = 'work';
       setCurrentPhase('work');
