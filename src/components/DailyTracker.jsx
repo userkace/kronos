@@ -637,13 +637,18 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Create new task for the new day if timezone rolled over
     if (shouldCreateNewTask) {
+      // Calculate midnight of the current day in timezone
+      const currentDateBase = parse(currentDateInTimezone, 'yyyy-MM-dd', new Date());
+      const midnightInTimezone = parse('00:00:00', 'HH:mm:ss', currentDateBase);
+      const midnightUTC = fromZonedTime(midnightInTimezone, timezone);
+      
       const newEntry = {
         id: Date.now(),
         description: activeEntry.description,
         project: activeEntry.project,
         task: activeEntry.task,
         tags: activeEntry.tags,
-        startTime: utcTime.toISOString(), // Start from current time
+        startTime: midnightUTC.toISOString(), // Start from midnight
         isActive: true
       };
 
