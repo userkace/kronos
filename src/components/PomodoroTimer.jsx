@@ -37,7 +37,6 @@ const PomodoroTimer = () => {
     resetTimer,
     skipPhase,
     resetAll,
-    setCurrentPhase,
     setCurrentSet,
     setCompletedSets,
     setCurrentTask,
