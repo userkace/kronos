@@ -930,48 +930,31 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       }
     };
 
+    // Parse time strings and combine with dates (common logic for both timezone modes)
+    const startTimeObj = parseTimeString(entryData.startTime);
+    const endTimeObj = parseTimeString(entryData.endTime);
+    
+    if (!startTimeObj || !endTimeObj) {
+      error('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
+      return;
+    }
+    
+    // Combine date and time
+    const dateBase = parse(entryDate, 'yyyy-MM-dd', new Date());
+    const localStartDateTime = new Date(dateBase);
+    localStartDateTime.setHours(startTimeObj.getHours(), startTimeObj.getMinutes(), startTimeObj.getSeconds(), 0);
+    
+    const localEndDateTime = new Date(dateBase);
+    localEndDateTime.setHours(endTimeObj.getHours(), endTimeObj.getMinutes(), endTimeObj.getSeconds(), 0);
+
     // Create date objects appropriately based on timezone mode
     let startDateTime, endDateTime;
 
     if (entryData.timezoneMode === 'selected') {
-      // When using selected timezone, create the date object directly in that timezone
-      const startTimeObj = parseTimeString(entryData.startTime);
-      const endTimeObj = parseTimeString(entryData.endTime);
-      
-      if (!startTimeObj || !endTimeObj) {
-        error('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
-        return;
-      }
-      
-      // Combine date and time
-      const dateBase = parse(entryDate, 'yyyy-MM-dd', new Date());
-      const localStartDateTime = new Date(dateBase);
-      localStartDateTime.setHours(startTimeObj.getHours(), startTimeObj.getMinutes(), startTimeObj.getSeconds(), 0);
-      
-      const localEndDateTime = new Date(dateBase);
-      localEndDateTime.setHours(endTimeObj.getHours(), endTimeObj.getMinutes(), endTimeObj.getSeconds(), 0);
-
       // Convert from selected timezone to UTC
       startDateTime = fromZonedTime(localStartDateTime, timezone);
       endDateTime = fromZonedTime(localEndDateTime, timezone);
     } else {
-      // When using custom timezone, create date object and convert from that timezone
-      const startTimeObj = parseTimeString(entryData.startTime);
-      const endTimeObj = parseTimeString(entryData.endTime);
-      
-      if (!startTimeObj || !endTimeObj) {
-        error('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
-        return;
-      }
-      
-      // Combine date and time
-      const dateBase = parse(entryDate, 'yyyy-MM-dd', new Date());
-      const localStartDateTime = new Date(dateBase);
-      localStartDateTime.setHours(startTimeObj.getHours(), startTimeObj.getMinutes(), startTimeObj.getSeconds(), 0);
-      
-      const localEndDateTime = new Date(dateBase);
-      localEndDateTime.setHours(endTimeObj.getHours(), endTimeObj.getMinutes(), endTimeObj.getSeconds(), 0);
-
       // Convert from custom timezone to UTC
       startDateTime = fromZonedTime(localStartDateTime, timezoneToUse);
       endDateTime = fromZonedTime(localEndDateTime, timezoneToUse);
