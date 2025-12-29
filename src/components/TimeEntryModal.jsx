@@ -171,7 +171,7 @@ const TimeEntryModal = ({
       const startMinutes = parseTimeToMinutes(startTime);
       const endMinutes = parseTimeToMinutes(endTime);
       
-      if (startMinutes === 0 && endMinutes === 0) return '';
+      if (Number.isNaN(startMinutes) || Number.isNaN(endMinutes)) return '';
       
       let diffMinutes = endMinutes - startMinutes;
       
