@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Brain, Timer, Settings as SettingsIcon, SkipForward } from 'lucide-react';
-import { useTimezone } from '../contexts/TimezoneContext';
 import { useToast } from '../contexts/ToastContext';
 import { usePomodoro } from '../contexts/PomodoroContext';
 
 const PomodoroTimer = () => {
-  const { selectedTimezone } = useTimezone();
   const { success, error } = useToast();
   
   // Use Pomodoro context for all state
