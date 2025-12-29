@@ -199,7 +199,7 @@ const TimeEntryModal = ({
         error('Invalid time format. Please use HH:MM:SS format');
         return;
       }
-    } catch (error) {
+    } catch (err) {
       error('Invalid time format. Please use HH:MM:SS format');
       return;
     }
