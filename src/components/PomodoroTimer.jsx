@@ -80,7 +80,7 @@ const PomodoroTimer = () => {
         duration = workDuration * 60;
     }
     setTotalTime(duration);
-  }, [currentPhase, workDuration, shortBreakDuration, longBreakDuration, currentTask, isTrackingTask]);
+  }, [currentPhase, workDuration, shortBreakDuration, longBreakDuration, currentTask, isTrackingTask, setTaskStartTime]);
 
   // Play notification sound when timer completes
   useEffect(() => {
