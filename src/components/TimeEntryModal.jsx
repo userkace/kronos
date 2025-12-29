@@ -57,9 +57,9 @@ const TimeEntryModal = ({
   // Initialize form with initialData if editing
   useEffect(() => {
     if (initialData && mode === 'edit') {
-      // Convert UTC storage times to selected timezone for display (HH:mm format)
-      const startTimeInTimezone = initialData.startTime ? format(toZonedTime(parseISO(initialData.startTime), timezone), 'HH:mm') : '';
-      const endTimeInTimezone = initialData.endTime ? format(toZonedTime(parseISO(initialData.endTime), timezone), 'HH:mm') : '';
+      // Convert UTC storage times to selected timezone for display (h:mm:ss a format)
+      const startTimeInTimezone = initialData.startTime ? format(toZonedTime(parseISO(initialData.startTime), timezone), 'h:mm:ss a') : '';
+      const endTimeInTimezone = initialData.endTime ? format(toZonedTime(parseISO(initialData.endTime), timezone), 'h:mm:ss a') : '';
       
       // Determine the entry date - use stored date if available, otherwise derive from startTime
       let entryDate = initialData.date;
@@ -91,6 +91,50 @@ const TimeEntryModal = ({
     }
   }, [initialData, mode]);
 
+  // Parse time string with AM/PM and optional seconds to minutes since midnight
+  const parseTimeToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    
+    try {
+      // Parse 12-hour format with AM/PM and optional seconds
+      // Supports formats: "h:mm a", "h:mm:ss a", "hh:mm a", "hh:mm:ss a"
+      const timeObj = parse(timeStr, 'h:mm:ss a', new Date());
+      if (isValid(timeObj)) {
+        return timeObj.getHours() * 60 + timeObj.getMinutes() + (timeObj.getSeconds() / 60);
+      }
+      
+      // Try without seconds
+      const timeObjNoSeconds = parse(timeStr, 'h:mm a', new Date());
+      if (isValid(timeObjNoSeconds)) {
+        return timeObjNoSeconds.getHours() * 60 + timeObjNoSeconds.getMinutes();
+      }
+      
+      return 0;
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  // Format minutes since midnight to time string with seconds and AM/PM
+  const formatMinutesToTime = (totalMinutes) => {
+    if (totalMinutes <= 0) return '';
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.round((totalMinutes % 1) * 60);
+    
+    // Convert to 12-hour format
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const ampm = hours < 12 ? 'AM' : 'PM';
+    
+    // Include seconds if not zero
+    if (seconds > 0) {
+      return `${displayHours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm}`;
+    } else {
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    }
+  };
+
   // Parse duration string to minutes
   const parseDuration = (durationStr) => {
     if (!durationStr) return 0;
@@ -109,7 +153,7 @@ const TimeEntryModal = ({
     if (minutes <= 0) return '';
     
     const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const mins = Math.floor(minutes % 60);
     
     if (hours === 0) return `${mins} min`;
     if (mins === 0) return `${hours} h`;
@@ -121,16 +165,16 @@ const TimeEntryModal = ({
     if (!startTime || !endTime) return '';
     
     try {
-      const start = parse(startTime, 'HH:mm', new Date());
-      const end = parse(endTime, 'HH:mm', new Date());
+      const startMinutes = parseTimeToMinutes(startTime);
+      const endMinutes = parseTimeToMinutes(endTime);
       
-      if (!isValid(start) || !isValid(end)) return '';
+      if (startMinutes === 0 && endMinutes === 0) return '';
       
-      let diffMinutes = differenceInMinutes(end, start);
+      let diffMinutes = endMinutes - startMinutes;
       
       // Handle overnight shifts
       if (diffMinutes < 0) {
-        diffMinutes = differenceInMinutes(end, start) + (24 * 60);
+        diffMinutes = diffMinutes + (24 * 60);
       }
       
       return formatDuration(diffMinutes);
@@ -144,13 +188,13 @@ const TimeEntryModal = ({
     if (!startTime || !durationStr) return '';
     
     try {
-      const start = parse(startTime, 'HH:mm', new Date());
+      const startMinutes = parseTimeToMinutes(startTime);
       const durationMinutes = parseDuration(durationStr);
       
-      if (!isValid(start) || durationMinutes < 0) return '';
+      if (startMinutes === 0 || durationMinutes < 0) return '';
       
-      const end = addMinutes(start, durationMinutes);
-      return format(end, 'HH:mm');
+      const endMinutes = startMinutes + durationMinutes;
+      return formatMinutesToTime(endMinutes);
     } catch (error) {
       return '';
     }
@@ -190,10 +234,10 @@ const TimeEntryModal = ({
     
     // Validate time format
     try {
-      parse(formData.startTime, 'HH:mm', new Date());
-      parse(formData.endTime, 'HH:mm', new Date());
+      parseTimeToMinutes(formData.startTime);
+      parseTimeToMinutes(formData.endTime);
     } catch (error) {
-      alert('Invalid time format. Please use HH:MM format');
+      alert('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
       return;
     }
     
@@ -415,10 +459,11 @@ const TimeEntryModal = ({
                   Start Time
                 </label>
                 <input
-                  type="time"
+                  type="text"
                   value={formData.startTime}
                   onChange={(e) => handleInputChange('startTime', e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., 9:30 AM or 9:30:45 AM"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               
@@ -432,10 +477,11 @@ const TimeEntryModal = ({
                   End Time
                 </label>
                 <input
-                  type="time"
+                  type="text"
                   value={formData.endTime}
                   onChange={(e) => handleInputChange('endTime', e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., 5:30 PM or 5:30:15 PM"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               

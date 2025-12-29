@@ -907,26 +907,74 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Use the selected date instead of entryData.date
     const entryDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
 
+    // Parse time strings with AM/PM and optional seconds
+    const parseTimeString = (timeStr) => {
+      if (!timeStr) return null;
+      
+      try {
+        // Try parsing with seconds first: "h:mm:ss a" or "hh:mm:ss a"
+        const timeWithSeconds = parse(timeStr, 'h:mm:ss a', new Date());
+        if (isValid(timeWithSeconds)) {
+          return timeWithSeconds;
+        }
+        
+        // Try parsing without seconds: "h:mm a" or "hh:mm a"
+        const timeWithoutSeconds = parse(timeStr, 'h:mm a', new Date());
+        if (isValid(timeWithoutSeconds)) {
+          return timeWithoutSeconds;
+        }
+        
+        return null;
+      } catch (error) {
+        return null;
+      }
+    };
+
     // Create date objects appropriately based on timezone mode
     let startDateTime, endDateTime;
 
     if (entryData.timezoneMode === 'selected') {
       // When using selected timezone, create the date object directly in that timezone
-      // This means the times are already in the selected timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const startTimeObj = parseTimeString(entryData.startTime);
+      const endTimeObj = parseTimeString(entryData.endTime);
+      
+      if (!startTimeObj || !endTimeObj) {
+        error('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
+        return;
+      }
+      
+      // Combine date and time
+      const dateBase = parse(entryDate, 'yyyy-MM-dd', new Date());
+      const localStartDateTime = new Date(dateBase);
+      localStartDateTime.setHours(startTimeObj.getHours(), startTimeObj.getMinutes(), startTimeObj.getSeconds(), 0);
+      
+      const localEndDateTime = new Date(dateBase);
+      localEndDateTime.setHours(endTimeObj.getHours(), endTimeObj.getMinutes(), endTimeObj.getSeconds(), 0);
 
       // Convert from selected timezone to UTC
       startDateTime = fromZonedTime(localStartDateTime, timezone);
       endDateTime = fromZonedTime(localEndDateTime, timezone);
     } else {
       // When using custom timezone, create date object and convert from that timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const startTimeObj = parseTimeString(entryData.startTime);
+      const endTimeObj = parseTimeString(entryData.endTime);
+      
+      if (!startTimeObj || !endTimeObj) {
+        error('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
+        return;
+      }
+      
+      // Combine date and time
+      const dateBase = parse(entryDate, 'yyyy-MM-dd', new Date());
+      const localStartDateTime = new Date(dateBase);
+      localStartDateTime.setHours(startTimeObj.getHours(), startTimeObj.getMinutes(), startTimeObj.getSeconds(), 0);
+      
+      const localEndDateTime = new Date(dateBase);
+      localEndDateTime.setHours(endTimeObj.getHours(), endTimeObj.getMinutes(), endTimeObj.getSeconds(), 0);
 
       // Convert from custom timezone to UTC
-      startDateTime = toZonedTime(localStartDateTime, timezoneToUse);
-      endDateTime = toZonedTime(localEndDateTime, timezoneToUse);
+      startDateTime = fromZonedTime(localStartDateTime, timezoneToUse);
+      endDateTime = fromZonedTime(localEndDateTime, timezoneToUse);
     }
 
     const newEntry = {
@@ -1390,7 +1438,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       </>
                     )}
                     <span className="text-sm">
-                      {formatInTimezone(parseISO(activeEntry.startTime), 'h:mm a')} - now
+                      {formatInTimezone(parseISO(activeEntry.startTime), 'h:mm:ss a')} - now
                     </span>
                     <span className="font-mono font-semibold">
                       {getActiveDuration(activeEntry)}
@@ -1473,7 +1521,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       </p>
                       <div className="flex items-center space-x-4 text-gray-600">
                         <span className="text-sm">
-                          {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
+                          {formatInTimezone(parseISO(entry.startTime), 'h:mm:ss a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm:ss a')}
                         </span>
                         <span className="font-mono">
                           {formatDisplayDuration(duration)}
