@@ -313,7 +313,6 @@ export const PomodoroProvider = ({ children }) => {
         setCurrentSet(currentSet + 1);
       } else if (currentPhase === 'longBreak') {
         // Reset sets after long break
-        console.log('Long break completed - resetting sets from', currentSet, 'to 1');
         // Clear localStorage to ensure reset takes effect
         setCurrentSet(1);
         setCompletedSets(0);
