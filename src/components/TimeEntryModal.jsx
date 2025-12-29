@@ -95,16 +95,19 @@ const TimeEntryModal = ({
   const parseTimeToMinutes = (timeStr) => {
     if (!timeStr) return 0;
     
+    // Normalize input to avoid case-sensitivity issues with AM/PM
+    const normalizedTimeStr = timeStr.trim().toLowerCase();
+    
     try {
       // Parse 12-hour format with AM/PM and optional seconds
       // Supports formats: "h:mm a", "h:mm:ss a", "hh:mm a", "hh:mm:ss a"
-      const timeObj = parse(timeStr, 'h:mm:ss a', new Date());
+      const timeObj = parse(normalizedTimeStr, 'h:mm:ss a', new Date());
       if (isValid(timeObj)) {
         return timeObj.getHours() * 60 + timeObj.getMinutes() + (timeObj.getSeconds() / 60);
       }
       
       // Try without seconds
-      const timeObjNoSeconds = parse(timeStr, 'h:mm a', new Date());
+      const timeObjNoSeconds = parse(normalizedTimeStr, 'h:mm a', new Date());
       if (isValid(timeObjNoSeconds)) {
         return timeObjNoSeconds.getHours() * 60 + timeObjNoSeconds.getMinutes();
       }
