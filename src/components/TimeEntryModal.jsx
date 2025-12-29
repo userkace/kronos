@@ -190,8 +190,13 @@ const TimeEntryModal = ({
     
     // Validate time format
     try {
-      parse(formData.startTime, 'HH:mm:ss', new Date());
-      parse(formData.endTime, 'HH:mm:ss', new Date());
+      const start = parse(formData.startTime, 'HH:mm:ss', new Date());
+      const end = parse(formData.endTime, 'HH:mm:ss', new Date());
+      
+      if (!isValid(start) || !isValid(end)) {
+        alert('Invalid time format. Please use HH:MM:SS format');
+        return;
+      }
     } catch (error) {
       alert('Invalid time format. Please use HH:MM:SS format');
       return;
