@@ -10,6 +10,7 @@ import {
   X, 
   Clock
 } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 
 const TimeEntryModal = ({ 
   isOpen, 
@@ -21,6 +22,7 @@ const TimeEntryModal = ({
   timezone,
   selectedDate
 }) => {
+  const { error } = useToast();
   const [formData, setFormData] = useState({
     description: '',
     task: '',
@@ -179,12 +181,12 @@ const TimeEntryModal = ({
   const handleSave = () => {
     // Validate required fields
     if (!formData.description.trim()) {
-      alert('Please enter a description');
+      error('Please enter a description');
       return;
     }
     
     if (!formData.startTime || !formData.endTime) {
-      alert('Please enter both start and end times');
+      error('Please enter both start and end times');
       return;
     }
     
@@ -194,11 +196,11 @@ const TimeEntryModal = ({
       const end = parse(formData.endTime, 'HH:mm:ss', new Date());
       
       if (!isValid(start) || !isValid(end)) {
-        alert('Invalid time format. Please use HH:MM:SS format');
+        error('Invalid time format. Please use HH:MM:SS format');
         return;
       }
     } catch (error) {
-      alert('Invalid time format. Please use HH:MM:SS format');
+      error('Invalid time format. Please use HH:MM:SS format');
       return;
     }
     
