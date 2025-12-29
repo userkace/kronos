@@ -93,7 +93,7 @@ const TimeEntryModal = ({
 
   // Parse time string with AM/PM and optional seconds to minutes since midnight
   const parseTimeToMinutes = (timeStr) => {
-    if (!timeStr) return 0;
+    if (!timeStr) return null;
     
     // Normalize input to avoid case-sensitivity issues with AM/PM
     const normalizedTimeStr = timeStr.trim().toLowerCase();
@@ -112,9 +112,9 @@ const TimeEntryModal = ({
         return timeObjNoSeconds.getHours() * 60 + timeObjNoSeconds.getMinutes();
       }
       
-      return 0;
+      return null;
     } catch (error) {
-      return 0;
+      return null;
     }
   };
 
@@ -171,7 +171,7 @@ const TimeEntryModal = ({
       const startMinutes = parseTimeToMinutes(startTime);
       const endMinutes = parseTimeToMinutes(endTime);
       
-      if (Number.isNaN(startMinutes) || Number.isNaN(endMinutes)) return '';
+      if (startMinutes === null || endMinutes === null) return '';
       
       let diffMinutes = endMinutes - startMinutes;
       
@@ -194,7 +194,7 @@ const TimeEntryModal = ({
       const startMinutes = parseTimeToMinutes(startTime);
       const durationMinutes = parseDuration(durationStr);
       
-      if (startMinutes === 0 || durationMinutes < 0) return '';
+      if (startMinutes === null || durationMinutes < 0) return '';
       
       const endMinutes = startMinutes + durationMinutes;
       return formatMinutesToTime(endMinutes);
@@ -237,8 +237,13 @@ const TimeEntryModal = ({
     
     // Validate time format
     try {
-      parseTimeToMinutes(formData.startTime);
-      parseTimeToMinutes(formData.endTime);
+      const startMinutes = parseTimeToMinutes(formData.startTime);
+      const endMinutes = parseTimeToMinutes(formData.endTime);
+      
+      if (startMinutes === null || endMinutes === null) {
+        alert('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
+        return;
+      }
     } catch (error) {
       alert('Invalid time format. Please use format like "9:30 AM" or "9:30:45 AM"');
       return;
