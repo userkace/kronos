@@ -913,16 +913,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     if (entryData.timezoneMode === 'selected') {
       // When using selected timezone, create the date object directly in that timezone
       // This means the times are already in the selected timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const localStartDateTime = parse(entryData.startTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
 
       // Convert from selected timezone to UTC
       startDateTime = fromZonedTime(localStartDateTime, timezone);
       endDateTime = fromZonedTime(localEndDateTime, timezone);
     } else {
       // When using custom timezone, create date object and convert from that timezone
-      const localStartDateTime = parse(entryData.startTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const localStartDateTime = parse(entryData.startTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      const localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
 
       // Convert from custom timezone to UTC
       startDateTime = toZonedTime(localStartDateTime, timezoneToUse);
