@@ -5,6 +5,7 @@ import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merg
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
+import { usePomodoro } from '../contexts/PomodoroContext';
 import {
   saveTimesheetData,
   loadTimesheetData,
@@ -19,6 +20,7 @@ import faviconManager from '../utils/faviconManager';
 
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
+  const { isRunning: pomodoroIsRunning } = usePomodoro();
 
   // Initialize favicon manager
   useEffect(() => {
@@ -245,99 +247,80 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Load data from localStorage on mount and when date changes
   useEffect(() => {
-    const loadedData = loadTimesheetData();
-    const storageKey = getStorageDateKey(selectedDate);
-    const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
+    const loadData = () => {
+      const loadedData = loadTimesheetData();
+      const storageKey = getStorageDateKey(selectedDate);
+      const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
 
-    // Debug logging
-    console.log('=== DailyTracker Debug ===');
-    console.log('Selected Date (raw):', selectedDate);
-    console.log('Selected Date (toString):', selectedDate.toString());
-    console.log('Timezone:', timezone);
-    console.log('Storage Key:', storageKey);
-    console.log('Display Date:', displayDate);
-    console.log('Is Today:', isToday());
-    console.log('Available keys in storage:', Object.keys(loadedData || {}));
+      // Debug logging
+      console.log('=== DailyTracker Debug ===');
+      console.log('Selected Date (raw):', selectedDate);
+      console.log('Selected Date (toString):', selectedDate.toString());
+      console.log('Timezone:', timezone);
+      console.log('Storage Key:', storageKey);
+      console.log('Display Date:', displayDate);
+      console.log('Is Today:', isToday());
+      console.log('Available keys in storage:', Object.keys(loadedData || {}));
 
-    // Additional timezone debug
-    console.log('=== Date Calculation Debug ===');
-    console.log('Current system time:', new Date());
-    console.log('Current time in selected timezone:', getCurrentDateInTimezone());
-    console.log('Today in selected timezone:', formatInTimezone(new Date(), 'yyyy-MM-dd'));
-    console.log('Selected date in selected timezone:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
+      // Additional timezone debug
+      console.log('=== Date Calculation Debug ===');
+      console.log('Current system time:', new Date());
+      console.log('Current time in selected timezone:', getCurrentDateInTimezone());
+      console.log('Today in selected timezone:', formatInTimezone(new Date(), 'yyyy-MM-dd'));
+      console.log('Selected date in selected timezone:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
 
-    // Check what's actually stored for each key
-    console.log('=== Storage Contents Debug ===');
-    Object.keys(loadedData || {}).forEach(key => {
-      console.log(`Key "${key}" has ${loadedData[key].length} entries`);
-      if (loadedData[key].length > 0) {
-        console.log(`  First entry:`, loadedData[key][0]);
-      }
-    });
-
-    if (loadedData && loadedData[storageKey]) {
-      const dayEntries = loadedData[storageKey] || [];
-      console.log('Entries found for storage key:', dayEntries.length, dayEntries);
-      console.log('=== State Update Debug ===');
-      console.log('About to setSelectedDateEntries with', dayEntries.length, 'entries for key:', storageKey);
-      // Sort entries by start time (earliest first)
-      const sortedEntries = dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      setSelectedDateEntries(sortedEntries);
-      console.log('setSelectedDateEntries called with sorted entries');
-
-      // Check for active entry (only for current date in selected timezone)
-      const todayInSelectedTimezone = formatInTimezone(new Date(), 'yyyy-MM-dd');
-      const isCurrentDate = todayInSelectedTimezone === displayDate;
-
-      console.log('=== Active Entry Debug ===');
-      console.log('Is Current Date:', isCurrentDate);
-      console.log('Current activeEntry:', activeEntry);
-      console.log('Day entries:', dayEntries);
-      console.log('Active entry in data:', dayEntries.find(entry => entry.isActive));
-
-      // Log details of all entries to see their structure
-      console.log('=== Entry Details ===');
-      dayEntries.forEach((entry, index) => {
-        console.log(`Entry ${index}:`, {
-          id: entry.id,
-          description: entry.description,
-          isActive: entry.isActive,
-          startTime: entry.startTime,
-          endTime: entry.endTime
-        });
+      // Check what's actually stored for each key
+      console.log('=== Storage Contents Debug ===');
+      Object.keys(loadedData || {}).forEach(key => {
+        console.log(`Key "${key}" has ${loadedData[key].length} entries`);
+        if (loadedData[key].length > 0) {
+          console.log(`  First entry:`, loadedData[key][0]);
+        }
       });
 
-      if (isCurrentDate) {
-        const active = dayEntries.find(entry => entry.isActive);
-        if (active) {
-          console.log('Setting activeEntry from data:', active);
-          setActiveEntry(active);
-        } else if (activeEntry) {
-          console.log('Keeping existing activeEntry:', activeEntry);
-          // Keep existing activeEntry if no active found in today's entries
-          // This handles the case where we navigated away and back
-        } else {
-          // Look for active entry in all dates (for timers that might be stored under wrong date)
-          let foundActive = null;
-          Object.keys(loadedData).forEach(dateKey => {
-            const entries = loadedData[dateKey];
-            const activeInDate = entries.find(entry => entry.isActive);
-            if (activeInDate) {
-              foundActive = activeInDate;
-              console.log('Found active entry in different date key:', dateKey, activeInDate);
-            }
-          });
+      if (loadedData && loadedData[storageKey]) {
+        const dayEntries = loadedData[storageKey] || [];
+        console.log('Entries found for storage key:', dayEntries.length, dayEntries);
+        console.log('=== State Update Debug ===');
+        console.log('About to setSelectedDateEntries with', dayEntries.length, 'entries for key:', storageKey);
+        // Sort entries by start time (earliest first)
+        const sortedEntries = dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        setSelectedDateEntries(sortedEntries);
+        console.log('setSelectedDateEntries called with sorted entries');
 
-          if (foundActive) {
-            console.log('Setting activeEntry from different date:', foundActive);
-            setActiveEntry(foundActive);
+        // Check for active entry (only for current date in selected timezone)
+        const todayInSelectedTimezone = formatInTimezone(new Date(), 'yyyy-MM-dd');
+        const isCurrentDate = todayInSelectedTimezone === displayDate;
+
+        console.log('=== Active Entry Debug ===');
+        console.log('Is Current Date:', isCurrentDate);
+        console.log('Current activeEntry:', activeEntry);
+        console.log('Day entries:', dayEntries);
+        console.log('Active entry in data:', dayEntries.find(entry => entry.isActive));
+
+        // Log details of all entries to see their structure
+        console.log('=== Entry Details ===');
+        dayEntries.forEach((entry, index) => {
+          console.log(`Entry ${index}:`, {
+            id: entry.id,
+            description: entry.description,
+            isActive: entry.isActive,
+            startTime: entry.startTime,
+            endTime: entry.endTime
+          });
+        });
+
+        if (isCurrentDate) {
+          const activeEntry = dayEntries.find(entry => entry.isActive);
+          if (activeEntry) {
+            console.log('Setting active entry:', activeEntry);
+            setActiveEntry(activeEntry);
           } else {
-            console.log('No activeEntry found anywhere');
+            console.log('No active entry found, clearing active entry');
             setActiveEntry(null);
           }
-        }
-      } else {
-        // Don't clear activeEntry when viewing other dates - keep the timer running
+        } else {
+          console.log('Not current date, clearing active entry');
         // Only clear if there's no active timer at all
         if (!activeEntry) {
           console.log('Clearing activeEntry - no timer running');
@@ -372,6 +355,45 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         setActiveEntry(null);
       }
     }
+    };
+
+    loadData();
+
+    // Add storage event listener for cross-tab synchronization
+    const handleStorageChange = (e) => {
+      if (e.key === 'kronos_timesheet_data') {
+        console.log('Storage changed, reloading data');
+        loadData();
+      }
+    };
+
+    // Add polling for same-tab changes (when Pomodoro saves data)
+    const pollInterval = setInterval(() => {
+      const currentData = loadTimesheetData();
+      const storageKey = getStorageDateKey(selectedDate);
+      const currentEntries = currentData[storageKey] || [];
+      
+      // Check if entries have changed
+      if (currentEntries.length !== selectedDateEntries.length) {
+        console.log('Entries count changed, reloading data');
+        loadData();
+      } else {
+        // Check if any entry IDs are different
+        const currentIds = currentEntries.map(e => e.id).sort();
+        const selectedIds = selectedDateEntries.map(e => e.id).sort();
+        if (JSON.stringify(currentIds) !== JSON.stringify(selectedIds)) {
+          console.log('Entries changed, reloading data');
+          loadData();
+        }
+      }
+    }, 2000); // Check every 2 seconds
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
+    };
   }, [timezone, selectedDate]); // Re-load when timezone or selected date changes
 
   // Date navigation functions
@@ -497,6 +519,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
   };
 
+  // Format break time with seconds always included
+  const formatBreakDuration = (seconds) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    if (minutes < 60) return `${minutes}m ${remainingSeconds}s`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m ${remainingSeconds}s` : `${hours}h ${remainingSeconds}s`;
+  };
+
   // Calculate break time between two consecutive entries
   const calculateBreakTime = (currentEntry, previousEntry) => {
     if (!currentEntry || !previousEntry || !previousEntry.endTime || !currentEntry.startTime) return null;
@@ -506,8 +539,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     const breakSeconds = differenceInSeconds(currentStartInTimezone, prevEndInTimezone);
 
-    // Only show breaks longer than 1 minute
-    if (breakSeconds <= 60) return null;
+    // Only show breaks longer than 10 seconds to avoid noise
+    if (breakSeconds <= 10) return null;
 
     return breakSeconds;
   };
@@ -538,6 +571,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Start new timer (only works on current date)
   const handleStart = () => {
+    // Prevent starting if Pomodoro is running
+    if (pomodoroIsRunning) {
+      warning('Cannot start timer while Pomodoro is active');
+      return;
+    }
+
     const taskToStart = currentTask.trim() || funnyDefaultTasks[Math.floor(Math.random() * funnyDefaultTasks.length)];
 
     if (!taskToStart) return;
@@ -724,6 +763,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Modal handlers
   const handleOpenModal = (mode, entry = null) => {
+    // Prevent opening modal if Pomodoro is running
+    if (pomodoroIsRunning && mode === 'add') {
+      warning('Cannot add manual entries while Pomodoro is active');
+      return;
+    }
+    
     setModalState({
       isOpen: true,
       mode,
@@ -751,6 +796,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     if (entriesToMerge.length < 2) return true;
 
+    // Check if any entry is from pomodoro source - disable merging for pomodoro entries
+    const hasPomodoroEntries = entriesToMerge.some(entry => entry.source === 'pomodoro');
+    if (hasPomodoroEntries) return true;
+
     // Check if any entry is active
     if (entriesToMerge.some(entry => entry.isActive)) return true;
 
@@ -761,18 +810,26 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     for (let i = 0; i < sortedEntries.length - 1; i++) {
       const currentEntry = sortedEntries[i];
       const nextEntry = sortedEntries[i + 1];
-
-      // Find any entry that overlaps the time gap between current and next entry
-      const hasSplittingEntry = entries.some(entry =>
-        entry.description !== description &&
-        new Date(entry.startTime) >= new Date(currentEntry.endTime) &&
+      
+      // Get all entries between current and next
+      const entriesBetween = entries.filter(entry => 
+        new Date(entry.startTime) > new Date(currentEntry.startTime) &&
         new Date(entry.startTime) < new Date(nextEntry.startTime)
       );
-
-      if (hasSplittingEntry) return true;
+      
+      if (entriesBetween.length > 0) return true;
     }
 
     return false;
+  };
+
+  // Check if entries contain pomodoro source for tooltip
+  const hasPomodoroSource = (description) => {
+    const storageKey = getStorageDateKey(selectedDate);
+    const allData = loadTimesheetData() || {};
+    const entries = allData[storageKey] || [];
+    const entriesToMerge = entries.filter(entry => entry.description === description);
+    return entriesToMerge.some(entry => entry.source === 'pomodoro');
   };
 
 // Merge entries with the same description
@@ -1224,11 +1281,15 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               </div>
               <button
                 onClick={handleStart}
+                disabled={pomodoroIsRunning}
                 className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-colors ${
-                  activeEntry
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
+                  pomodoroIsRunning
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : activeEntry
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
+                title={pomodoroIsRunning ? 'Cannot start timer while Pomodoro is active' : ''}
               >
                 {activeEntry ? (
                   <>
@@ -1257,7 +1318,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
             <div className="flex justify-center space-x-4">
               <button
                 onClick={() => handleOpenModal('add')}
-                className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                disabled={pomodoroIsRunning}
+                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                  pomodoroIsRunning
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                }`}
+                title={pomodoroIsRunning ? 'Cannot add manual entries while Pomodoro is active' : ''}
               >
                 + Add Manual Entry
               </button>
@@ -1277,7 +1344,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
             <div className="flex justify-center space-x-4">
               <button
                 onClick={() => handleOpenModal('add')}
-                className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                disabled={pomodoroIsRunning}
+                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                  pomodoroIsRunning
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                }`}
+                title={pomodoroIsRunning ? 'Cannot add manual entries while Pomodoro is active' : ''}
               >
                 + Add Manual Entry for {formatInTimezone(selectedDate, 'MMM d')}
               </button>
@@ -1361,7 +1434,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
                       <span className="font-medium">Break</span>
                       <span>•</span>
-                      <span>{formatDisplayDuration(breakTimeBetweenActiveAndLast)}</span>
+                      <span>{formatBreakDuration(breakTimeBetweenActiveAndLast)}</span>
                     </div>
                   </div>
                 );
@@ -1433,7 +1506,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                           }`}
                           title={
                             shouldDisableMerge(entry.description)
-                              ? 'Cannot merge: entries are split by other tasks or contain active entries'
+                              ? hasPomodoroSource(entry.description)
+                                ? 'Cannot merge: Pomodoro entries cannot be merged'
+                                : 'Cannot merge: entries are split by other tasks or contain active entries'
                               : `Merge ${getDuplicateCount(entry.description)} entries`
                           }
                         >
@@ -1451,7 +1526,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
                       <span className="font-medium">Break</span>
                       <span>•</span>
-                      <span>{formatDisplayDuration(breakTime)}</span>
+                      <span>{formatBreakDuration(breakTime)}</span>
                     </div>
                   </div>
                 )}

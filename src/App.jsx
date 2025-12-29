@@ -6,6 +6,7 @@ import AppLayout from './components/AppLayout';
 import DataImportExport from './components/DataImportExport';
 import Onboarding from './components/Onboarding';
 import Settings from './components/Settings';
+import PomodoroTimer from './components/PomodoroTimer';
 import {
   saveSelectedWeek,
   loadSelectedWeek,
@@ -19,6 +20,7 @@ import {
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { PomodoroProvider } from './contexts/PomodoroContext';
 import './App.css';
 
 function AppContent() {
@@ -124,6 +126,9 @@ function AppContent() {
               onTimezoneChange={changeTimezone}
               onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
             />
+          ) : currentView === 'pomodoro' ? (
+            // Pomodoro Timer View
+            <PomodoroTimer />
           ) : currentView === 'timesheet' ? (
             // Weekly Timesheet View
             <div className="p-6">
@@ -160,7 +165,9 @@ function AppWrapper() {
     <ToastProvider>
       <TimezoneProvider>
         <UserPreferencesProvider>
-          <AppContent />
+          <PomodoroProvider>
+            <AppContent />
+          </PomodoroProvider>
         </UserPreferencesProvider>
       </TimezoneProvider>
     </ToastProvider>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Menu, X, Globe, Database, Settings } from 'lucide-react';
+import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { loadSidebarState, saveSidebarState } from '../utils/storage';
 import TimezoneSelect from './TimezoneSelect';
 import DataImportExport from './DataImportExport';
+import PomodoroProgressBar from './atoms/PomodoroProgressBar';
 
 const AppLayout = ({ children, currentView, onViewChange }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
@@ -75,6 +76,12 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
       label: 'Tracker',
       icon: Clock,
       description: 'Track time in real-time'
+    },
+    {
+      id: 'pomodoro',
+      label: 'Pomodoro',
+      icon: Timer,
+      description: 'Focus with time management'
     },
     {
       id: 'timesheet',
@@ -159,8 +166,12 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
             </div>
           </nav>
 
+          {/* Show Pomodoro progress bar only when not on Pomodoro view */}
+          {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} className="mx-4"/>}
+
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-gray-200">
+            {/* Timezone Display */}
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <Globe className="w-4 h-4" />
               <span className="truncate">{selectedTimezone}</span>
@@ -186,6 +197,8 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                   {currentView === 'tracker' ? (
                     <Clock className="w-5 h-5 text-blue-600" />
+                  ) : currentView === 'pomodoro' ? (
+                    <Timer className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'timesheet' ? (
                     <Calendar className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'settings' ? (
@@ -197,6 +210,7 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
                     {currentView === 'tracker' ? 'Tracker' :
+                     currentView === 'pomodoro' ? 'Pomodoro' :
                      currentView === 'timesheet' ? 'Timesheet' :
                      currentView === 'settings' ? 'Settings' :
                      'Data'}
@@ -204,6 +218,8 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                   <p className="text-sm text-gray-500 hidden sm:block">
                     {currentView === 'tracker'
                       ? 'Track your time in real-time'
+                      : currentView === 'pomodoro'
+                      ? 'Stay focused with time management'
                       : currentView === 'timesheet'
                       ? 'View your weekly time summary'
                       : currentView === 'settings'
