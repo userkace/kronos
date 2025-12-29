@@ -315,8 +315,6 @@ export const PomodoroProvider = ({ children }) => {
         // Reset sets after long break
         console.log('Long break completed - resetting sets from', currentSet, 'to 1');
         // Clear localStorage to ensure reset takes effect
-        // localStorage.removeItem('kronos_pomodoro_current_set');
-        // localStorage.removeItem('kronos_pomodoro_completed_sets');
         setCurrentSet(1);
         setCompletedSets(0);
       }
