@@ -31,7 +31,6 @@ const PomodoroTimer = () => {
     currentSet,
     currentTask,
     isTrackingTask,
-    taskStartTime,
     startTimer,
     pauseTimer,
     resumeTimer,
