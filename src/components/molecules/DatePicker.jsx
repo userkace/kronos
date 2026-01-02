@@ -251,7 +251,7 @@ const DatePicker = ({
             <div 
               role="grid" 
               aria-labelledby="month-year"
-              className="grid grid-cols-7 gap-1"
+              className="grid grid-cols-7 gap-1 w-full"
               aria-activedescendant={selectedDate ? `date-${format(selectedDate, 'yyyy-MM-dd')}` : undefined}
             >
               {calendarDays.map((day, index) => {
@@ -267,7 +267,7 @@ const DatePicker = ({
                   <div 
                     key={index}
                     role="gridcell"
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center w-8 h-8 mx-auto"
                     aria-selected={isSelected}
                   >
                     <button
@@ -289,7 +289,7 @@ const DatePicker = ({
                       }}
                       id={`date-${format(day, 'yyyy-MM-dd')}`}
                       data-date={day.toISOString()}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mx-auto ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                         isSelected
                           ? 'bg-blue-600 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
                           : isToday
