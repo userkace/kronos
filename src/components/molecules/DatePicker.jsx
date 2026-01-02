@@ -13,7 +13,7 @@ const DatePicker = ({
   const [showPicker, setShowPicker] = React.useState(false);
 
   const { selectedTimezone } = useTimezone();
-  
+
   // Format date for display in the selected timezone
   const formatDate = (date, formatStr) => {
     if (!date) return '';
@@ -54,13 +54,13 @@ const DatePicker = ({
     // Compare dates in the selected timezone
     const dateInTZ = new Date(date.toLocaleString('en-US', { timeZone: selectedTimezone }));
     const todayInTZ = new Date(today.toLocaleString('en-US', { timeZone: selectedTimezone }));
-    
+
     // Reset hours, minutes, seconds, and milliseconds for accurate date comparison
     const dateToCompare = new Date(dateInTZ);
     dateToCompare.setHours(0, 0, 0, 0);
     const todayToCompare = new Date(todayInTZ);
     todayToCompare.setHours(0, 0, 0, 0);
-    
+
     return dateToCompare > todayToCompare;
   };
 
@@ -123,30 +123,40 @@ const DatePicker = ({
 
                 const isSelected = isDateSelected(day);
                 const isToday = isDateToday(day);
-                const isCurrentMonth = calendarDays[15] ? 
-                  day.getMonth() === calendarDays[15].getMonth() : 
+                const isCurrentMonth = calendarDays[15] ?
+                  day.getMonth() === calendarDays[15].getMonth() :
                   day.getMonth() === new Date().getMonth();
 
                 return (
                   <button
                     key={index}
                     onClick={(e) => {
-                      e.stopPropagation();
-                      onDateChange(day);
-                      setShowPicker(false);
+                        onDateChange(day);
+
+                        // Check if the selected date is in a different month than the current view
+                        const currentViewMonth = calendarDays[15]?.getMonth(); // Get the month of the current view
+                        const currentViewYear = calendarDays[15]?.getFullYear(); // Get the year of the current view
+
+                        if (day.getMonth() !== currentViewMonth || day.getFullYear() !== currentViewYear) {
+                          // Calculate how many months to move (positive or negative)
+                          const monthDiff = (day.getFullYear() - currentViewYear) * 12 + (day.getMonth() - currentViewMonth);
+                          onMonthChange(monthDiff);
+                        }
+
+                        setShowPicker(false);
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mx-auto ${
                       isSelected
                         ? 'bg-blue-600 text-white'
                         : isToday
                           ? 'bg-blue-100 text-blue-800'
-                          : isCurrentMonth
-                            ? isFutureDate(day) 
-                              ? 'text-gray-300 cursor-not-allowed'
+                          : isFutureDate(day)
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : !isCurrentMonth
+                              ? 'text-gray-400 hover:bg-gray-50'
                               : 'hover:bg-gray-100'
-                            : 'text-gray-300 hover:bg-gray-50'
                     }`}
-                    disabled={!isCurrentMonth || isFutureDate(day)}
+                    disabled={isFutureDate(day)}
                     aria-label={`Select ${format(day, 'MMMM d, yyyy')}`}
                   >
                     {day.getDate()}
