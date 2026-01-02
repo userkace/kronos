@@ -133,8 +133,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     setCurrentMonth(newMonth);
   };
 
-  // Get calendar days for the current month view
-  const calendarDays = getCalendarDays(currentMonth);
+  // Get calendar days for the current month view, memoized to prevent unnecessary recalculations
+  const calendarDays = React.useMemo(() => {
+    return getCalendarDays(currentMonth);
+  }, [currentMonth, timezone]);
 
   // Array of funny default task descriptions
   const funnyDefaultTasks = [
