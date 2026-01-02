@@ -52,38 +52,56 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // State for calendar view
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // Get days for the calendar view in the target timezone
+
+  /**
+   * Generates an array of dates for a calendar view, including days from the previous and next months
+   * to ensure a complete grid. Handles timezone conversion to ensure dates are displayed correctly
+   * in the user's selected timezone.
+   *
+   * @param {Date} date - The reference date for which to generate the calendar month.
+   *                      The calendar will display the month containing this date.
+   * @returns {Date[]} An array of Date objects representing the calendar days, where:
+   *                   - The first items (if any) are the trailing days from the previous month
+   *                   - Followed by all days of the current month
+   *                   - Ending with leading days from the next month (if needed to complete the grid)
+   *                   - The array length is always a multiple of 7 (complete weeks)
+   *                   - All dates are in UTC to maintain consistency across timezones
+   *
+   * @example
+   * // Returns an array of Date objects for the calendar view of March 2023
+   * // including days from February 26 to April 1 (assuming March 1, 2023 is a Wednesday)
+   * getCalendarDays(new Date('2023-03-15T00:00:00Z'));
+   */
   const getCalendarDays = (date) => {
     const zonedDate = toZonedTime(date, timezone);
     const year = zonedDate.getFullYear();
     const month = zonedDate.getMonth();
-    
+
     // First day of the month in target timezone
     const firstDay = toZonedTime(new Date(Date.UTC(year, month, 1)), timezone);
     // Last day of the month in target timezone
     const lastDay = toZonedTime(new Date(Date.UTC(year, month + 1, 0)), timezone);
-    
+
     // Day of week of first day (0 = Sunday, 6 = Saturday)
     const firstDayOfWeek = firstDay.getDay();
     // Total days in month
     const daysInMonth = lastDay.getDate();
-    
+
     // Calculate days to show from previous month
     const prevMonthLastDay = toZonedTime(new Date(Date.UTC(year, month, 0)), timezone);
     const daysFromPrevMonth = firstDayOfWeek;
-    
+
     // Calculate total days to show (ensuring 6 rows)
     const totalDaysToShow = Math.ceil((daysInMonth + daysFromPrevMonth) / 7) * 7;
     let daysFromNextMonth = totalDaysToShow - (daysInMonth + daysFromPrevMonth);
-    
+
     // Adjust if we have a complete week without needing extra days
     if (daysFromNextMonth < 0) {
       daysFromNextMonth = 0;
     }
-    
+
     const days = [];
-    
+
     // Add days from previous month
     if (daysFromPrevMonth > 0) {
       const prevMonthDays = prevMonthLastDay.getDate();
@@ -92,29 +110,29 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         days.push(day);
       }
     }
-    
+
     // Add days from current month
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(new Date(Date.UTC(year, month, i)));
     }
-    
+
     // Add days from next month if needed
     if (daysFromNextMonth > 0) {
       for (let i = 1; i <= daysFromNextMonth; i++) {
         days.push(new Date(Date.UTC(year, month + 1, i)));
       }
     }
-    
+
     return days;
   };
-  
+
   // Handle month navigation
   const handleMonthChange = (increment) => {
     const newMonth = new Date(currentMonth);
     newMonth.setMonth(newMonth.getMonth() + increment);
     setCurrentMonth(newMonth);
   };
-  
+
   // Get calendar days for the current month view
   const calendarDays = getCalendarDays(currentMonth);
 
@@ -1346,7 +1364,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   setSelectedDate(date);
                   // Only update the month if the selected date is in a different month
                   const newMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-                  if (newMonth.getMonth() !== currentMonth.getMonth() || 
+                  if (newMonth.getMonth() !== currentMonth.getMonth() ||
                       newMonth.getFullYear() !== currentMonth.getFullYear()) {
                     setCurrentMonth(newMonth);
                   }
