@@ -1286,11 +1286,19 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           {/* Date Navigation */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}, {formatInTimezone(selectedDate, 'MMM d, yyyy')}
-              </h1>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    <span className="sm:hidden">{formatInTimezone(selectedDate, 'MMM. d, yyyy')}</span>
+                    <span className="hidden sm:inline">{formatInTimezone(selectedDate, 'MMMM d, yyyy')}</span>
+                  </h1>
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
+                <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${isToday() ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                  {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}
+                </span>
               <button
                 onClick={handlePreviousDay}
                 className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
