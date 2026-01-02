@@ -170,14 +170,22 @@ export const saveSidebarState = (isOpen) => {
   }
 };
 
-// Load sidebar state from LocalStorage
+/**
+ * Loads the sidebar state from LocalStorage
+ * @returns {boolean} - Returns true if the sidebar should be open, false otherwise
+ */
 export const loadSidebarState = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEYS.SIDEBAR_STATE);
-    return saved ? JSON.parse(saved) : { isOpen: true }; // Default to open
+    // Handle both old object format and new boolean format for backward compatibility
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return typeof parsed === 'object' ? parsed.isOpen !== false : parsed !== false;
+    }
+    return true; // Default to open
   } catch (error) {
     console.error('Error loading sidebar state:', error);
-    return { isOpen: true }; // Default to open on error
+    return true; // Default to open on error
   }
 };
 
