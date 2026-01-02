@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
+import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown } from 'lucide-react';
+import DatePicker from './molecules/DatePicker';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
@@ -48,6 +49,48 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Check if timezone is properly initialized
   const isTimezoneInitialized = timezone && timezone !== 'UTC';
+
+  // Helper function to get days for the calendar view
+  const getCalendarDays = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    // First day of the month
+    const firstDay = new Date(year, month, 1);
+    // Last day of the month
+    const lastDay = new Date(year, month + 1, 0);
+    // Day of week of first day (0 = Sunday, 6 = Saturday)
+    const firstDayOfWeek = firstDay.getDay();
+    // Total days in month
+    const daysInMonth = lastDay.getDate();
+    // Total days from previous month to show
+    const daysFromPrevMonth = firstDayOfWeek;
+    // Total days to show
+    const totalDaysToShow = Math.ceil((daysInMonth + daysFromPrevMonth) / 7) * 7;
+    const daysFromNextMonth = totalDaysToShow - (daysInMonth + daysFromPrevMonth);
+    
+    const days = [];
+    
+    // Add days from previous month
+    for (let i = daysFromPrevMonth - 1; i >= 0; i--) {
+      const day = new Date(year, month, -i);
+      days.push(day);
+    }
+    
+    // Add days from current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      const day = new Date(year, month, i);
+      days.push(day);
+    }
+    
+    // Add days from next month
+    for (let i = 1; i <= daysFromNextMonth; i++) {
+      const day = new Date(year, month + 1, i);
+      days.push(day);
+    }
+    
+    return days;
+  };
 
   // Array of funny default task descriptions
   const funnyDefaultTasks = [
@@ -1232,6 +1275,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
+
             </div>
           </div>
 
@@ -1244,17 +1288,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
             </div>
             <div className="flex items-center space-x-2">
               <button
-                onClick={toggleShowBreaks}
-                className={`p-2 rounded-lg transition-colors ${
-                  showBreaks
-                    ? 'text-orange-600 bg-orange-50 hover:bg-orange-100'
-                    : 'text-gray-500 hover:bg-gray-200'
-                }`}
-                title={showBreaks ? 'Hide break times' : 'Show break times'}
-              >
-                <Clock className="w-5 h-5" />
-              </button>
-              <button
                 onClick={() => changeSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                 className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
                 title={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
@@ -1265,6 +1298,23 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   <ArrowDown className="w-5 h-5" />
                 )}
               </button>
+              <button
+                onClick={toggleShowBreaks}
+                className={`p-2 rounded-lg transition-colors ${
+                  showBreaks
+                    ? 'text-orange-600 bg-orange-50 hover:bg-orange-100'
+                    : 'text-gray-500 hover:bg-gray-200'
+                }`}
+                title={showBreaks ? 'Hide break times' : 'Show break times'}
+              >
+                <Clock className="w-5 h-5" />
+              </button>
+              <DatePicker
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+                timezone={timezone}
+                className="m-0"
+              />
             </div>
           </div>
         </div>
