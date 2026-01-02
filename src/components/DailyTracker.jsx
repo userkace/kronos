@@ -50,47 +50,73 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Check if timezone is properly initialized
   const isTimezoneInitialized = timezone && timezone !== 'UTC';
 
-  // Helper function to get days for the calendar view
+  // State for calendar view
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Get days for the calendar view in the target timezone
   const getCalendarDays = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
+    const zonedDate = toZonedTime(date, timezone);
+    const year = zonedDate.getFullYear();
+    const month = zonedDate.getMonth();
     
-    // First day of the month
-    const firstDay = new Date(year, month, 1);
-    // Last day of the month
-    const lastDay = new Date(year, month + 1, 0);
+    // First day of the month in target timezone
+    const firstDay = toZonedTime(new Date(Date.UTC(year, month, 1)), timezone);
+    // Last day of the month in target timezone
+    const lastDay = toZonedTime(new Date(Date.UTC(year, month + 1, 0)), timezone);
+    
     // Day of week of first day (0 = Sunday, 6 = Saturday)
     const firstDayOfWeek = firstDay.getDay();
     // Total days in month
     const daysInMonth = lastDay.getDate();
-    // Total days from previous month to show
+    
+    // Calculate days to show from previous month
+    const prevMonthLastDay = toZonedTime(new Date(Date.UTC(year, month, 0)), timezone);
     const daysFromPrevMonth = firstDayOfWeek;
-    // Total days to show
+    
+    // Calculate total days to show (ensuring 6 rows)
     const totalDaysToShow = Math.ceil((daysInMonth + daysFromPrevMonth) / 7) * 7;
-    const daysFromNextMonth = totalDaysToShow - (daysInMonth + daysFromPrevMonth);
+    let daysFromNextMonth = totalDaysToShow - (daysInMonth + daysFromPrevMonth);
+    
+    // Adjust if we have a complete week without needing extra days
+    if (daysFromNextMonth < 0) {
+      daysFromNextMonth = 0;
+    }
     
     const days = [];
     
     // Add days from previous month
-    for (let i = daysFromPrevMonth - 1; i >= 0; i--) {
-      const day = new Date(year, month, -i);
-      days.push(day);
+    if (daysFromPrevMonth > 0) {
+      const prevMonthDays = prevMonthLastDay.getDate();
+      for (let i = 0; i < daysFromPrevMonth; i++) {
+        const day = new Date(Date.UTC(year, month - 1, prevMonthDays - daysFromPrevMonth + i + 1));
+        days.push(day);
+      }
     }
     
     // Add days from current month
     for (let i = 1; i <= daysInMonth; i++) {
-      const day = new Date(year, month, i);
-      days.push(day);
+      days.push(new Date(Date.UTC(year, month, i)));
     }
     
-    // Add days from next month
-    for (let i = 1; i <= daysFromNextMonth; i++) {
-      const day = new Date(year, month + 1, i);
-      days.push(day);
+    // Add days from next month if needed
+    if (daysFromNextMonth > 0) {
+      for (let i = 1; i <= daysFromNextMonth; i++) {
+        days.push(new Date(Date.UTC(year, month + 1, i)));
+      }
     }
     
     return days;
   };
+  
+  // Handle month navigation
+  const handleMonthChange = (increment) => {
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(newMonth.getMonth() + increment);
+    setCurrentMonth(newMonth);
+  };
+  
+  // Get calendar days for the current month view
+  const calendarDays = getCalendarDays(currentMonth);
 
   // Array of funny default task descriptions
   const funnyDefaultTasks = [
@@ -1270,8 +1296,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
               <button
                 onClick={handleNextDay}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                title="Next Day"
+                className={`p-2 rounded-lg transition-colors ${
+                  isToday()
+                    ? 'cursor-not-allowed text-gray-400'
+                    : 'hover:bg-gray-200'
+                }`}
+                title={isToday() ? "Current day" : "Next Day"}
+                disabled={isToday()}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -1311,9 +1342,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               </button>
               <DatePicker
                 selectedDate={selectedDate}
-                onDateChange={setSelectedDate}
-                timezone={timezone}
-                className="m-0"
+                onDateChange={(date) => {
+                  setSelectedDate(date);
+                  // Only update the month if the selected date is in a different month
+                  const newMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+                  if (newMonth.getMonth() !== currentMonth.getMonth() || 
+                      newMonth.getFullYear() !== currentMonth.getFullYear()) {
+                    setCurrentMonth(newMonth);
+                  }
+                }}
+                onMonthChange={handleMonthChange}
+                calendarDays={calendarDays}
               />
             </div>
           </div>
