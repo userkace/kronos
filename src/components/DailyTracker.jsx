@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, Calendar } from 'lucide-react';
+import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
@@ -27,7 +28,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     faviconManager.init();
   }, []);
 
+  // State for the current task input and active entry
   const [currentTask, setCurrentTask] = useState('');
+  const {
+    sortOrder,
+    changeSortOrder,
+    showBreaks,
+    toggleShowBreaks
+  } = useUserPreferences();
   const [activeEntry, setActiveEntry] = useState(null);
   const [selectedDateEntries, setSelectedDateEntries] = useState([]); // Renamed from todayEntries
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -372,7 +380,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const currentData = loadTimesheetData();
       const storageKey = getStorageDateKey(selectedDate);
       const currentEntries = currentData[storageKey] || [];
-      
+
       // Check if entries have changed
       if (currentEntries.length !== selectedDateEntries.length) {
         console.log('Entries count changed, reloading data');
@@ -642,7 +650,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const timerStartDate = format(toZonedTime(parseISO(activeEntry.startTime), timezone), 'yyyy-MM-dd');
     const currentDateInTimezone = format(currentTimeInTimezone, 'yyyy-MM-dd');
     const storageKey = getStorageDateKey(timerStartDate);
-    
+
     const allData = loadTimesheetData() || {};
     if (!allData[storageKey]) {
       allData[storageKey] = [];
@@ -680,7 +688,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const currentDateBase = parse(currentDateInTimezone, 'yyyy-MM-dd', new Date());
       const midnightInTimezone = parse('00:00:00', 'HH:mm:ss', currentDateBase);
       const midnightUTC = fromZonedTime(midnightInTimezone, timezone);
-      
+
       // Create the today/present segment (midnight to current time)
       const todayEntry = {
         id: Date.now(),
@@ -699,17 +707,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       }
       allData[newStorageKey].push(todayEntry);
       saveTimesheetData(allData);
-      
+
       // Update display to show the current day's entries if we're viewing today
       if (isToday()) {
         const newDateEntries = allData[newStorageKey] || [];
         const sortedNewEntries = newDateEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
         setSelectedDateEntries(sortedNewEntries);
       }
-      
+
       success(`Task time recorded for both ${timerStartDate} and ${currentDateInTimezone}`);
     }
-    
+
     setActiveEntry(null);
 
     // Update display if we're viewing the timer's original date
@@ -768,7 +776,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       warning('Cannot add manual entries while Pomodoro is active');
       return;
     }
-    
+
     setModalState({
       isOpen: true,
       mode,
@@ -810,13 +818,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     for (let i = 0; i < sortedEntries.length - 1; i++) {
       const currentEntry = sortedEntries[i];
       const nextEntry = sortedEntries[i + 1];
-      
+
       // Get all entries between current and next
-      const entriesBetween = entries.filter(entry => 
+      const entriesBetween = entries.filter(entry =>
         new Date(entry.startTime) > new Date(currentEntry.startTime) &&
         new Date(entry.startTime) < new Date(nextEntry.startTime)
       );
-      
+
       if (entriesBetween.length > 0) return true;
     }
 
@@ -1227,11 +1235,37 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 text-gray-600">
-            <Clock className="w-5 h-5" />
-            <span className="text-2xl font-semibold text-gray-900">
-              {calculateDailyTotal()}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline space-x-2 text-gray-600">
+              <Clock className="w-5 h-5 self-center mt-1" />
+              <span className="text-2xl font-semibold text-gray-900">
+                {calculateDailyTotal()}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={toggleShowBreaks}
+                className={`p-2 rounded-lg transition-colors ${
+                  showBreaks
+                    ? 'text-orange-600 bg-orange-50 hover:bg-orange-100'
+                    : 'text-gray-500 hover:bg-gray-200'
+                }`}
+                title={showBreaks ? 'Hide break times' : 'Show break times'}
+              >
+                <Clock className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => changeSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
+              >
+                {sortOrder === 'asc' ? (
+                  <ArrowUp className="w-5 h-5" />
+                ) : (
+                  <ArrowDown className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1423,7 +1457,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           )}
 
           {/* Break Time Display between running and previous entry */}
-          {(() => {
+          {showBreaks && (() => {
             const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
             if (activeEntry && completedEntriesAsc.length > 0) {
               const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
@@ -1445,8 +1479,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
           {/* Completed Entries */}
           {(() => {
-            const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-            const displayEntries = completedEntriesAsc.slice().reverse();
+            const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+            const displayEntries = sortOrder === 'asc'
+              ? [...completedEntries]
+              : [...completedEntries].reverse();
 
             return displayEntries.map((entry, index) => {
               // Convert both times to the selected timezone for accurate calculation
@@ -1454,8 +1490,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
               const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
 
-              const previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
-              const breakTime = calculateBreakTime(entry, previousEntry);
+              // Get the correct previous entry based on sort order
+              let previousEntry = null;
+              if (sortOrder === 'asc') {
+                // In ascending order, previous entry is at index - 1
+                previousEntry = index > 0 ? displayEntries[index - 1] : null;
+              } else {
+                // In descending order, previous entry is at index + 1
+                previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
+              }
+              const breakTime = previousEntry ? calculateBreakTime(entry, previousEntry) : null;
 
               return (
                 <React.Fragment key={entry.id}>
@@ -1521,7 +1565,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 </div>
 
                 {/* Break Time Display between this entry and the previous older entry */}
-                {breakTime && (
+                {showBreaks && breakTime && (
                   <div className="text-center py-2">
                     <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
                       <span className="font-medium">Break</span>
