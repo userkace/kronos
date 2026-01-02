@@ -1348,6 +1348,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 onClick={() => changeSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                 className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
                 title={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
+                aria-label={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
               >
                 {sortOrder === 'asc' ? (
                   <ArrowUp className="w-5 h-5" />
@@ -1363,6 +1364,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     : 'text-gray-500 hover:bg-gray-200'
                 }`}
                 title={showBreaks ? 'Hide break times' : 'Show break times'}
+                aria-label={showBreaks ? 'Hide break times' : 'Show break times'}
+                aria-pressed={showBreaks}
               >
                 <Coffee className="w-5 h-5" />
               </button>
