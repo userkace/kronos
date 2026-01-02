@@ -1,5 +1,5 @@
-import React from 'react';
-import { format } from 'date-fns';
+import React, { useEffect, useRef } from 'react';
+import { format, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTimezone } from '../../contexts/TimezoneContext';
 
@@ -11,8 +11,114 @@ const DatePicker = ({
   className = ''
 }) => {
   const [showPicker, setShowPicker] = React.useState(false);
-
+  const [focusedDate, setFocusedDate] = React.useState(selectedDate || new Date());
+  const popupRef = useRef(null);
+  const triggerRef = useRef(null);
   const { selectedTimezone } = useTimezone();
+
+  // Close the popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popupRef.current && !popupRef.current.contains(event.target) && 
+          triggerRef.current && !triggerRef.current.contains(event.target)) {
+        setShowPicker(false);
+      }
+    };
+
+    if (showPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      // Set focus to the first focusable element in the dialog
+      const firstFocusable = popupRef.current?.querySelector('button');
+      if (firstFocusable) firstFocusable.focus();
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPicker]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e) => {
+    if (!showPicker) return;
+
+    const currentDate = focusedDate || selectedDate || new Date();
+    let newDate = new Date(currentDate);
+    let shouldUpdate = false;
+
+    switch (e.key) {
+      case 'Escape':
+        setShowPicker(false);
+        triggerRef.current?.focus();
+        return;
+      case 'ArrowLeft':
+        newDate = subDays(currentDate, 1);
+        shouldUpdate = true;
+        break;
+      case 'ArrowRight':
+        newDate = addDays(currentDate, 1);
+        shouldUpdate = true;
+        break;
+      case 'ArrowUp':
+        newDate = subDays(currentDate, 7);
+        shouldUpdate = true;
+        break;
+      case 'ArrowDown':
+        newDate = addDays(currentDate, 7);
+        shouldUpdate = true;
+        break;
+      case 'Home':
+        newDate = startOfWeek(currentDate);
+        shouldUpdate = true;
+        break;
+      case 'End':
+        newDate = endOfWeek(currentDate);
+        shouldUpdate = true;
+        break;
+      case 'PageUp':
+        newDate = e.shiftKey ? addMonths(currentDate, -12) : subMonths(currentDate, 1);
+        shouldUpdate = true;
+        onMonthChange(e.shiftKey ? -12 : -1);
+        break;
+      case 'PageDown':
+        newDate = e.shiftKey ? addMonths(currentDate, 12) : addMonths(currentDate, 1);
+        shouldUpdate = true;
+        onMonthChange(e.shiftKey ? 12 : 1);
+        break;
+      case ' ':
+      case 'Enter':
+        if (document.activeElement.getAttribute('role') === 'gridcell') {
+          document.activeElement.click();
+        }
+        return;
+      default:
+        return;
+    }
+
+    if (shouldUpdate) {
+      e.preventDefault();
+      setFocusedDate(newDate);
+      
+      // Update month view if needed
+      if (!isSameMonth(newDate, currentDate)) {
+        const monthDiff = (newDate.getFullYear() - currentDate.getFullYear()) * 12 + 
+                         (newDate.getMonth() - currentDate.getMonth());
+        onMonthChange(monthDiff);
+      }
+    }
+  };
+
+  // Focus the selected date when the popup opens or the month changes
+  useEffect(() => {
+    if (showPicker && popupRef.current) {
+      const selectedButton = popupRef.current.querySelector('[aria-selected="true"]');
+      if (selectedButton) {
+        selectedButton.focus();
+      } else if (focusedDate) {
+        const focusedButton = popupRef.current.querySelector(`[data-date="${focusedDate.toISOString()}"]`);
+        if (focusedButton) focusedButton.focus();
+      }
+    }
+  }, [showPicker, focusedDate, calendarDays]);
 
   // Format date for display in the selected timezone
   const formatDate = (date, formatStr) => {
@@ -67,9 +173,16 @@ const DatePicker = ({
   return (
     <div className={`relative ${className}`}>
       <button
-        onClick={() => setShowPicker(!showPicker)}
+        ref={triggerRef}
+        onClick={() => {
+          setShowPicker(!showPicker);
+          setFocusedDate(selectedDate || new Date());
+        }}
         className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-        title="Select date"
+        aria-haspopup="dialog"
+        aria-expanded={showPicker}
+        aria-label={`Choose date, selected date is ${formatDate(selectedDate, 'MMMM d, yyyy')}`}
+        title={`Select date (${formatDate(selectedDate, 'MMMM d, yyyy')})`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -78,8 +191,14 @@ const DatePicker = ({
 
       {showPicker && (
         <div
-          className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+          ref={popupRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Calendar"
+          className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 focus:outline-none"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={handleKeyDown}
+          tabIndex="-1"
         >
           <div className="p-4">
             {/* Month Navigation */}
@@ -94,7 +213,11 @@ const DatePicker = ({
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <div className="font-medium">
+              <div 
+                className="font-medium"
+                id="month-year"
+                aria-live="polite"
+              >
                 {formatDate(calendarDays[15] || new Date(), 'MMMM yyyy')}
               </div>
               <button
@@ -110,14 +233,27 @@ const DatePicker = ({
             </div>
 
             {/* Day headers */}
-            <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2">
-              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                <div key={day} className="py-1">{day}</div>
+            <div 
+              role="row" 
+              className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2"
+              aria-hidden="true"
+            >
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day, i) => (
+                <div key={day} className="py-1" role="columnheader" aria-label={day}>
+                  <abbr title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]}>
+                    {day}
+                  </abbr>
+                </div>
               ))}
             </div>
 
             {/* Calendar days */}
-            <div className="grid grid-cols-7 gap-1">
+            <div 
+              role="grid" 
+              aria-labelledby="month-year"
+              className="grid grid-cols-7 gap-1"
+              aria-activedescendant={selectedDate ? `date-${format(selectedDate, 'yyyy-MM-dd')}` : undefined}
+            >
               {calendarDays.map((day, index) => {
                 if (!day) return <div key={index} className="h-8"></div>;
 
@@ -128,39 +264,49 @@ const DatePicker = ({
                   day.getMonth() === new Date().getMonth();
 
                 return (
-                  <button
+                  <div 
                     key={index}
-                    onClick={(e) => {
+                    role="gridcell"
+                    className="flex items-center justify-center"
+                    aria-selected={isSelected}
+                  >
+                    <button
+                      onClick={(e) => {
                         onDateChange(day);
-
+                        setFocusedDate(day);
+                        
                         // Check if the selected date is in a different month than the current view
-                        const currentViewMonth = calendarDays[15]?.getMonth(); // Get the month of the current view
-                        const currentViewYear = calendarDays[15]?.getFullYear(); // Get the year of the current view
+                        const currentViewMonth = calendarDays[15]?.getMonth();
+                        const currentViewYear = calendarDays[15]?.getFullYear();
 
                         if (day.getMonth() !== currentViewMonth || day.getFullYear() !== currentViewYear) {
-                          // Calculate how many months to move (positive or negative)
                           const monthDiff = (day.getFullYear() - currentViewYear) * 12 + (day.getMonth() - currentViewMonth);
                           onMonthChange(monthDiff);
                         }
 
                         setShowPicker(false);
-                    }}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mx-auto ${
-                      isSelected
-                        ? 'bg-blue-600 text-white'
-                        : isToday
-                          ? 'bg-blue-100 text-blue-800'
-                          : isFutureDate(day)
-                            ? 'text-gray-300 cursor-not-allowed'
-                            : !isCurrentMonth
-                              ? 'text-gray-400 hover:bg-gray-50'
-                              : 'hover:bg-gray-100'
-                    }`}
-                    disabled={isFutureDate(day)}
-                    aria-label={`Select ${format(day, 'MMMM d, yyyy')}`}
-                  >
-                    {day.getDate()}
-                  </button>
+                        triggerRef.current?.focus();
+                      }}
+                      id={`date-${format(day, 'yyyy-MM-dd')}`}
+                      data-date={day.toISOString()}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mx-auto ${
+                        isSelected
+                          ? 'bg-blue-600 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                          : isToday
+                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 focus:bg-blue-200'
+                            : isFutureDate(day)
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : !isCurrentMonth
+                                ? 'text-gray-400 hover:bg-gray-50 focus:bg-gray-50'
+                                : 'hover:bg-gray-100 focus:bg-gray-100'
+                      } focus:outline-none`}
+                      disabled={isFutureDate(day)}
+                      aria-label={`${format(day, 'EEEE, MMMM d, yyyy')}${isSelected ? ' (selected)' : ''}${!isCurrentMonth ? ' (not in current month)' : ''}`}
+                      tabIndex={isSelected ? 0 : -1}
+                    >
+                      {day.getDate()}
+                    </button>
+                  </div>
                 );
               })}
             </div>
