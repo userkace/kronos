@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
+import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown, Calendar, Coffee } from 'lucide-react';
 import DatePicker from './molecules/DatePicker';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import TimezoneSelect from './TimezoneSelect';
@@ -1338,7 +1338,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 }`}
                 title={showBreaks ? 'Hide break times' : 'Show break times'}
               >
-                <Clock className="w-5 h-5" />
+                <Coffee className="w-5 h-5" />
               </button>
               <DatePicker
                 selectedDate={selectedDate}
