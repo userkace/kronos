@@ -251,7 +251,7 @@ const DatePicker = ({
               role="grid" 
               aria-labelledby="month-year"
               className="grid grid-cols-7 gap-1 w-full"
-              aria-activedescendant={selectedDate ? `date-${format(selectedDate, 'yyyy-MM-dd')}` : undefined}
+              aria-activedescendant={focusedDate ? `date-${format(focusedDate, 'yyyy-MM-dd')}` : undefined}
             >
               {calendarDays.map((day, index) => {
                 // Convert day to the selected timezone for display and comparison
