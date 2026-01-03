@@ -223,10 +223,10 @@ const DatePicker = ({
     ];
   };
 
-  // Get years array based on current year range
+  // Get years array based on current year range (20 years for 4x5 grid)
   const getYears = () => {
     const years = [];
-    for (let i = yearRangeStart; i <= yearRangeStart + 20; i++) {
+    for (let i = yearRangeStart; i <= yearRangeStart + 19; i++) {
       years.push(i);
     }
     return years;
@@ -235,7 +235,7 @@ const DatePicker = ({
   // Get year range title for display
   const getYearRangeTitle = () => {
     const startYear = yearRangeStart;
-    const endYear = yearRangeStart + 20;
+    const endYear = yearRangeStart + 19;
     return `${startYear}-${endYear}`;
   };
 
@@ -282,7 +282,7 @@ const DatePicker = ({
                     newDate.setFullYear(newDate.getFullYear() - 1);
                     setCurrentDisplayDate(newDate);
                   } else if (viewMode === 'years') {
-                    setYearRangeStart(yearRangeStart - 21);
+                    setYearRangeStart(yearRangeStart - 20);
                   }
                 }}
                 className="p-1 rounded-full hover:bg-gray-100"
@@ -327,12 +327,16 @@ const DatePicker = ({
                     >
                       <ArrowDownLeft className="w-4 h-4" />
                     </button>
-                    <div 
-                      className="font-medium"
-                      aria-live="polite"
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewMode('years');
+                      }}
+                      className="font-medium hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                      aria-label="Select year"
                     >
                       {formatDate(currentDisplayDate, 'yyyy')}
-                    </div>
+                    </button>
                   </>
                 )}
                 {viewMode === 'years' && (
@@ -366,7 +370,7 @@ const DatePicker = ({
                     newDate.setFullYear(newDate.getFullYear() + 1);
                     setCurrentDisplayDate(newDate);
                   } else if (viewMode === 'years') {
-                    setYearRangeStart(yearRangeStart + 21);
+                    setYearRangeStart(yearRangeStart + 20);
                   }
                 }}
                 className="p-1 rounded-full hover:bg-gray-100"
