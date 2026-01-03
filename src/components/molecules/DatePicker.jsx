@@ -79,6 +79,7 @@ const DatePicker = ({
         const monthDelta = e.shiftKey ? -12 : -1;
         if (onMonthChange) {
           onMonthChange(monthDelta);
+          shouldUpdate = true;
           return;
         }
         newDate = addMonths(currentDate, monthDelta);
@@ -89,6 +90,7 @@ const DatePicker = ({
         const monthDelta = e.shiftKey ? 12 : 1;
         if (onMonthChange) {
           onMonthChange(monthDelta);
+          shouldUpdate = true;
           return;
         }
         newDate = addMonths(currentDate, monthDelta);
