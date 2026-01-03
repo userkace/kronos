@@ -479,21 +479,21 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Get completed entries only (filter out active entries)
     const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-    
+
     // Handle active entry by inserting it in correct chronological position
     let allEntriesChronological = [...completedEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
     if (activeEntry) {
       // Find the correct position to insert active entry chronologically
       const activeStartTime = new Date(activeEntry.startTime);
-      let insertIndex = allEntriesChronological.findIndex(entry => 
+      let insertIndex = allEntriesChronological.findIndex(entry =>
         new Date(entry.startTime) > activeStartTime
       );
-      
+
       // If no entry starts after active entry, add to the end
       if (insertIndex === -1) {
         insertIndex = allEntriesChronological.length;
       }
-      
+
       // Insert active entry at the correct chronological position
       allEntriesChronological.splice(insertIndex, 0, activeEntry);
     }
@@ -1430,12 +1430,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 // Handle unexpected item types with warning and fallback
                 if (!item || !item.type) {
                   warning('Invalid entry detected in task list');
+                  return null;
                 }
 
                 if (item.type === 'active') {
                   // Validate active item has required data and ID
                   if (!item.data || !item.data.id) {
                     error('Invalid active entry detected - missing required data');
+                    return null;
                   }
 
                   return (
@@ -1503,6 +1505,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   // Validate break item has required data and breakKey
                   if (!item.data || !item.breakKey) {
                     error('Invalid break entry detected - missing required data');
+                    return null;
                   }
 
                   return (
@@ -1527,10 +1530,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 } else {
                   // Entry type
                   const entry = item.data;
-                  
+
                   // Validate entry has required data and ID
                   if (!entry || !entry.id) {
                     error('Invalid time entry detected - missing required data');
+                    return null;
                   }
 
                   const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
@@ -1624,13 +1628,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               <Clock className="w-16 h-16 mx-auto mb-4" />
             </div>
             <h3 className="text-xl font-semibold text-gray-500 mb-2">
-              {isToday() 
+              {isToday()
                 ? "No time entries yet"
                 : "No time entries for this date"
               }
             </h3>
             <p className="text-gray-400">
-              {isToday() 
+              {isToday()
                 ? "Start tracking your time by entering a task above and clicking Start"
                 : "Add manual time entries for this date using the Add Manual Entry button above"
               }
