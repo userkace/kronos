@@ -542,6 +542,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Format break time with seconds always included
   const formatBreakDuration = (seconds) => {
+    // Validate that seconds is a positive number
+    if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) {
+      return 'Invalid break time';
+    }
+    
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -1506,6 +1511,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   // Validate break item has required data and breakKey
                   if (!item.data || !item.breakKey) {
                     error('Invalid break entry detected - missing required data');
+                    return null;
+                  }
+
+                  // Validate that break data is a positive number
+                  if (typeof item.data !== 'number' || isNaN(item.data) || item.data < 0) {
+                    error('Invalid break entry detected - break time must be a positive number');
                     return null;
                   }
 
