@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
@@ -1402,7 +1402,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         <div className="space-y-3">
           {/* Unified Task Entries with Layout Animation */}
           <AnimatePresence mode="popLayout">
-            {(() => {
+            {useMemo(() => {
               // Create a unified display that includes both entries and breaks in correct positions
               const unifiedDisplay = [];
               
@@ -1668,7 +1668,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   );
                 }
               });
-            })()}
+            }, [activeEntry, selectedDateEntries, sortOrder, showBreaks])}
 
           </AnimatePresence>
         </div>
