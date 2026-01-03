@@ -278,11 +278,19 @@ const DatePicker = ({
                         setFocusedDate(day);
                         
                         // Check if the selected date is in a different month than the current view
-                        const currentViewMonth = calendarDays[15]?.getMonth();
-                        const currentViewYear = calendarDays[15]?.getFullYear();
+                        // Use timezone-aware comparison to avoid edge cases with timezone conversion
+                        const currentViewDate = calendarDays[15] ? 
+                          toZonedTime(calendarDays[15], selectedTimezone) : 
+                          toZonedTime(new Date(), selectedTimezone);
+                        const currentViewMonth = currentViewDate.getMonth();
+                        const currentViewYear = currentViewDate.getFullYear();
+                        
+                        const selectedDateInTZ = toZonedTime(day, selectedTimezone);
+                        const selectedMonth = selectedDateInTZ.getMonth();
+                        const selectedYear = selectedDateInTZ.getFullYear();
 
-                        if (day.getMonth() !== currentViewMonth || day.getFullYear() !== currentViewYear) {
-                          const monthDiff = (day.getFullYear() - currentViewYear) * 12 + (day.getMonth() - currentViewMonth);
+                        if (selectedMonth !== currentViewMonth || selectedYear !== currentViewYear) {
+                          const monthDiff = (selectedYear - currentViewYear) * 12 + (selectedMonth - currentViewMonth);
                           onMonthChange(monthDiff);
                         }
 
