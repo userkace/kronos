@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { format, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTimezone } from '../../contexts/TimezoneContext';
 
