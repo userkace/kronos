@@ -1414,6 +1414,22 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   type: 'active',
                   data: activeEntry
                 });
+                
+                // Add break between active entry and last completed entry
+                const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+                if (completedEntriesAsc.length > 0) {
+                  const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
+                  const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
+                  if (breakTimeBetweenActiveAndLast) {
+                    unifiedDisplay.push({
+                      type: 'break',
+                      data: breakTimeBetweenActiveAndLast,
+                      beforeEntryId: activeEntry.id,
+                      afterEntryId: lastCompleted.id,
+                      breakKey: `active-break-${activeEntry.id}-${lastCompleted.id}`
+                    });
+                  }
+                }
               }
 
               // Create chronological entries for break time calculation
@@ -1656,41 +1672,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 }
               });
             })()}
-          </AnimatePresence>
 
-          {/* Break Time Display between running and previous entry */}
-          <AnimatePresence>
-            {showBreaks && (() => {
-              const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-              if (activeEntry && completedEntriesAsc.length > 0) {
-                const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
-                const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
-                if (breakTimeBetweenActiveAndLast) {
-                  return (
-                    <motion.div
-                      key="active-break-indicator"
-                      initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="text-center py-2"
-                    >
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.1, duration: 0.3 }}
-                        className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
-                      >
-                        <span className="font-medium">Break</span>
-                        <span>•</span>
-                        <span>{formatBreakDuration(breakTimeBetweenActiveAndLast)}</span>
-                      </motion.div>
-                    </motion.div>
-                  );
-                }
-              }
-              return null;
-            })()}
           </AnimatePresence>
         </div>
 
