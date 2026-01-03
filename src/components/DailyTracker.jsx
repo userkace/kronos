@@ -1505,12 +1505,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                             : 'bg-green-600 hover:bg-green-700 text-white'
                         }`}
                         title={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : ''}
+                        aria-label={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : `Continue task: ${entry.description}`}
                       >
                         <Play className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleOpenModal('edit', entry)}
                         className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
+                        aria-label={`Edit task: ${entry.description}`}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
