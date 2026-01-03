@@ -1398,7 +1398,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         )}
 
         {/* Task List */}
-        <div className="space-y-3" layout>
+        <div className="space-y-3">
           {/* Unified Task Entries with Layout Animation */}
           <AnimatePresence mode="popLayout">
             {(() => {
