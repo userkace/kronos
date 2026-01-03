@@ -1218,6 +1218,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   <AnimatePresence>
                     {showBreaks && breakTotal !== '0s' && (
                       <motion.span
+                        key="break-total"
                         initial={{ opacity: 0, scale: 0, x: -50 }}
                         animate={{ opacity: 1, scale: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0, x: -50 }}
