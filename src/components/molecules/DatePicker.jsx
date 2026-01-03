@@ -75,16 +75,26 @@ const DatePicker = ({
         newDate = endOfWeek(currentDate);
         shouldUpdate = true;
         break;
-      case 'PageUp':
-        newDate = e.shiftKey ? addMonths(currentDate, -12) : subMonths(currentDate, 1);
+      case 'PageUp': {
+        const monthDelta = e.shiftKey ? -12 : -1;
+        if (onMonthChange) {
+          onMonthChange(monthDelta);
+          return;
+        }
+        newDate = addMonths(currentDate, monthDelta);
         shouldUpdate = true;
-        onMonthChange(e.shiftKey ? -12 : -1);
         break;
-      case 'PageDown':
-        newDate = e.shiftKey ? addMonths(currentDate, 12) : addMonths(currentDate, 1);
+      }
+      case 'PageDown': {
+        const monthDelta = e.shiftKey ? 12 : 1;
+        if (onMonthChange) {
+          onMonthChange(monthDelta);
+          return;
+        }
+        newDate = addMonths(currentDate, monthDelta);
         shouldUpdate = true;
-        onMonthChange(e.shiftKey ? 12 : 1);
         break;
+      }
       case ' ':
       case 'Enter':
         if (document.activeElement.getAttribute('role') === 'gridcell') {
