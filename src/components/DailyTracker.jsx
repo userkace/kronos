@@ -1575,17 +1575,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       style={{ display: showBreaks ? 'block' : 'none' }}
                       className="text-center py-2"
                     >
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: showBreaks ? 1 : 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ delay: 0.1, duration: 0.3 }}
+                      <div
                         className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
                       >
                         <span className="font-medium">Break</span>
                         <span>•</span>
                         <span>{formatBreakDuration(item.data)}</span>
-                      </motion.div>
+                      </div>
                     </motion.div>
                   );
                 } else {
