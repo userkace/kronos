@@ -15,6 +15,7 @@ const DatePicker = ({
   const [focusedDate, setFocusedDate] = React.useState(selectedDate || new Date());
   const [viewMode, setViewMode] = React.useState('days'); // 'days', 'months', 'years'
   const [currentDisplayDate, setCurrentDisplayDate] = React.useState(new Date());
+  const [yearRangeStart, setYearRangeStart] = React.useState(new Date().getFullYear() - 10);
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
   const { selectedTimezone } = useTimezone();
@@ -222,14 +223,20 @@ const DatePicker = ({
     ];
   };
 
-  // Get years array (current year ± 10 years)
+  // Get years array based on current year range
   const getYears = () => {
-    const currentYear = new Date().getFullYear();
     const years = [];
-    for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+    for (let i = yearRangeStart; i <= yearRangeStart + 20; i++) {
       years.push(i);
     }
     return years;
+  };
+
+  // Get year range title for display
+  const getYearRangeTitle = () => {
+    const startYear = yearRangeStart;
+    const endYear = yearRangeStart + 20;
+    return `${startYear}-${endYear}`;
   };
 
   return (
@@ -275,9 +282,7 @@ const DatePicker = ({
                     newDate.setFullYear(newDate.getFullYear() - 1);
                     setCurrentDisplayDate(newDate);
                   } else if (viewMode === 'years') {
-                    const newDate = new Date(currentDisplayDate);
-                    newDate.setFullYear(newDate.getFullYear() - 20);
-                    setCurrentDisplayDate(newDate);
+                    setYearRangeStart(yearRangeStart - 21);
                   }
                 }}
                 className="p-1 rounded-full hover:bg-gray-100"
@@ -346,7 +351,7 @@ const DatePicker = ({
                       className="font-medium"
                       aria-live="polite"
                     >
-                      {Math.floor(currentDisplayDate.getFullYear() / 10) * 10}-{Math.floor(currentDisplayDate.getFullYear() / 10) * 10 + 9}
+                      {getYearRangeTitle()}
                     </div>
                   </>
                 )}
@@ -361,9 +366,7 @@ const DatePicker = ({
                     newDate.setFullYear(newDate.getFullYear() + 1);
                     setCurrentDisplayDate(newDate);
                   } else if (viewMode === 'years') {
-                    const newDate = new Date(currentDisplayDate);
-                    newDate.setFullYear(newDate.getFullYear() + 20);
-                    setCurrentDisplayDate(newDate);
+                    setYearRangeStart(yearRangeStart + 21);
                   }
                 }}
                 className="p-1 rounded-full hover:bg-gray-100"
