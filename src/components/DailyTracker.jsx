@@ -448,31 +448,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
   }, [selectedDateEntries, timezone]); // Re-save only when entries or timezone changes, NOT when selectedDate changes
 
-  // Memoized break total calculation to avoid expensive recalculation on every render
-  const breakTotal = useMemo(() => {
-    return calculateDailyBreakTotal();
-  }, [selectedDateEntries, activeEntry, calculateBreakTime]);
-
-  // Calculate duration for active entry
-  const getActiveDuration = (entry) => {
-    if (!entry) return '0:00:00';
-
-    // Convert both times to the selected timezone for accurate calculation
-    const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-    const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone);
-
-    const seconds = differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
-    return formatDuration(seconds);
-  };
-
-  // Format duration in HH:MM:SS
-  const formatDuration = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
   // Format duration for display (h min format)
   const formatDisplayDuration = (seconds) => {
     if (seconds < 60) return `${seconds}s`;
@@ -481,17 +456,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
-  };
-
-  // Format break time with seconds always included
-  const formatBreakDuration = (seconds) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    if (minutes < 60) return `${minutes}m ${remainingSeconds}s`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m ${remainingSeconds}s` : `${hours}h ${remainingSeconds}s`;
   };
 
   // Calculate break time between two consecutive entries
@@ -507,30 +471,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     if (breakSeconds <= 10) return null;
 
     return breakSeconds;
-  };
-
-  // Calculate total daily time
-  const calculateDailyTotal = () => {
-    let totalSeconds = 0;
-
-    // Add completed entries
-    selectedDateEntries.forEach(entry => {
-      if (!entry.isActive && entry.endTime) {
-        // Convert both times to the selected timezone for accurate calculation
-        const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-        const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
-        totalSeconds += differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
-      }
-    });
-
-    // Add active entry time
-    if (activeEntry) {
-      const startTimeInTimezone = toZonedTime(parseISO(activeEntry.startTime), timezone);
-      const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone); // Use the ref for consistent time
-      totalSeconds += differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
-    }
-
-    return formatDisplayDuration(totalSeconds);
   };
 
   // Calculate total break time for the day
@@ -561,6 +501,66 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     return formatDisplayDuration(totalBreakSeconds);
+  };
+
+  // Memoized break total calculation to avoid expensive recalculation on every render
+  const breakTotal = useMemo(() => {
+    return calculateDailyBreakTotal();
+  }, [selectedDateEntries, activeEntry]);
+
+  // Calculate duration for active entry
+  const getActiveDuration = (entry) => {
+    if (!entry) return '0:00:00';
+
+    // Convert both times to the selected timezone for accurate calculation
+    const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
+    const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone);
+
+    const seconds = differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
+    return formatDuration(seconds);
+  };
+
+  // Format duration in HH:MM:SS
+  const formatDuration = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Format break time with seconds always included
+  const formatBreakDuration = (seconds) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    if (minutes < 60) return `${minutes}m ${remainingSeconds}s`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m ${remainingSeconds}s` : `${hours}h ${remainingSeconds}s`;
+  };
+
+  // Calculate total daily time
+  const calculateDailyTotal = () => {
+    let totalSeconds = 0;
+
+    // Add completed entries
+    selectedDateEntries.forEach(entry => {
+      if (!entry.isActive && entry.endTime) {
+        // Convert both times to the selected timezone for accurate calculation
+        const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
+        const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
+        totalSeconds += differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
+      }
+    });
+
+    // Add active entry time
+    if (activeEntry) {
+      const startTimeInTimezone = toZonedTime(parseISO(activeEntry.startTime), timezone);
+      const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone); // Use the ref for consistent time
+      totalSeconds += differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
+    }
+
+    return formatDisplayDuration(totalSeconds);
   };
 
   // Start new timer (only works on current date)
