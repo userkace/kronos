@@ -7,14 +7,18 @@ class StorageEventSystem {
     this.lastKnownData = new Map();
     this.isInitialized = false;
     this.originalMethods = {};
+    this.boundHandleNativeStorageChange = null;
   }
 
   // Initialize the event system
   init() {
     if (this.isInitialized) return;
     
+    // Store bound function reference for proper removal later
+    this.boundHandleNativeStorageChange = this.handleNativeStorageChange.bind(this);
+    
     // Listen for native storage events (cross-tab)
-    window.addEventListener('storage', this.handleNativeStorageChange.bind(this));
+    window.addEventListener('storage', this.boundHandleNativeStorageChange);
     
     // Start monitoring for in-tab changes
     this.startInTabMonitoring();
@@ -151,7 +155,7 @@ class StorageEventSystem {
 
   // Cleanup method
   destroy() {
-    window.removeEventListener('storage', this.handleNativeStorageChange);
+    window.removeEventListener('storage', this.boundHandleNativeStorageChange);
     
     // Restore original localStorage methods if they were overridden
     if (this.originalMethods.setItem) {
@@ -167,6 +171,7 @@ class StorageEventSystem {
     this.listeners.clear();
     this.lastKnownData.clear();
     this.originalMethods = {};
+    this.boundHandleNativeStorageChange = null;
     this.isInitialized = false;
   }
 }
