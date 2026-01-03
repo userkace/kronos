@@ -296,7 +296,11 @@ const PomodoroTimer = () => {
           {!isRunning ? (
             <button
               onClick={handleStartTimer}
-              className="flex items-center space-x-2 px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+              className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
+                currentPhase === 'work' && !currentTask.trim()
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+              }`}
               disabled={currentPhase === 'work' && !currentTask.trim()}
             >
               <Play className="w-4 h-4" />
