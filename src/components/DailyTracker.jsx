@@ -448,6 +448,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
   }, [selectedDateEntries, timezone]); // Re-save only when entries or timezone changes, NOT when selectedDate changes
 
+  // Memoized break total calculation to avoid expensive recalculation on every render
+  const breakTotal = useMemo(() => {
+    return calculateDailyBreakTotal();
+  }, [selectedDateEntries, activeEntry, calculateBreakTime]);
+
   // Calculate duration for active entry
   const getActiveDuration = (entry) => {
     if (!entry) return '0:00:00';
@@ -1222,26 +1227,21 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   {calculateDailyTotal()}
                 </span>
               </div>
-              {(() => {
-                const breakTotal = calculateDailyBreakTotal();
-                return (
-                  <AnimatePresence>
-                    {showBreaks && breakTotal !== '0s' && (
-                      <motion.span
-                        key="break-total"
-                        initial={{ opacity: 0, scale: 0, x: -50 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0, x: -50 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
-                      >
-                        <Coffee className="w-4 h-4 mr-2" />
-                        {breakTotal}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                );
-              })()}
+              <AnimatePresence>
+                {showBreaks && breakTotal !== '0s' && (
+                  <motion.span
+                    key="break-total"
+                    initial={{ opacity: 0, scale: 0, x: -50 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0, x: -50 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
+                  >
+                    <Coffee className="w-4 h-4 mr-2" />
+                    {breakTotal}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
             <div className="flex items-center space-x-2">
               <button
