@@ -12,15 +12,16 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
     try {
       const allData = loadTimesheetData();
       let foundActive = null;
-      
-      Object.keys(allData).forEach(dateKey => {
+
+      for (const dateKey of Object.keys(allData)) {
         const entries = allData[dateKey];
         const activeInDate = entries.find(entry => entry.isActive);
         if (activeInDate) {
           foundActive = activeInDate;
+          break; // Exit early since only one entry can be active
         }
-      });
-      
+      }
+
       setActiveEntry(foundActive);
     } catch (error) {
       console.error('Error checking active entry:', error);
@@ -39,12 +40,12 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
   // Check for active entries on mount and when storage changes
   React.useEffect(() => {
     checkActiveEntry();
-    
+
     // Subscribe to storage changes using the event system
     const unsubscribe = storageEventSystem.subscribe('kronos_timesheet_data', () => {
       checkActiveEntry();
     });
-    
+
     return () => {
       unsubscribe();
     };
@@ -98,7 +99,7 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
   }
 
   return (
-    <div 
+    <div
       className={`mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${className}`}
       onClick={() => onViewChange && onViewChange('tracker')}
     >
@@ -109,8 +110,8 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
             <Play className="w-4 h-4" />
           </div>
           <span className="text-sm font-medium text-gray-700">
-            {activeEntry.description?.length > 15 
-            ? activeEntry.description.substring(0, 15) + '...' 
+            {activeEntry.description?.length > 15
+            ? activeEntry.description.substring(0, 15) + '...'
             : activeEntry.description}
           </span>
         </div>
@@ -123,12 +124,12 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
 
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 rounded-full h-2 mb-2 relative overflow-hidden">
-        <div 
+        <div
           className="h-2 rounded-full bg-green-500 relative"
           style={{ width: '100%' }}
         >
           {/* Animated beam effect */}
-          <div 
+          <div
             className="absolute inset-0 bg-linear-to-r from-transparent via-white to-transparent opacity-30"
             style={{
               animation: 'beam 2s infinite',
