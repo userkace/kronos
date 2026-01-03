@@ -171,7 +171,7 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
           {currentView !== 'tracker' && <DailyTrackerProgressBar onViewChange={onViewChange} className="mx-4" timezone={selectedTimezone}/>}
 
           {/* Show Pomodoro progress bar only when not on Pomodoro view */}
-          {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} className="mx-4"/>}
+          {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} className="mx-4" />}
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-gray-200">
