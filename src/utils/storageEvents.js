@@ -27,6 +27,10 @@ class StorageEventSystem {
   }
 
   // Start monitoring localStorage for in-tab changes
+  // NOTE: This approach overrides native localStorage methods globally, which can cause issues
+  // with external libraries, browser extensions, or other parts of the application that expect
+  // standard localStorage behavior. Consider using a wrapper class that components can opt into,
+  // or implementing a custom storage interface that doesn't modify the global localStorage object.
   startInTabMonitoring() {
     // Override localStorage methods to detect in-tab changes
     this.originalMethods.setItem = localStorage.setItem.bind(localStorage);
@@ -180,6 +184,11 @@ class StorageEventSystem {
 const storageEventSystem = new StorageEventSystem();
 
 // Auto-initialize
+// NOTE: The system auto-initializes on module load, but there's no way to disable this behavior.
+// If the application doesn't need this system immediately or wants to initialize it later, it will still run.
+// Additionally, since the system modifies global localStorage methods, this immediate initialization could
+// interfere with other code that runs during module loading. Consider making initialization explicit
+// rather than automatic, or at least providing a way to opt out.
 storageEventSystem.init();
 
 export default storageEventSystem;
