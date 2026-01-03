@@ -54,28 +54,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // State for calendar view
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  /**
-   * Generates an array of dates for a calendar view, including days from the previous and next months
-   * to ensure a complete grid. Handles timezone conversion to ensure dates are displayed correctly
-   * in the user's selected timezone.
-   *
-   * @param {Date} date - The reference date for which to generate the calendar month.
-   *                      The calendar will display the month containing this date.
-   * @returns {Date[]} An array of Date objects representing the calendar days, where:
-   *                   - The first items (if any) are the trailing days from the previous month
-   *                   - Followed by all days of the current month
-   *                   - Ending with leading days from the next month (if needed to complete the grid)
-   *                   - The array length is always a multiple of 7 (complete weeks)
-   *                   - All dates are in UTC to maintain consistency across timezones
-   *
-   * @example
-   * // Returns an array of Date objects for the calendar view of March 2023
-   * // including days from February 26 to April 1 (assuming March 1, 2023 is a Wednesday)
-   * getCalendarDays(new Date('2023-03-15T00:00:00Z'));
-   */
-  const getCalendarDays = (date) => {
+  // Get calendar days for the current month view, memoized to prevent unnecessary recalculations
+  const calendarDays = React.useMemo(() => {
     // Use the original date for year/month calculation to avoid timezone offset issues
-    const originalDate = new Date(date);
+    const originalDate = new Date(currentMonth);
     const year = originalDate.getFullYear();
     const month = originalDate.getMonth();
 
@@ -119,7 +101,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     return days;
-  };
+  }, [currentMonth, timezone]);
 
   // Handle month navigation
   const handleMonthChange = (increment) => {
@@ -127,11 +109,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     newMonth.setMonth(newMonth.getMonth() + increment);
     setCurrentMonth(newMonth);
   };
-
-  // Get calendar days for the current month view, memoized to prevent unnecessary recalculations
-  const calendarDays = React.useMemo(() => {
-    return getCalendarDays(currentMonth);
-  }, [currentMonth, timezone]);
 
   // Array of funny default task descriptions
   const funnyDefaultTasks = [
