@@ -143,6 +143,7 @@ const PomodoroTimer = () => {
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
                 title="Timer Settings"
+                aria-label="Timer settings"
               >
                 <SettingsIcon className="w-5 h-5" />
               </button>
