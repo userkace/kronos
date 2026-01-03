@@ -513,12 +513,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     return formatDisplayDuration(totalBreakSeconds);
-  }, [selectedDateEntries, activeEntry, calculateBreakTime]);
-
+  }, [selectedDateEntries, activeEntry, calculateBreakTime, formatDisplayDuration]);
   // Memoized break total calculation to avoid expensive recalculation on every render
   const breakTotal = useMemo(() => {
     return calculateDailyBreakTotal();
-  }, [calculateDailyBreakTotal]);
+  }, [selectedDateEntries, activeEntry, calculateBreakTime, formatDisplayDuration]);
 
   // Calculate duration for active entry
   const getActiveDuration = (entry) => {
