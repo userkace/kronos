@@ -531,8 +531,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   const calculateDailyBreakTotal = () => {
     let totalBreakSeconds = 0;
 
-    // Get all entries sorted by start time (chronological order)
-    const allEntries = [...selectedDateEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    // Get completed entries only (filter out active entries), then sort by start time
+    const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+    const allEntries = completedEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
     // Add active entry to the list if it exists
     if (activeEntry) {
