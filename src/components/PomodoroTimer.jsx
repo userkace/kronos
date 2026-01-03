@@ -342,7 +342,7 @@ const PomodoroTimer = () => {
                   ? 'Cannot start Pomodoro while timer is active in Daily Tracker'
                   : (currentPhase === 'work' && !currentTask.trim())
                     ? 'Please enter a task description'
-                    : ''
+                    : 'Start Pomodoro timer'
               }
             >
               <Play className="w-4 h-4" />
