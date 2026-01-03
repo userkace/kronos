@@ -1416,7 +1416,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           {/* Unified Task Entries with Layout Animation */}
           <AnimatePresence mode="popLayout">
             {unifiedDisplay.map((item, index) => {
+                // Handle unexpected item types with warning and fallback
+                if (!item || !item.type) {
+                  warning('Invalid entry detected in task list');
+                }
+
                 if (item.type === 'active') {
+                  // Validate active item has required data and ID
+                  if (!item.data || !item.data.id) {
+                    error('Invalid active entry detected - missing required data');
+                  }
+
                   return (
                     <motion.div
                       key={`active-${item.data.id}`}
@@ -1479,6 +1489,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     </motion.div>
                   );
                 } else if (item.type === 'break') {
+                  // Validate break item has required data and breakKey
+                  if (!item.data || !item.breakKey) {
+                    error('Invalid break entry detected - missing required data');
+                  }
+
                   return (
                     <motion.div
                       key={item.breakKey}
@@ -1499,8 +1514,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     </motion.div>
                   );
                 } else {
-                  // Entry
+                  // Entry type
                   const entry = item.data;
+                  
+                  // Validate entry has required data and ID
+                  if (!entry || !entry.id) {
+                    error('Invalid time entry detected - missing required data');
+                  }
+
                   const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
                   const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
                   const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
