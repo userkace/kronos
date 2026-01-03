@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown, Calendar, Coffee } from 'lucide-react';
@@ -39,7 +39,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   } = useUserPreferences();
   const [activeEntry, setActiveEntry] = useState(null);
   const [selectedDateEntries, setSelectedDateEntries] = useState([]); // Renamed from todayEntries
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const currentTimeRef = useRef(new Date());
+  const [_, setCurrentTime] = useState(0); // Just for triggering re-renders
   const [selectedDate, setSelectedDate] = useState(new Date()); // Initialize to today in UTC
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -514,27 +515,28 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return todayInSelectedTimezone === selectedDateInTimezone;
   };
 
-  // Update current time every second for real-time display (only after timezone is initialized)
+  // Update current time every second for real-time display
   useEffect(() => {
-    if (!isTimezoneInitialized) return;
-
     const timer = setInterval(() => {
-      setCurrentTime(getCurrentDateInTimezone());
+      currentTimeRef.current = new Date();
+      setCurrentTime(prev => prev + 1); // Just increment to trigger re-render
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timezone, isTimezoneInitialized]); // Re-create timer when timezone changes or initializes
+  }, []); // No dependencies - runs once on mount
 
-  // Update page title with cumulative work time when Daily Tracker is active (only after timezone is initialized)
+  // Memoize the updateWorkTimeTitle function
+  const updateWorkTimeTitle = useCallback(() => {
+    setCurrentTime(prev => prev + 1);
+    const totalWorkTime = calculateDailyTotal();
+    document.title = `${totalWorkTime} - Kronos`;
+  }, [timezone, selectedDateEntries, activeEntry, isTimezoneInitialized]);
+
+  // Update page title with cumulative work time when Daily Tracker is active
   useEffect(() => {
     if (!isTimezoneInitialized) return;
 
-    const updateWorkTimeTitle = () => {
-      const totalWorkTime = calculateDailyTotal();
-      document.title = `${totalWorkTime} - Kronos`;
-    };
-
-    // Update title immediately
+    // Initial update
     updateWorkTimeTitle();
 
     // Update title every second to reflect active timer time
@@ -545,7 +547,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       clearInterval(titleTimer);
       document.title = 'Kronos';
     };
-  }, [timezone, selectedDateEntries, activeEntry, currentTime, isTimezoneInitialized]); // Re-create timer when dependencies change or timezone initializes
+  }, [updateWorkTimeTitle, isTimezoneInitialized]);
 
   // Update favicon based on active entry state
   useEffect(() => {
@@ -592,7 +594,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Convert both times to the selected timezone for accurate calculation
     const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-    const currentTimeInTimezone = currentTime; // Use the updated currentTime state
+    const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone);
 
     const seconds = differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
     return formatDuration(seconds);
@@ -659,7 +661,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Add active entry time
     if (activeEntry) {
       const startTimeInTimezone = toZonedTime(parseISO(activeEntry.startTime), timezone);
-      const currentTimeInTimezone = toZonedTime(new Date(), timezone); // Always convert fresh for timezone consistency
+      const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone); // Use the ref for consistent time
       totalSeconds += differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
     }
 
@@ -1539,7 +1541,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     {!isToday() && (
                       <>
                         <span className="text-sm font-medium">
-                          {formatInTimezone(currentTime, 'MMMM d')}
+                          {formatInTimezone(currentTimeRef.current, 'MMMM d')}
                         </span>
                       </>
                     )}
