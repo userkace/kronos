@@ -6,6 +6,7 @@ import { loadSidebarState, saveSidebarState } from '../utils/storage';
 import TimezoneSelect from './TimezoneSelect';
 import DataImportExport from './DataImportExport';
 import PomodoroProgressBar from './atoms/PomodoroProgressBar';
+import DailyTrackerProgressBar from './atoms/DailyTrackerProgressBar';
 
 const AppLayout = ({ children, currentView, onViewChange }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
@@ -166,8 +167,11 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
             </div>
           </nav>
 
+          {/* Show DailyTracker progress bar only when not on tracker view */}
+          {currentView !== 'tracker' && <DailyTrackerProgressBar onViewChange={onViewChange} className="mx-4" timezone={selectedTimezone} />}
+
           {/* Show Pomodoro progress bar only when not on Pomodoro view */}
-          {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} className="mx-4"/>}
+          {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} className="mx-4" />}
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-gray-200">
