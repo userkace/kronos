@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown, Calendar, Coffee } from 'lucide-react';
@@ -524,6 +525,35 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     return formatDisplayDuration(totalSeconds);
+  };
+
+  // Calculate total break time for the day
+  const calculateDailyBreakTotal = () => {
+    let totalBreakSeconds = 0;
+    
+    // Get all entries sorted by start time (chronological order)
+    const allEntries = [...selectedDateEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    
+    // Add active entry to the list if it exists
+    if (activeEntry) {
+      allEntries.push(activeEntry);
+    }
+    
+    // Calculate break times between consecutive entries
+    for (let i = 1; i < allEntries.length; i++) {
+      const currentEntry = allEntries[i];
+      const previousEntry = allEntries[i - 1];
+      
+      // Only calculate break if previous entry has an end time
+      if (previousEntry.endTime || !previousEntry.isActive) {
+        const breakTime = calculateBreakTime(currentEntry, previousEntry);
+        if (breakTime) {
+          totalBreakSeconds += breakTime;
+        }
+      }
+    }
+    
+    return formatDisplayDuration(totalBreakSeconds);
   };
 
   // Start new timer (only works on current date)
@@ -1174,11 +1204,27 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-baseline space-x-2 text-gray-600">
-              <Clock className="w-5 h-5 self-center mt-1" />
-              <span className="text-2xl font-semibold text-gray-900">
-                {calculateDailyTotal()}
-              </span>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-baseline space-x-2 text-gray-600">
+                <Clock className="w-5 h-5 self-center mt-1" />
+                <span className="text-2xl font-semibold text-gray-900">
+                  {calculateDailyTotal()}
+                </span>
+              </div>
+              <AnimatePresence>
+              {showBreaks && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0, x: -50 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0, x: -50 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
+                >
+                  <Coffee className="w-4 h-4 mr-2" />
+                  {calculateDailyBreakTotal()}
+                </motion.span>
+              )}
+            </AnimatePresence>
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -1405,25 +1451,38 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           )}
 
           {/* Break Time Display between running and previous entry */}
-          {showBreaks && (() => {
-            const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-            if (activeEntry && completedEntriesAsc.length > 0) {
-              const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
-              const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
-              if (breakTimeBetweenActiveAndLast) {
-                return (
-                  <div className="text-center py-2">
-                    <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
-                      <span className="font-medium">Break</span>
-                      <span>•</span>
-                      <span>{formatBreakDuration(breakTimeBetweenActiveAndLast)}</span>
-                    </div>
-                  </div>
-                );
+          <AnimatePresence>
+            {showBreaks && (() => {
+              const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+              if (activeEntry && completedEntriesAsc.length > 0) {
+                const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
+                const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
+                if (breakTimeBetweenActiveAndLast) {
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="text-center py-2"
+                    >
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1, duration: 0.3 }}
+                        className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
+                      >
+                        <span className="font-medium">Break</span>
+                        <span>•</span>
+                        <span>{formatBreakDuration(breakTimeBetweenActiveAndLast)}</span>
+                      </motion.div>
+                    </motion.div>
+                  );
+                }
               }
-            }
-            return null;
-          })()}
+              return null;
+            })()}
+          </AnimatePresence>
 
           {/* Completed Entries */}
           {(() => {
@@ -1519,15 +1578,28 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 </div>
 
                 {/* Break Time Display between this entry and the previous older entry */}
-                {showBreaks && breakTime && (
-                  <div className="text-center py-2">
-                    <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
-                      <span className="font-medium">Break</span>
-                      <span>•</span>
-                      <span>{formatBreakDuration(breakTime)}</span>
-                    </div>
-                  </div>
-                )}
+                <AnimatePresence>
+                  {showBreaks && breakTime && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 0, scale: 0.8 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="text-center py-2"
+                    >
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1, duration: 0.3 }}
+                        className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
+                      >
+                        <span className="font-medium">Break</span>
+                        <span>•</span>
+                        <span>{formatBreakDuration(breakTime)}</span>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 </React.Fragment>
               );
             });
