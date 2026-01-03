@@ -1426,7 +1426,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     chronologicalWithBreaks.push({
                       type: 'break',
                       data: breakTime,
-                      beforeEntryId: entry.id
+                      beforeEntryId: entry.id,
+                      afterEntryId: previousEntry.id,
+                      breakKey: `break-${previousEntry.id}-${entry.id}` // Create stable composite key
                     });
                   }
                 }
@@ -1545,10 +1547,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 } else if (item.type === 'break') {
                   return (
                     <motion.div
-                      key={`break-${item.beforeEntryId}`}
+                      key={item.breakKey}
                       layout
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: showBreaks ? 1 : 0, scale: showBreaks ? 1 : 0.8 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
                       style={{ display: showBreaks ? 'block' : 'none' }}
                       className="text-center py-2"
@@ -1556,6 +1559,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: showBreaks ? 1 : 0 }}
+                        exit={{ opacity: 0 }}
                         transition={{ delay: 0.1, duration: 0.3 }}
                         className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
                       >
