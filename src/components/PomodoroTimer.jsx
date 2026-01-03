@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Brain, Timer, Settings as SettingsIcon, SkipForward } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { usePomodoro } from '../contexts/PomodoroContext';
+import { loadTimesheetData } from '../utils/storage';
+import storageEventSystem from '../utils/storageEvents';
 
 const PomodoroTimer = () => {
   const { success, error } = useToast();
-  
+
   // Use Pomodoro context for all state
   const {
     workDuration,
@@ -42,12 +44,45 @@ const PomodoroTimer = () => {
     setTaskStartTime,
     selectedTimezone: pomodoroTimezone
   } = usePomodoro();
-  
+
   // Local state
   const [showSettings, setShowSettings] = useState(false);
   const [totalTime, setTotalTime] = useState(workDuration * 60);
-  
+  const [hasActiveTimerEntry, setHasActiveTimerEntry] = useState(false);
+
   const audioRef = useRef(null);
+
+  // Helper function to check for active timer entries
+  const checkForActiveTimerEntries = () => {
+    const allData = loadTimesheetData();
+    
+    // Early return optimization: break loop as soon as active entry is found
+    for (const dateKey in allData) {
+      const entries = allData[dateKey];
+      const activeEntry = entries.find(entry => entry.isActive);
+      if (activeEntry) {
+        setHasActiveTimerEntry(true);
+        return true;
+      }
+    }
+    
+    setHasActiveTimerEntry(false);
+    return false;
+  };
+
+  // Check for active entries on mount and when storage changes
+  useEffect(() => {
+    checkForActiveTimerEntries();
+    
+    // Subscribe to storage changes using the event system
+    const unsubscribe = storageEventSystem.subscribe('kronos_timesheet_data', () => {
+      checkForActiveTimerEntries();
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Initialize audio for notifications
   useEffect(() => {
@@ -271,7 +306,7 @@ const PomodoroTimer = () => {
             {formatTime(timeLeft)}
           </div>
           <div className="text-lg text-gray-600 capitalize">
-            {currentPhase === 'work' ? 'Work Session' : 
+            {currentPhase === 'work' ? 'Work Session' :
              currentPhase === 'shortBreak' ? 'Short Break' : 'Long Break'}
           </div>
           <div className="text-sm text-gray-500 mt-2">
@@ -282,7 +317,7 @@ const PomodoroTimer = () => {
 
         <div className="mb-6">
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className={`h-2 rounded-full transition-all duration-1000 ${getPhaseColor()}`}
               style={{ width: `${progress}%` }}
             />
@@ -296,51 +331,62 @@ const PomodoroTimer = () => {
           {!isRunning ? (
             <button
               onClick={handleStartTimer}
-              className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              disabled={currentPhase === 'work' && !currentTask.trim()}
+              className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
+                (currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+              }`}
+              disabled={(currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry}
+              title={
+                hasActiveTimerEntry 
+                  ? 'Cannot start Pomodoro while timer is active in Daily Tracker'
+                  : (currentPhase === 'work' && !currentTask.trim())
+                    ? 'Please enter a task description'
+                    : 'Start Pomodoro timer'
+              }
             >
-              <Play className="w-5 h-5" />
+              <Play className="w-4 h-4" />
               <span>Start</span>
             </button>
           ) : isPaused ? (
             <button
               onClick={resumeTimer}
-              className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
             >
-              <Play className="w-5 h-5" />
+              <Play className="w-4 h-4" />
               <span>Resume</span>
             </button>
           ) : (
             <button
               onClick={pauseTimer}
-              className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
             >
-              <Pause className="w-5 h-5" />
+              <Pause className="w-4 h-4" />
               <span>Pause</span>
             </button>
           )}
-          
+
           <button
             onClick={resetTimer}
-            className="flex items-center space-x-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-4 h-4" />
             <span>Reset</span>
           </button>
-          
+
           <button
             onClick={skipPhase}
-            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
           >
             <SkipForward className="w-4 h-4" />
             <span>Skip</span>
           </button>
-          
+
           <button
             onClick={resetAll}
-            className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
           >
-            <span>Reset All</span>
+            Reset All
           </button>
         </div>
         </div>

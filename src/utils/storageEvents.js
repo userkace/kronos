@@ -1,0 +1,194 @@
+// Storage event system for efficient cross-component communication
+// Eliminates the need for polling by using custom events
+
+class StorageEventSystem {
+  constructor() {
+    this.listeners = new Map();
+    this.lastKnownData = new Map();
+    this.isInitialized = false;
+    this.originalMethods = {};
+    this.boundHandleNativeStorageChange = null;
+  }
+
+  // Initialize the event system
+  init() {
+    if (this.isInitialized) return;
+
+    // Store bound function reference for proper removal later
+    this.boundHandleNativeStorageChange = this.handleNativeStorageChange.bind(this);
+
+    // Listen for native storage events (cross-tab)
+    window.addEventListener('storage', this.boundHandleNativeStorageChange);
+
+    // Start monitoring for in-tab changes
+    this.startInTabMonitoring();
+
+    this.isInitialized = true;
+  }
+
+  // Start monitoring localStorage for in-tab changes
+  // NOTE: This approach overrides native localStorage methods globally, which can cause issues
+  // with external libraries, browser extensions, or other parts of the application that expect
+  // standard localStorage behavior. Consider using a wrapper class that components can opt into,
+  // or implementing a custom storage interface that doesn't modify the global localStorage object.
+  startInTabMonitoring() {
+    // Override localStorage methods to detect in-tab changes
+    this.originalMethods.setItem = localStorage.setItem.bind(localStorage);
+    this.originalMethods.removeItem = localStorage.removeItem.bind(localStorage);
+    this.originalMethods.clear = localStorage.clear.bind(localStorage);
+
+    localStorage.setItem = (key, value) => {
+      const oldValue = localStorage.getItem(key);
+      try {
+        this.originalMethods.setItem(key, value);
+      } catch (error) {
+        // Re-throw the error after logging
+        console.error('localStorage.setItem failed:', error);
+        throw error;
+      }
+      // Only notify listeners if the operation succeeded
+      this.detectChanges(key, oldValue, value);
+    };
+
+    localStorage.removeItem = (key) => {
+      const oldValue = localStorage.getItem(key);
+      try {
+        this.originalMethods.removeItem(key);
+      } catch (error) {
+        // Re-throw the error after logging
+        console.error('localStorage.removeItem failed:', error);
+        throw error;
+      }
+      // Only notify listeners if the operation succeeded
+      this.detectChanges(key, oldValue, null);
+    };
+
+    localStorage.clear = () => {
+      // Store current values before clearing
+      const currentValues = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        currentValues[key] = localStorage.getItem(key);
+      }
+
+      try {
+        this.originalMethods.clear();
+      } catch (error) {
+        // Re-throw the error after logging
+        console.error('localStorage.clear failed:', error);
+        throw error;
+      }
+      // Only notify listeners if the operation succeeded
+      Object.keys(currentValues).forEach(key => {
+        this.detectChanges(key, currentValues[key], null);
+      });
+    };
+  }
+
+  // Handle native storage events (cross-tab changes)
+  handleNativeStorageChange(event) {
+    const { key, oldValue, newValue } = event;
+    this.detectChanges(key, oldValue, newValue);
+  }
+
+  // Detect and emit changes for a specific key
+  detectChanges(key, oldValue, newValue) {
+    // Only emit if the value actually changed
+    if (oldValue === newValue) return;
+
+    // Update last known data
+    this.lastKnownData.set(key, newValue);
+
+    // Emit custom event for this key
+    this.emit(key, { key, oldValue, newValue });
+  }
+
+  // Subscribe to storage changes for a specific key
+  subscribe(key, callback) {
+    if (!this.listeners.has(key)) {
+      this.listeners.set(key, new Set());
+    }
+
+    this.listeners.get(key).add(callback);
+
+    // Store initial value if not already stored
+    if (!this.lastKnownData.has(key)) {
+      this.lastKnownData.set(key, localStorage.getItem(key));
+    }
+
+    // Return unsubscribe function
+    return () => {
+      const keyListeners = this.listeners.get(key);
+      if (keyListeners) {
+        keyListeners.delete(callback);
+        if (keyListeners.size === 0) {
+          this.listeners.delete(key);
+        }
+      }
+    };
+  }
+
+  // Emit event to all listeners for a key
+  emit(key, data) {
+    const keyListeners = this.listeners.get(key);
+    if (keyListeners) {
+      keyListeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error('Error in storage event listener:', error);
+        }
+      });
+    }
+  }
+
+  // Get the last known value for a key
+  getLastKnownValue(key) {
+    return this.lastKnownData.get(key);
+  }
+
+  // Force a check for changes (useful for initialization)
+  forceCheck(key) {
+    const currentValue = localStorage.getItem(key);
+    const lastKnownValue = this.lastKnownData.get(key);
+
+    if (currentValue !== lastKnownValue) {
+      this.detectChanges(key, lastKnownValue, currentValue);
+    }
+  }
+
+  // Cleanup method
+  destroy() {
+    window.removeEventListener('storage', this.boundHandleNativeStorageChange);
+
+    // Restore original localStorage methods if they were overridden
+    if (this.originalMethods.setItem) {
+      localStorage.setItem = this.originalMethods.setItem;
+    }
+    if (this.originalMethods.removeItem) {
+      localStorage.removeItem = this.originalMethods.removeItem;
+    }
+    if (this.originalMethods.clear) {
+      localStorage.clear = this.originalMethods.clear;
+    }
+
+    this.listeners.clear();
+    this.lastKnownData.clear();
+    this.originalMethods = {};
+    this.boundHandleNativeStorageChange = null;
+    this.isInitialized = false;
+  }
+}
+
+// Create singleton instance
+const storageEventSystem = new StorageEventSystem();
+
+// Auto-initialize
+// NOTE: The system auto-initializes on module load, but there's no way to disable this behavior.
+// If the application doesn't need this system immediately or wants to initialize it later, it will still run.
+// Additionally, since the system modifies global localStorage methods, this immediate initialization could
+// interfere with other code that runs during module loading. Consider making initialization explicit
+// rather than automatic, or at least providing a way to opt out.
+storageEventSystem.init();
+
+export default storageEventSystem;
