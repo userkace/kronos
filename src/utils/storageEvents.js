@@ -30,14 +30,20 @@ class StorageEventSystem {
 
     localStorage.setItem = (key, value) => {
       const oldValue = localStorage.getItem(key);
-      originalSetItem(key, value);
-      this.detectChanges(key, oldValue, value);
+      try {
+        originalSetItem(key, value);
+      } finally {
+        this.detectChanges(key, oldValue, value);
+      }
     };
 
     localStorage.removeItem = (key) => {
       const oldValue = localStorage.getItem(key);
-      originalRemoveItem(key);
-      this.detectChanges(key, oldValue, null);
+      try {
+        originalRemoveItem(key);
+      } finally {
+        this.detectChanges(key, oldValue, null);
+      }
     };
 
     localStorage.clear = () => {
@@ -48,12 +54,14 @@ class StorageEventSystem {
         currentValues[key] = localStorage.getItem(key);
       }
       
-      originalClear();
-      
-      // Notify about all cleared keys
-      Object.keys(currentValues).forEach(key => {
-        this.detectChanges(key, currentValues[key], null);
-      });
+      try {
+        originalClear();
+      } finally {
+        // Notify about all cleared keys
+        Object.keys(currentValues).forEach(key => {
+          this.detectChanges(key, currentValues[key], null);
+        });
+      }
     };
   }
 
