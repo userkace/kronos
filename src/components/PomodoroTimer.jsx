@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Brain, Timer, Settings as SettingsIcon, SkipForward } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { usePomodoro } from '../contexts/PomodoroContext';
+import { loadTimesheetData } from '../utils/storage';
 
 const PomodoroTimer = () => {
   const { success, error } = useToast();
@@ -46,8 +47,50 @@ const PomodoroTimer = () => {
   // Local state
   const [showSettings, setShowSettings] = useState(false);
   const [totalTime, setTotalTime] = useState(workDuration * 60);
+  const [hasActiveTimerEntry, setHasActiveTimerEntry] = useState(false);
 
   const audioRef = useRef(null);
+
+  // Helper function to check for active timer entries
+  const checkForActiveTimerEntries = () => {
+    const allData = loadTimesheetData();
+    let foundActive = false;
+    
+    Object.keys(allData).forEach(dateKey => {
+      const entries = allData[dateKey];
+      const activeInDate = entries.find(entry => entry.isActive);
+      if (activeInDate) {
+        foundActive = true;
+      }
+    });
+    
+    setHasActiveTimerEntry(foundActive);
+    return foundActive;
+  };
+
+  // Check for active entries on mount and when storage changes
+  useEffect(() => {
+    checkForActiveTimerEntries();
+    
+    // Listen for storage changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'kronos_timesheet_data') {
+        checkForActiveTimerEntries();
+      }
+    };
+    
+    // Poll for changes (same as DailyTracker)
+    const pollInterval = setInterval(() => {
+      checkForActiveTimerEntries();
+    }, 2000);
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
+    };
+  }, []);
 
   // Initialize audio for notifications
   useEffect(() => {
@@ -297,11 +340,18 @@ const PomodoroTimer = () => {
             <button
               onClick={handleStartTimer}
               className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
-                currentPhase === 'work' && !currentTask.trim()
+                (currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry
                   ? 'text-gray-400 cursor-not-allowed'
                   : 'text-green-600 hover:text-green-700 hover:bg-green-50'
               }`}
-              disabled={currentPhase === 'work' && !currentTask.trim()}
+              disabled={(currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry}
+              title={
+                hasActiveTimerEntry 
+                  ? 'Cannot start Pomodoro while timer is active in Daily Tracker'
+                  : (currentPhase === 'work' && !currentTask.trim())
+                    ? 'Please enter a task description'
+                    : ''
+              }
             >
               <Play className="w-4 h-4" />
               <span>Start</span>
