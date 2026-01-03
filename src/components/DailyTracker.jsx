@@ -1395,60 +1395,70 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         )}
 
         {/* Task List */}
-        <div className="space-y-3">
+        <div className="space-y-3" layout>
           {/* Active Entry */}
-          {activeEntry && (
-            <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-semibold text-gray-900 text-lg">
-                      {activeEntry.description}
-                    </h3>
-                  </div>
-                  <p className="text-green-700 text-sm mb-2">
-                    {activeEntry.project || ''}
-                  </p>
-                  <div className="flex items-center space-x-4 text-green-600">
-                    {!isToday() && (
-                      <>
-                        <span className="text-sm font-medium">
-                          {formatInTimezone(currentTimeRef.current, 'MMMM d')}
+          <AnimatePresence>
+            {activeEntry && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                layout
+              >
+                <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h3 className="font-semibold text-gray-900 text-lg">
+                          {activeEntry.description}
+                        </h3>
+                      </div>
+                      <p className="text-green-700 text-sm mb-2">
+                        {activeEntry.project || ''}
+                      </p>
+                      <div className="flex items-center space-x-4 text-green-600">
+                        {!isToday() && (
+                          <>
+                            <span className="text-sm font-medium">
+                              {formatInTimezone(currentTimeRef.current, 'MMMM d')}
+                            </span>
+                          </>
+                        )}
+                        <span className="text-sm">
+                          {formatInTimezone(parseISO(activeEntry.startTime), 'h:mm a')} - now
                         </span>
-                      </>
-                    )}
-                    <span className="text-sm">
-                      {formatInTimezone(parseISO(activeEntry.startTime), 'h:mm a')} - now
-                    </span>
-                    <span className="font-mono font-semibold">
-                      {getActiveDuration(activeEntry)}
-                    </span>
+                        <span className="font-mono font-semibold">
+                          {getActiveDuration(activeEntry)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={handleStop}
+                          className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg flex items-center space-x-2"
+                          aria-label="Pause timer"
+                        >
+                          <Pause className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {!isToday() && (
+                        <button
+                          onClick={handleToday}
+                          className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
+                          title="Back to Today"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          <span>Today</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="opacity-0 group-hover:opacity-100 transition-all">
-                    <button
-                      onClick={handleStop}
-                      className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg flex items-center space-x-2"
-                      aria-label="Pause timer"
-                    >
-                      <Pause className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {!isToday() && (
-                    <button
-                      onClick={handleToday}
-                      className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
-                      title="Back to Today"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>Today</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Break Time Display between running and previous entry */}
           <AnimatePresence>
@@ -1485,111 +1495,119 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           </AnimatePresence>
 
           {/* Completed Entries */}
-          {(() => {
-            const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-            const displayEntries = sortOrder === 'asc'
-              ? [...completedEntries]
-              : [...completedEntries].reverse();
+          <AnimatePresence mode="popLayout">
+            {(() => {
+              const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+              const displayEntries = sortOrder === 'asc'
+                ? [...completedEntries]
+                : [...completedEntries].reverse();
 
-            return displayEntries.map((entry, index) => {
-              // Convert both times to the selected timezone for accurate calculation
-              const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-              const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
-              const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
+              return displayEntries.map((entry, index) => {
+                // Convert both times to the selected timezone for accurate calculation
+                const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
+                const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
+                const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
 
-              // Get the correct previous entry based on sort order
-              let previousEntry = null;
-              if (sortOrder === 'asc') {
-                // In ascending order, previous entry is at index - 1
-                previousEntry = index > 0 ? displayEntries[index - 1] : null;
-              } else {
-                // In descending order, previous entry is at index + 1
-                previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
-              }
-              const breakTime = previousEntry ? calculateBreakTime(entry, previousEntry) : null;
+                // Get the correct previous entry based on sort order
+                let previousEntry = null;
+                if (sortOrder === 'asc') {
+                  // In ascending order, previous entry is at index - 1
+                  previousEntry = index > 0 ? displayEntries[index - 1] : null;
+                } else {
+                  // In descending order, previous entry is at index + 1
+                  previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
+                }
+                const breakTime = previousEntry ? calculateBreakTime(entry, previousEntry) : null;
 
-              return (
-                <React.Fragment key={entry.id}>
-                  {/* Entry Card */}
-                  <div
-                    className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all"
-                  >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {entry.description}
-                      </h3>
-                      <p className="text-gray-500 text-sm mb-2">
-                        {entry.project || ''}
-                      </p>
-                      <div className="flex items-center space-x-4 text-gray-600">
-                        <span className="text-sm">
-                          {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
-                        </span>
-                        <span className="font-mono">
-                          {formatDisplayDuration(duration)}
-                        </span>
+                return (
+                  <React.Fragment key={entry.id}>
+                    {/* Entry Card */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      layout
+                    >
+                      <div
+                        className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all"
+                      >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">
+                            {entry.description}
+                          </h3>
+                          <p className="text-gray-500 text-sm mb-2">
+                            {entry.project || ''}
+                          </p>
+                          <div className="flex items-center space-x-4 text-gray-600">
+                            <span className="text-sm">
+                              {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
+                            </span>
+                            <span className="font-mono">
+                              {formatDisplayDuration(duration)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <button
+                            onClick={() => handleContinue(entry)}
+                            disabled={pomodoroIsRunning}
+                            className={`p-3 rounded-full flex items-center space-x-1 transition-colors ${
+                              pomodoroIsRunning
+                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                            title={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : ''}
+                            aria-label={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : `Continue task: ${entry.description}`}
+                          >
+                            <Play className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenModal('edit', entry)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
+                            aria-label={`Edit task: ${entry.description}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          {getDuplicateCount(entry.description) > 1 && (
+                            <button
+                              onClick={() => handleMergeEntries(entry.description)}
+                              disabled={shouldDisableMerge(entry.description)}
+                              className={`px-3 py-2 rounded-lg flex items-center space-x-1 ${
+                                shouldDisableMerge(entry.description)
+                                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                  : 'bg-purple-600 hover:bg-purple-700 text-white'
+                              }`}
+                              title={
+                                shouldDisableMerge(entry.description)
+                                  ? hasPomodoroSource(entry.description)
+                                    ? 'Cannot merge: Pomodoro entries cannot be merged'
+                                    : 'Cannot merge: entries are split by other tasks or contain active entries'
+                                  : `Merge ${getDuplicateCount(entry.description)} entries`
+                              }
+                            >
+                              <Merge className="w-4 h-4" />
+                              <span>Merge ({getDuplicateCount(entry.description)})</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => handleContinue(entry)}
-                        disabled={pomodoroIsRunning}
-                        className={`p-3 rounded-full flex items-center space-x-1 transition-colors ${
-                          pomodoroIsRunning
-                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
-                        }`}
-                        title={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : ''}
-                        aria-label={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : `Continue task: ${entry.description}`}
-                      >
-                        <Play className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleOpenModal('edit', entry)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
-                        aria-label={`Edit task: ${entry.description}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      {getDuplicateCount(entry.description) > 1 && (
-                        <button
-                          onClick={() => handleMergeEntries(entry.description)}
-                          disabled={shouldDisableMerge(entry.description)}
-                          className={`px-3 py-2 rounded-lg flex items-center space-x-1 ${
-                            shouldDisableMerge(entry.description)
-                              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                              : 'bg-purple-600 hover:bg-purple-700 text-white'
-                          }`}
-                          title={
-                            shouldDisableMerge(entry.description)
-                              ? hasPomodoroSource(entry.description)
-                                ? 'Cannot merge: Pomodoro entries cannot be merged'
-                                : 'Cannot merge: entries are split by other tasks or contain active entries'
-                              : `Merge ${getDuplicateCount(entry.description)} entries`
-                          }
-                        >
-                          <Merge className="w-4 h-4" />
-                          <span>Merge ({getDuplicateCount(entry.description)})</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  </motion.div>
 
-                {/* Break Time Display between this entry and the previous older entry */}
-                <AnimatePresence>
-                  {showBreaks && breakTime && (
+                    {/* Break Time Display between this entry and the previous older entry */}
                     <motion.div
-                      initial={{ opacity: 0, y: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 0, scale: 0.8 }}
+                      layout
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: showBreaks && breakTime ? 1 : 0, scale: showBreaks && breakTime ? 1 : 0.8 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
+                      style={{ display: (showBreaks && breakTime) ? 'block' : 'none' }}
                       className="text-center py-2"
                     >
                       <motion.div
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        animate={{ opacity: showBreaks && breakTime ? 1 : 0 }}
                         transition={{ delay: 0.1, duration: 0.3 }}
                         className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
                       >
@@ -1598,12 +1616,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                         <span>{formatBreakDuration(breakTime)}</span>
                       </motion.div>
                     </motion.div>
-                  )}
-                </AnimatePresence>
-                </React.Fragment>
-              );
-            });
-          })()}
+                  </React.Fragment>
+                );
+              });
+            })()}
+          </AnimatePresence>
         </div>
 
         {/* Empty State */}
