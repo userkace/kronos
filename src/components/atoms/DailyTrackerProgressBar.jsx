@@ -6,6 +6,26 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
   const [activeEntry, setActiveEntry] = React.useState(null);
   const [currentTime, setCurrentTime] = React.useState(new Date());
 
+  // Add beam animation to document head
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes beam {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   // Check for active entries
   const checkActiveEntry = () => {
     try {
@@ -118,7 +138,9 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
             <Play className="w-4 h-4" />
           </div>
           <span className="text-sm font-medium text-gray-700">
-            Active Task
+            {activeEntry.description?.length > 15 
+            ? activeEntry.description.substring(0, 15) + '...' 
+            : activeEntry.description}
           </span>
         </div>
         <div className="flex items-center space-x-2">
@@ -129,19 +151,26 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-2 relative overflow-hidden">
         <div 
-          className="h-2 rounded-full bg-green-500 transition-all duration-1000 animate-pulse"
+          className="h-2 rounded-full bg-green-500 relative"
           style={{ width: '100%' }}
-        />
+        >
+          {/* Animated beam effect */}
+          <div 
+            className="absolute inset-0 bg-linear-to-r from-transparent via-white to-transparent opacity-30"
+            style={{
+              animation: 'beam 2s infinite',
+              transform: 'translateX(-100%)'
+            }}
+          />
+        </div>
       </div>
 
       {/* Additional Info */}
       <div className="flex justify-between text-xs text-gray-500">
         <span className="font-medium" title={activeEntry.description}>
-          {activeEntry.description?.length > 20 
-            ? activeEntry.description.substring(0, 20) + '...' 
-            : activeEntry.description}
+          Active Task
         </span>
         <span>
           {formatDisplayDuration()}
