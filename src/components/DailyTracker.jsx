@@ -1146,6 +1146,108 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     success(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
   };
 
+  // Memoized unified display computation for entries and breaks
+  const unifiedDisplay = useMemo(() => {
+    // Create a unified display that includes both entries and breaks in correct positions
+    const unifiedDisplay = [];
+    
+    // Get completed entries
+    const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+    
+    // Add active entry if it exists (always at top)
+    if (activeEntry) {
+      unifiedDisplay.push({
+        type: 'active',
+        data: activeEntry
+      });
+      
+      // Add break between active entry and last completed entry
+      const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+      if (completedEntriesAsc.length > 0) {
+        const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
+        const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
+        if (breakTimeBetweenActiveAndLast) {
+          unifiedDisplay.push({
+            type: 'break',
+            data: breakTimeBetweenActiveAndLast,
+            beforeEntryId: activeEntry.id,
+            afterEntryId: lastCompleted.id,
+            breakKey: `active-break-${activeEntry.id}-${lastCompleted.id}`
+          });
+        }
+      }
+    }
+
+    // Create chronological entries for break time calculation
+    const chronologicalEntries = [...completedEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+    // Calculate break times and create chronological sequence with breaks
+    const chronologicalWithBreaks = [];
+    chronologicalEntries.forEach((entry, index) => {
+      if (index > 0) {
+        const previousEntry = chronologicalEntries[index - 1];
+        const breakTime = calculateBreakTime(entry, previousEntry);
+        if (breakTime) {
+          chronologicalWithBreaks.push({
+            type: 'break',
+            data: breakTime,
+            beforeEntryId: entry.id,
+            afterEntryId: previousEntry.id,
+            breakKey: `break-${previousEntry.id}-${entry.id}` // Create stable composite key
+          });
+        }
+      }
+      chronologicalWithBreaks.push({
+        type: 'entry',
+        data: entry
+      });
+    });
+
+    // Now sort the chronological sequence according to display order
+    if (sortOrder === 'desc') {
+      // For newest first, we need to reverse the entire sequence
+      // but keep breaks with their correct chronological positions
+      const reversedSequence = [];
+      const entryPositions = new Map();
+      
+      // First, map entry positions in chronological order
+      chronologicalWithBreaks.forEach((item, index) => {
+        if (item.type === 'entry') {
+          entryPositions.set(item.data.id, index);
+        }
+      });
+      
+      // Sort entries by display order
+      const displayEntries = [...completedEntries].reverse();
+      
+      // For each entry in display order, find it in chronological sequence
+      // and add it and any preceding breaks to the reversed sequence
+      displayEntries.forEach(entry => {
+        const chronologicalIndex = entryPositions.get(entry.id);
+        if (chronologicalIndex !== undefined) {
+          // Find the start of this segment (after previous entry or breaks)
+          let segmentStart = chronologicalIndex;
+          while (segmentStart > 0 && 
+                 chronologicalWithBreaks[segmentStart - 1].type !== 'entry') {
+            segmentStart--;
+          }
+          
+          // Add the segment (breaks + entry) in reverse order
+          for (let i = chronologicalIndex; i >= segmentStart; i--) {
+            reversedSequence.push(chronologicalWithBreaks[i]);
+          }
+        }
+      });
+      
+      unifiedDisplay.push(...reversedSequence);
+    } else {
+      // For oldest first, use chronological order directly
+      unifiedDisplay.push(...chronologicalWithBreaks);
+    }
+
+    return unifiedDisplay;
+  }, [activeEntry, selectedDateEntries, sortOrder, showBreaks, _]);
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
       <div className="max-w-4xl mx-auto">
@@ -1405,106 +1507,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         <div className="space-y-3">
           {/* Unified Task Entries with Layout Animation */}
           <AnimatePresence mode="popLayout">
-            {useMemo(() => {
-              // Create a unified display that includes both entries and breaks in correct positions
-              const unifiedDisplay = [];
-              
-              // Get completed entries
-              const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-              
-              // Add active entry if it exists (always at top)
-              if (activeEntry) {
-                unifiedDisplay.push({
-                  type: 'active',
-                  data: activeEntry
-                });
-                
-                // Add break between active entry and last completed entry
-                const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-                if (completedEntriesAsc.length > 0) {
-                  const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
-                  const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
-                  if (breakTimeBetweenActiveAndLast) {
-                    unifiedDisplay.push({
-                      type: 'break',
-                      data: breakTimeBetweenActiveAndLast,
-                      beforeEntryId: activeEntry.id,
-                      afterEntryId: lastCompleted.id,
-                      breakKey: `active-break-${activeEntry.id}-${lastCompleted.id}`
-                    });
-                  }
-                }
-              }
-
-              // Create chronological entries for break time calculation
-              const chronologicalEntries = [...completedEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-
-              // Calculate break times and create chronological sequence with breaks
-              const chronologicalWithBreaks = [];
-              chronologicalEntries.forEach((entry, index) => {
-                if (index > 0) {
-                  const previousEntry = chronologicalEntries[index - 1];
-                  const breakTime = calculateBreakTime(entry, previousEntry);
-                  if (breakTime) {
-                    chronologicalWithBreaks.push({
-                      type: 'break',
-                      data: breakTime,
-                      beforeEntryId: entry.id,
-                      afterEntryId: previousEntry.id,
-                      breakKey: `break-${previousEntry.id}-${entry.id}` // Create stable composite key
-                    });
-                  }
-                }
-                chronologicalWithBreaks.push({
-                  type: 'entry',
-                  data: entry
-                });
-              });
-
-              // Now sort the chronological sequence according to display order
-              if (sortOrder === 'desc') {
-                // For newest first, we need to reverse the entire sequence
-                // but keep breaks with their correct chronological positions
-                const reversedSequence = [];
-                const entryPositions = new Map();
-                
-                // First, map entry positions in chronological order
-                chronologicalWithBreaks.forEach((item, index) => {
-                  if (item.type === 'entry') {
-                    entryPositions.set(item.data.id, index);
-                  }
-                });
-                
-                // Sort entries by display order
-                const displayEntries = [...completedEntries].reverse();
-                
-                // For each entry in display order, find it in chronological sequence
-                // and add it and any preceding breaks to the reversed sequence
-                displayEntries.forEach(entry => {
-                  const chronologicalIndex = entryPositions.get(entry.id);
-                  if (chronologicalIndex !== undefined) {
-                    // Find the start of this segment (after previous entry or breaks)
-                    let segmentStart = chronologicalIndex;
-                    while (segmentStart > 0 && 
-                           chronologicalWithBreaks[segmentStart - 1].type !== 'entry') {
-                      segmentStart--;
-                    }
-                    
-                    // Add the segment (breaks + entry) in reverse order
-                    for (let i = chronologicalIndex; i >= segmentStart; i--) {
-                      reversedSequence.push(chronologicalWithBreaks[i]);
-                    }
-                  }
-                });
-                
-                unifiedDisplay.push(...reversedSequence);
-              } else {
-                // For oldest first, use chronological order directly
-                unifiedDisplay.push(...chronologicalWithBreaks);
-              }
-
-              // Render the unified display
-              return unifiedDisplay.map((item, index) => {
+            {unifiedDisplay.map((item, index) => {
                 if (item.type === 'active') {
                   return (
                     <motion.div
@@ -1670,8 +1673,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     </motion.div>
                   );
                 }
-              });
-            }, [activeEntry, selectedDateEntries, sortOrder, showBreaks, _])}
+            })}
 
           </AnimatePresence>
         </div>
