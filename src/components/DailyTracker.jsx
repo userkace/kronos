@@ -1484,10 +1484,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       key={item.breakKey}
                       layout
                       initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: showBreaks ? 1 : 0, scale: showBreaks ? 1 : 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}
-                      style={{ display: showBreaks ? 'block' : 'none' }}
                       className="text-center py-2"
                     >
                       <div
