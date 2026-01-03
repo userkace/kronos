@@ -503,8 +503,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const currentEntry = allEntriesChronological[i];
       const previousEntry = allEntriesChronological[i - 1];
 
-      // Only calculate break if previous entry has an end time
-      if (previousEntry.endTime && !previousEntry.isActive) {
+      // Only calculate break if previous entry has an end time and is not active
+      // Also ensure neither current nor previous entry is the active entry
+      if (previousEntry.endTime && !previousEntry.isActive && !currentEntry.isActive) {
         const breakTime = calculateBreakTime(currentEntry, previousEntry);
         if (breakTime) {
           totalBreakSeconds += breakTime;
