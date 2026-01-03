@@ -98,43 +98,53 @@ export const useUnifiedDisplay = (
     // Filter completed entries once
     const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
     
-    // Handle active entry and its break
-    if (activeEntry) {
-      unifiedDisplay.push({
-        type: 'active',
-        data: activeEntry
-      });
-      
-      // Add break between active entry and last completed entry
-      if (completedEntries.length > 0) {
-        const lastCompleted = completedEntries[completedEntries.length - 1];
-        const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
-        if (breakTimeBetweenActiveAndLast) {
-          unifiedDisplay.push({
-            type: 'break',
-            data: breakTimeBetweenActiveAndLast,
-            beforeEntryId: activeEntry.id,
-            afterEntryId: lastCompleted.id,
-            breakKey: `active-break-${activeEntry.id}-${lastCompleted.id}`
-          });
-        }
-      }
-    }
-
     // Sort completed entries chronologically
     const chronologicalEntries = [...completedEntries].sort((a, b) => 
       new Date(a.startTime) - new Date(b.startTime)
     );
 
-    // Create chronological sequence with breaks
-    const chronologicalWithBreaks = createChronologicalWithBreaks(chronologicalEntries, calculateBreakTime);
+    // Handle active entry by inserting it in correct chronological position
+    let allEntriesChronological = [...chronologicalEntries];
+    if (activeEntry) {
+      // Find the correct position to insert active entry chronologically
+      const activeStartTime = new Date(activeEntry.startTime);
+      let insertIndex = allEntriesChronological.findIndex(entry => 
+        new Date(entry.startTime) > activeStartTime
+      );
+      
+      // If no entry starts after active entry, add to the end
+      if (insertIndex === -1) {
+        insertIndex = allEntriesChronological.length;
+      }
+      
+      // Insert active entry at the correct chronological position
+      allEntriesChronological.splice(insertIndex, 0, activeEntry);
+    }
 
-    // Apply display order and filter breaks if needed
+    // Create chronological sequence with breaks for all entries
+    const chronologicalWithBreaks = createChronologicalWithBreaks(allEntriesChronological, calculateBreakTime);
+
+    // Separate active entry and breaks from completed entries for display
+    let activeEntryDisplay = [];
+    let completedEntriesDisplay = [];
+    
+    chronologicalWithBreaks.forEach(item => {
+      if (item.type === 'entry' && item.data.isActive) {
+        activeEntryDisplay.push({
+          type: 'active',
+          data: item.data
+        });
+      } else {
+        completedEntriesDisplay.push(item);
+      }
+    });
+
+    // Apply display order to completed entries only
     let displaySequence;
     if (sortOrder === 'desc') {
-      displaySequence = createReversedSequence(chronologicalWithBreaks, completedEntries);
+      displaySequence = createReversedSequence(completedEntriesDisplay, chronologicalEntries);
     } else {
-      displaySequence = chronologicalWithBreaks;
+      displaySequence = completedEntriesDisplay;
     }
 
     // Filter out breaks if showBreaks is false
@@ -142,7 +152,8 @@ export const useUnifiedDisplay = (
       displaySequence = displaySequence.filter(item => item.type !== 'break');
     }
 
-    unifiedDisplay.push(...displaySequence);
+    // Combine active entry (always first) with completed entries display
+    unifiedDisplay.push(...activeEntryDisplay, ...displaySequence);
 
     return unifiedDisplay;
   }, [activeEntry, selectedDateEntries, sortOrder, showBreaks, calculateBreakTime]);
