@@ -55,18 +55,19 @@ const PomodoroTimer = () => {
   // Helper function to check for active timer entries
   const checkForActiveTimerEntries = () => {
     const allData = loadTimesheetData();
-    let foundActive = false;
     
-    Object.keys(allData).forEach(dateKey => {
+    // Early return optimization: break loop as soon as active entry is found
+    for (const dateKey in allData) {
       const entries = allData[dateKey];
-      const activeInDate = entries.find(entry => entry.isActive);
-      if (activeInDate) {
-        foundActive = true;
+      const activeEntry = entries.find(entry => entry.isActive);
+      if (activeEntry) {
+        setHasActiveTimerEntry(true);
+        return true;
       }
-    });
+    }
     
-    setHasActiveTimerEntry(foundActive);
-    return foundActive;
+    setHasActiveTimerEntry(false);
+    return false;
   };
 
   // Check for active entries on mount and when storage changes
