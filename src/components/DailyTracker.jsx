@@ -1613,10 +1613,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               <Clock className="w-16 h-16 mx-auto mb-4" />
             </div>
             <h3 className="text-xl font-semibold text-gray-500 mb-2">
-              No time entries yet
+              {isToday() 
+                ? "No time entries yet"
+                : "No time entries for this date"
+              }
             </h3>
             <p className="text-gray-400">
-              Start tracking your time by entering a task above and clicking Start
+              {isToday() 
+                ? "Start tracking your time by entering a task above and clicking Start"
+                : "Add manual time entries for this date using the Add Manual Entry button above"
+              }
             </p>
           </div>
         )}
