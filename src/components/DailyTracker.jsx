@@ -459,7 +459,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   };
 
   // Calculate break time between two consecutive entries
-  const calculateBreakTime = (currentEntry, previousEntry) => {
+  const calculateBreakTime = useCallback((currentEntry, previousEntry) => {
     if (!currentEntry || !previousEntry || !previousEntry.endTime || !currentEntry.startTime) return null;
 
     const prevEndInTimezone = toZonedTime(parseISO(previousEntry.endTime), timezone);
@@ -471,10 +471,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     if (breakSeconds <= 10) return null;
 
     return breakSeconds;
-  };
+  }, [timezone]);
 
   // Calculate total break time for the day
-  const calculateDailyBreakTotal = () => {
+  const calculateDailyBreakTotal = useCallback(() => {
     let totalBreakSeconds = 0;
 
     // Get completed entries only (filter out active entries), then sort by start time
@@ -501,12 +501,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     return formatDisplayDuration(totalBreakSeconds);
-  };
+  }, [selectedDateEntries, activeEntry, calculateBreakTime]);
 
   // Memoized break total calculation to avoid expensive recalculation on every render
   const breakTotal = useMemo(() => {
     return calculateDailyBreakTotal();
-  }, [selectedDateEntries, activeEntry]);
+  }, [calculateDailyBreakTotal]);
 
   // Calculate duration for active entry
   const getActiveDuration = (entry) => {
