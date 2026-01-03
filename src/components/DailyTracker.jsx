@@ -1670,7 +1670,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   );
                 }
               });
-            }, [activeEntry, selectedDateEntries, sortOrder, showBreaks])}
+            }, [activeEntry, selectedDateEntries, sortOrder, showBreaks, _])}
 
           </AnimatePresence>
         </div>
