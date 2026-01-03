@@ -7,26 +7,6 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
   const [activeEntry, setActiveEntry] = React.useState(null);
   const [currentTime, setCurrentTime] = React.useState(new Date());
 
-  // Add beam animation to document head
-  React.useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes beam {
-        0% {
-          transform: translateX(-100%);
-        }
-        100% {
-          transform: translateX(100%);
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
-
   // Check for active entries
   const checkActiveEntry = () => {
     try {
