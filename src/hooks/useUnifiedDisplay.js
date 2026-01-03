@@ -120,13 +120,20 @@ export const useUnifiedDisplay = (
     // Create chronological sequence with breaks
     const chronologicalWithBreaks = createChronologicalWithBreaks(chronologicalEntries, calculateBreakTime);
 
-    // Apply display order
+    // Apply display order and filter breaks if needed
+    let displaySequence;
     if (sortOrder === 'desc') {
-      const reversedSequence = createReversedSequence(chronologicalWithBreaks, completedEntries);
-      unifiedDisplay.push(...reversedSequence);
+      displaySequence = createReversedSequence(chronologicalWithBreaks, completedEntries);
     } else {
-      unifiedDisplay.push(...chronologicalWithBreaks);
+      displaySequence = chronologicalWithBreaks;
     }
+
+    // Filter out breaks if showBreaks is false
+    if (!showBreaks) {
+      displaySequence = displaySequence.filter(item => item.type !== 'break');
+    }
+
+    unifiedDisplay.push(...displaySequence);
 
     return unifiedDisplay;
   }, [activeEntry, selectedDateEntries, sortOrder, showBreaks, calculateBreakTime]);
