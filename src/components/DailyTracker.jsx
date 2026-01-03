@@ -68,7 +68,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Day of week of first day (0 = Sunday, 6 = Saturday) in target timezone
     const firstDayOfWeek = zonedFirstDay.getDay();
-    
+
     // Total days in month - use UTC calculation which is consistent across timezones
     const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 
@@ -440,7 +440,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     if (hasTimerEntries && isToday()) {
       const storageKey = getStorageDateKey(); // Use current date in selected timezone
-      
+
       const allData = loadTimesheetData() || {};
       allData[storageKey] = selectedDateEntries;
       saveTimesheetData(allData);
@@ -530,29 +530,29 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Calculate total break time for the day
   const calculateDailyBreakTotal = () => {
     let totalBreakSeconds = 0;
-    
+
     // Get all entries sorted by start time (chronological order)
     const allEntries = [...selectedDateEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-    
+
     // Add active entry to the list if it exists
     if (activeEntry) {
       allEntries.push(activeEntry);
     }
-    
+
     // Calculate break times between consecutive entries
     for (let i = 1; i < allEntries.length; i++) {
       const currentEntry = allEntries[i];
       const previousEntry = allEntries[i - 1];
-      
+
       // Only calculate break if previous entry has an end time
-      if (previousEntry.endTime || !previousEntry.isActive) {
+      if (previousEntry.endTime && !previousEntry.isActive) {
         const breakTime = calculateBreakTime(currentEntry, previousEntry);
         if (breakTime) {
           totalBreakSeconds += breakTime;
         }
       }
     }
-    
+
     return formatDisplayDuration(totalBreakSeconds);
   };
 
@@ -1399,39 +1399,91 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           {/* Unified Task Entries with Layout Animation */}
           <AnimatePresence mode="popLayout">
             {(() => {
-              // Create a unified array that includes both active and completed entries
-              // with proper positioning based on sort order
-              const allEntries = [];
+              // Create a unified display that includes both entries and breaks in correct positions
+              const unifiedDisplay = [];
               
-              // Add active entry if it exists
+              // Get completed entries
+              const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+              
+              // Add active entry if it exists (always at top)
               if (activeEntry) {
-                allEntries.push({
-                  ...activeEntry,
-                  _entryType: 'active',
-                  _sortKey: -1 // Always put active entry at the top for layout animation
+                unifiedDisplay.push({
+                  type: 'active',
+                  data: activeEntry
                 });
               }
-              
-              // Add completed entries
-              const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-              const displayEntries = sortOrder === 'asc'
-                ? [...completedEntries]
-                : [...completedEntries].reverse();
 
-              displayEntries.forEach((entry, index) => {
-                allEntries.push({
-                  ...entry,
-                  _entryType: 'completed',
-                  _sortKey: sortOrder === 'asc' ? index : displayEntries.length - index,
-                  _displayIndex: index
+              // Create chronological entries for break time calculation
+              const chronologicalEntries = [...completedEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+              // Calculate break times and create chronological sequence with breaks
+              const chronologicalWithBreaks = [];
+              chronologicalEntries.forEach((entry, index) => {
+                if (index > 0) {
+                  const previousEntry = chronologicalEntries[index - 1];
+                  const breakTime = calculateBreakTime(entry, previousEntry);
+                  if (breakTime) {
+                    chronologicalWithBreaks.push({
+                      type: 'break',
+                      data: breakTime,
+                      beforeEntryId: entry.id
+                    });
+                  }
+                }
+                chronologicalWithBreaks.push({
+                  type: 'entry',
+                  data: entry
                 });
               });
 
-              return allEntries.map((entry) => {
-                if (entry._entryType === 'active') {
+              // Now sort the chronological sequence according to display order
+              if (sortOrder === 'desc') {
+                // For newest first, we need to reverse the entire sequence
+                // but keep breaks with their correct chronological positions
+                const reversedSequence = [];
+                const entryPositions = new Map();
+                
+                // First, map entry positions in chronological order
+                chronologicalWithBreaks.forEach((item, index) => {
+                  if (item.type === 'entry') {
+                    entryPositions.set(item.data.id, index);
+                  }
+                });
+                
+                // Sort entries by display order
+                const displayEntries = [...completedEntries].reverse();
+                
+                // For each entry in display order, find it in chronological sequence
+                // and add it and any preceding breaks to the reversed sequence
+                displayEntries.forEach(entry => {
+                  const chronologicalIndex = entryPositions.get(entry.id);
+                  if (chronologicalIndex !== undefined) {
+                    // Find the start of this segment (after previous entry or breaks)
+                    let segmentStart = chronologicalIndex;
+                    while (segmentStart > 0 && 
+                           chronologicalWithBreaks[segmentStart - 1].type !== 'entry') {
+                      segmentStart--;
+                    }
+                    
+                    // Add the segment (breaks + entry) in reverse order
+                    for (let i = chronologicalIndex; i >= segmentStart; i--) {
+                      reversedSequence.push(chronologicalWithBreaks[i]);
+                    }
+                  }
+                });
+                
+                unifiedDisplay.push(...reversedSequence);
+              } else {
+                // For oldest first, use chronological order directly
+                unifiedDisplay.push(...chronologicalWithBreaks);
+              }
+
+              // Render the unified display
+              return unifiedDisplay.map((item, index) => {
+                if (item.type === 'active') {
                   return (
                     <motion.div
-                      key={`active-${entry.id}`}
+                      key={`active-${item.data.id}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 0 }}
@@ -1443,11 +1495,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
                               <h3 className="font-semibold text-gray-900 text-lg">
-                                {entry.description}
+                                {item.data.description}
                               </h3>
                             </div>
                             <p className="text-green-700 text-sm mb-2">
-                              {entry.project || ''}
+                              {item.data.project || ''}
                             </p>
                             <div className="flex items-center space-x-4 text-green-600">
                               {!isToday() && (
@@ -1458,10 +1510,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                                 </>
                               )}
                               <span className="text-sm">
-                                {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - now
+                                {formatInTimezone(parseISO(item.data.startTime), 'h:mm a')} - now
                               </span>
                               <span className="font-mono font-semibold">
-                                {getActiveDuration(entry)}
+                                {getActiveDuration(item.data)}
                               </span>
                             </div>
                           </div>
@@ -1490,36 +1542,46 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       </div>
                     </motion.div>
                   );
+                } else if (item.type === 'break') {
+                  return (
+                    <motion.div
+                      key={`break-${item.beforeEntryId}`}
+                      layout
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: showBreaks ? 1 : 0, scale: showBreaks ? 1 : 0.8 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      style={{ display: showBreaks ? 'block' : 'none' }}
+                      className="text-center py-2"
+                    >
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: showBreaks ? 1 : 0 }}
+                        transition={{ delay: 0.1, duration: 0.3 }}
+                        className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
+                      >
+                        <span className="font-medium">Break</span>
+                        <span>•</span>
+                        <span>{formatBreakDuration(item.data)}</span>
+                      </motion.div>
+                    </motion.div>
+                  );
                 } else {
-                  // Completed entry
+                  // Entry
+                  const entry = item.data;
                   const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
                   const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
                   const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
 
-                  // Get the correct previous entry based on sort order
-                  let previousEntry = null;
-                  if (sortOrder === 'asc') {
-                    // In ascending order, previous entry is at index - 1
-                    previousEntry = entry._displayIndex > 0 ? displayEntries[entry._displayIndex - 1] : null;
-                  } else {
-                    // In descending order, previous entry is at index + 1
-                    previousEntry = entry._displayIndex < displayEntries.length - 1 ? displayEntries[entry._displayIndex + 1] : null;
-                  }
-                  const breakTime = previousEntry ? calculateBreakTime(entry, previousEntry) : null;
-
                   return (
-                    <React.Fragment key={entry.id}>
-                      {/* Entry Card */}
-                      <motion.div
-                        initial={{ opacity: 0, x: 0 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
-                        layout
-                      >
-                        <div
-                          className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all"
-                        >
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, x: 0 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      layout
+                    >
+                      <div className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900">
@@ -1583,28 +1645,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                         </div>
                       </div>
                     </motion.div>
-
-                      {/* Break Time Display between this entry and the previous older entry */}
-                      <motion.div
-                        layout
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: showBreaks && breakTime ? 1 : 0, scale: showBreaks && breakTime ? 1 : 0.8 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        style={{ display: (showBreaks && breakTime) ? 'block' : 'none' }}
-                        className="text-center py-2"
-                      >
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: showBreaks && breakTime ? 1 : 0 }}
-                          transition={{ delay: 0.1, duration: 0.3 }}
-                          className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
-                        >
-                          <span className="font-medium">Break</span>
-                          <span>•</span>
-                          <span>{formatBreakDuration(breakTime)}</span>
-                        </motion.div>
-                      </motion.div>
-                    </React.Fragment>
                   );
                 }
               });
