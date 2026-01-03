@@ -75,6 +75,15 @@ const createReversedSequence = (chronologicalWithBreaks, completedEntries) => {
  * Custom hook to compute unified display of entries and breaks
  * Extracted from DailyTracker component for better testability and maintainability
  * Optimized for performance with reduced complexity
+ * 
+ * @param {Object|null} activeEntry - Currently active timer entry or null if no active entry
+ * @param {Array<Object>} selectedDateEntries - Array of timer entries for the selected date
+ * @param {string} sortOrder - Sort order for display ('asc' for chronological, 'desc' for reverse chronological)
+ * @param {boolean} showBreaks - Whether to include break periods between entries in the display
+ * @param {Function} calculateBreakTime - Function to calculate break time between two entries
+ * @param {Object} calculateBreakTime.entry - First entry for break calculation
+ * @param {Object} calculateBreakTime.previousEntry - Previous entry for break calculation
+ * @returns {Array<Object>} Unified display array containing entry and break objects with type and data properties
  */
 export const useUnifiedDisplay = (
   activeEntry,
