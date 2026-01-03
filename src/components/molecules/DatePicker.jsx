@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { format, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTimezone } from '../../contexts/TimezoneContext';
 
@@ -122,49 +123,47 @@ const DatePicker = ({
 
   // Format date for display in the selected timezone
   const formatDate = (date, formatStr) => {
-    if (!date) return '';
+    if (!date || !selectedTimezone) return '';
     // Convert to the selected timezone before formatting
-    const zonedDate = new Date(
-      date.toLocaleString('en-US', { timeZone: selectedTimezone })
-    );
+    const zonedDate = toZonedTime(date, selectedTimezone);
     return format(zonedDate, formatStr);
   };
 
   // Check if a date is the selected date (timezone aware)
   const isDateSelected = (date) => {
-    if (!selectedDate || !date) return false;
+    if (!selectedDate || !date || !selectedTimezone) return false;
     // Compare dates in the selected timezone
-    const date1 = new Date(date.toLocaleString('en-US', { timeZone: selectedTimezone }));
-    const date2 = new Date(selectedDate.toLocaleString('en-US', { timeZone: selectedTimezone }));
-    return date1.toDateString() === date2.toDateString();
+    const date1 = toZonedTime(date, selectedTimezone);
+    const date2 = toZonedTime(selectedDate, selectedTimezone);
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
   };
 
   // Check if a date is today (timezone aware)
   const isDateToday = (date) => {
-    if (!date) return false;
-    const today = new Date();
-    // Compare dates in the selected timezone
-    const dateInTZ = new Date(date.toLocaleString('en-US', { timeZone: selectedTimezone }));
-    const todayInTZ = new Date(today.toLocaleString('en-US', { timeZone: selectedTimezone }));
+    if (!date || !selectedTimezone) return false;
+    const today = toZonedTime(new Date(), selectedTimezone);
+    const dateInTZ = toZonedTime(date, selectedTimezone);
     return (
-      dateInTZ.getDate() === todayInTZ.getDate() &&
-      dateInTZ.getMonth() === todayInTZ.getMonth() &&
-      dateInTZ.getFullYear() === todayInTZ.getFullYear()
+      dateInTZ.getDate() === today.getDate() &&
+      dateInTZ.getMonth() === today.getMonth() &&
+      dateInTZ.getFullYear() === today.getFullYear()
     );
   };
 
   // Check if a date is in the future (timezone aware)
   const isFutureDate = (date) => {
-    if (!date) return false;
-    const today = new Date();
-    // Compare dates in the selected timezone
-    const dateInTZ = new Date(date.toLocaleString('en-US', { timeZone: selectedTimezone }));
-    const todayInTZ = new Date(today.toLocaleString('en-US', { timeZone: selectedTimezone }));
+    if (!date || !selectedTimezone) return false;
+    const today = toZonedTime(new Date(), selectedTimezone);
+    const dateInTZ = toZonedTime(date, selectedTimezone);
 
     // Reset hours, minutes, seconds, and milliseconds for accurate date comparison
     const dateToCompare = new Date(dateInTZ);
     dateToCompare.setHours(0, 0, 0, 0);
-    const todayToCompare = new Date(todayInTZ);
+    const todayToCompare = new Date(today);
     todayToCompare.setHours(0, 0, 0, 0);
 
     return dateToCompare > todayToCompare;
@@ -257,11 +256,16 @@ const DatePicker = ({
               {calendarDays.map((day, index) => {
                 if (!day) return <div key={index} className="h-8"></div>;
 
+                // Convert day to the selected timezone for display and comparison
+                const zonedDay = selectedTimezone ? toZonedTime(day, selectedTimezone) : day;
                 const isSelected = isDateSelected(day);
                 const isToday = isDateToday(day);
-                const isCurrentMonth = calendarDays[15] ?
-                  day.getMonth() === calendarDays[15].getMonth() :
-                  day.getMonth() === new Date().getMonth();
+                
+                // Check if day is in the current month being displayed
+                const currentMonth = calendarDays[15] ? 
+                  toZonedTime(calendarDays[15], selectedTimezone).getMonth() : 
+                  toZonedTime(new Date(), selectedTimezone).getMonth();
+                const isCurrentMonth = zonedDay.getMonth() === currentMonth;
 
                 return (
                   <div 
@@ -287,7 +291,7 @@ const DatePicker = ({
                         setShowPicker(false);
                         triggerRef.current?.focus();
                       }}
-                      id={`date-${format(day, 'yyyy-MM-dd')}`}
+                      id={`date-${format(zonedDay, 'yyyy-MM-dd')}`}
                       data-date={day.toISOString()}
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                         isSelected
@@ -301,10 +305,10 @@ const DatePicker = ({
                                 : 'hover:bg-gray-100 focus:bg-gray-100'
                       } focus:outline-none`}
                       disabled={isFutureDate(day)}
-                      aria-label={`${format(day, 'EEEE, MMMM d, yyyy')}${isSelected ? ' (selected)' : ''}${!isCurrentMonth ? ' (not in current month)' : ''}`}
+                      aria-label={`${format(zonedDay, 'EEEE, MMMM d, yyyy')}${isSelected ? ' (selected)' : ''}${!isCurrentMonth ? ' (not in current month)' : ''}`}
                       tabIndex={isSelected ? 0 : -1}
                     >
-                      {day.getDate()}
+                      {zonedDay.getDate()}
                     </button>
                   </div>
                 );
