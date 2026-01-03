@@ -129,26 +129,33 @@ const PomodoroTimer = () => {
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
+    <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pomodoro Timer</h1>
-            <p className="text-gray-600 mt-2">Stay focused with time management technique</p>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">Pomodoro Timer</h1>
+              <p className="text-gray-600 mt-2">Stay focused with time management technique</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Timer Settings"
+              >
+                <SettingsIcon className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <SettingsIcon className="w-5 h-5" />
-          </button>
         </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="mb-8 p-6 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Timer Settings</h3>
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Timer Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -232,13 +239,13 @@ const PomodoroTimer = () => {
 
         {/* Task Input */}
         {!isTrackingTask && (
-            <div className="mb-8">
+            <div className="mb-6">
             <input
                 type="text"
                 value={currentTask}
                 onChange={(e) => setCurrentTask(e.target.value)}
                 placeholder="What are you working on?"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={isRunning}
             />
             </div>
@@ -246,7 +253,7 @@ const PomodoroTimer = () => {
 
         {/* Status Information */}
         {isTrackingTask && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex items-center space-x-2 text-blue-800">
               <Timer className="w-5 h-5" />
               <span className="font-medium">Tracking time for: {currentTask}</span>
@@ -255,7 +262,7 @@ const PomodoroTimer = () => {
         )}
 {isTrackingTask && (
 <>
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full ${getPhaseColor()} text-white mb-4`}>
             {getPhaseIcon()}
           </div>
@@ -272,7 +279,7 @@ const PomodoroTimer = () => {
         </div>
 
 
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
               className={`h-2 rounded-full transition-all duration-1000 ${getPhaseColor()}`}
@@ -334,6 +341,7 @@ const PomodoroTimer = () => {
           >
             <span>Reset All</span>
           </button>
+        </div>
         </div>
       </div>
     </div>
