@@ -74,38 +74,32 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
    * getCalendarDays(new Date('2023-03-15T00:00:00Z'));
    */
   const getCalendarDays = (date) => {
-    const zonedDate = toZonedTime(date, timezone);
-    const year = zonedDate.getFullYear();
-    const month = zonedDate.getMonth();
+    // Use the original date for year/month calculation to avoid timezone offset issues
+    const originalDate = new Date(date);
+    const year = originalDate.getFullYear();
+    const month = originalDate.getMonth();
 
-    // First day of the month in target timezone
-    const firstDay = toZonedTime(new Date(Date.UTC(year, month, 1)), timezone);
-    // Last day of the month in target timezone
-    const lastDay = toZonedTime(new Date(Date.UTC(year, month + 1, 0)), timezone);
+    // Convert to target timezone for day-of-week calculations only
+    const zonedFirstDay = toZonedTime(new Date(Date.UTC(year, month, 1)), timezone);
 
-    // Day of week of first day (0 = Sunday, 6 = Saturday)
-    const firstDayOfWeek = firstDay.getDay();
-    // Total days in month
-    const daysInMonth = lastDay.getDate();
+    // Day of week of first day (0 = Sunday, 6 = Saturday) in target timezone
+    const firstDayOfWeek = zonedFirstDay.getDay();
+    
+    // Total days in month - use UTC calculation which is consistent across timezones
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 
     // Calculate days to show from previous month
-    const prevMonthLastDay = toZonedTime(new Date(Date.UTC(year, month, 0)), timezone);
     const daysFromPrevMonth = firstDayOfWeek;
 
-    // Calculate total days to show (ensuring 6 rows)
-    const totalDaysToShow = Math.ceil((daysInMonth + daysFromPrevMonth) / 7) * 7;
-    let daysFromNextMonth = totalDaysToShow - (daysInMonth + daysFromPrevMonth);
-
-    // Adjust if we have a complete week without needing extra days
-    if (daysFromNextMonth < 0) {
-      daysFromNextMonth = 0;
-    }
+    // Calculate total days to show - always ensure 6 rows (42 days) for consistent layout
+    const totalDaysToShow = 42;
+    const daysFromNextMonth = totalDaysToShow - (daysInMonth + daysFromPrevMonth);
 
     const days = [];
 
     // Add days from previous month
     if (daysFromPrevMonth > 0) {
-      const prevMonthDays = prevMonthLastDay.getDate();
+      const prevMonthDays = new Date(Date.UTC(year, month, 0)).getUTCDate();
       for (let i = 0; i < daysFromPrevMonth; i++) {
         const day = new Date(Date.UTC(year, month - 1, prevMonthDays - daysFromPrevMonth + i + 1));
         days.push(day);
