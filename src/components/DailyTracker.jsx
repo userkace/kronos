@@ -1596,7 +1596,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       key={entry.id}
                       initial={{ opacity: 0, x: 0 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
+                      exit={{ opacity: 0, x: 0 }}
                       transition={{ duration: 0.3, ease: "easeOut" }}
                       layout
                     >
