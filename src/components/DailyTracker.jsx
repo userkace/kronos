@@ -19,6 +19,7 @@ import {
   loadWeeklyTimesheet
 } from '../utils/storage';
 import faviconManager from '../utils/faviconManager';
+import storageEventSystem from '../utils/storageEvents';
 
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
@@ -359,37 +360,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     loadData();
 
-    // Add storage event listener for cross-tab synchronization
-    const handleStorageChange = (e) => {
-      if (e.key === 'kronos_timesheet_data') {
-        loadData();
-      }
-    };
-
-    // Add polling for same-tab changes (when Pomodoro saves data)
-    const pollInterval = setInterval(() => {
-      const currentData = loadTimesheetData();
-      const storageKey = getStorageDateKey(selectedDate);
-      const currentEntries = currentData[storageKey] || [];
-
-      // Check if entries have changed
-      if (currentEntries.length !== selectedDateEntries.length) {
-        loadData();
-      } else {
-        // Check if any entry IDs are different
-        const currentIds = currentEntries.map(e => e.id).sort();
-        const selectedIds = selectedDateEntries.map(e => e.id).sort();
-        if (JSON.stringify(currentIds) !== JSON.stringify(selectedIds)) {
-          loadData();
-        }
-      }
-    }, 2000); // Check every 2 seconds
-
-    window.addEventListener('storage', handleStorageChange);
+    // Subscribe to storage changes using the event system
+    const unsubscribe = storageEventSystem.subscribe('kronos_timesheet_data', () => {
+      loadData();
+    });
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(pollInterval);
+      unsubscribe();
     };
   }, [timezone, selectedDate]); // Re-load when timezone or selected date changes
 

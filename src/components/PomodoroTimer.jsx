@@ -3,6 +3,7 @@ import { Play, Pause, RotateCcw, Coffee, Brain, Timer, Settings as SettingsIcon,
 import { useToast } from '../contexts/ToastContext';
 import { usePomodoro } from '../contexts/PomodoroContext';
 import { loadTimesheetData } from '../utils/storage';
+import storageEventSystem from '../utils/storageEvents';
 
 const PomodoroTimer = () => {
   const { success, error } = useToast();
@@ -72,23 +73,13 @@ const PomodoroTimer = () => {
   useEffect(() => {
     checkForActiveTimerEntries();
     
-    // Listen for storage changes
-    const handleStorageChange = (e) => {
-      if (e.key === 'kronos_timesheet_data') {
-        checkForActiveTimerEntries();
-      }
-    };
-    
-    // Poll for changes (same as DailyTracker)
-    const pollInterval = setInterval(() => {
+    // Subscribe to storage changes using the event system
+    const unsubscribe = storageEventSystem.subscribe('kronos_timesheet_data', () => {
       checkForActiveTimerEntries();
-    }, 2000);
-    
-    window.addEventListener('storage', handleStorageChange);
+    });
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(pollInterval);
+      unsubscribe();
     };
   }, []);
 

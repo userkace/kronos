@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import { loadTimesheetData } from '../../utils/storage';
+import storageEventSystem from '../../utils/storageEvents';
 
 const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
   const [activeEntry, setActiveEntry] = React.useState(null);
@@ -59,23 +60,13 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
   React.useEffect(() => {
     checkActiveEntry();
     
-    // Listen for storage changes
-    const handleStorageChange = (e) => {
-      if (e.key === 'kronos_timesheet_data') {
-        checkActiveEntry();
-      }
-    };
-    
-    // Poll for changes
-    const pollInterval = setInterval(() => {
+    // Subscribe to storage changes using the event system
+    const unsubscribe = storageEventSystem.subscribe('kronos_timesheet_data', () => {
       checkActiveEntry();
-    }, 2000);
-    
-    window.addEventListener('storage', handleStorageChange);
+    });
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(pollInterval);
+      unsubscribe();
     };
   }, []);
 
