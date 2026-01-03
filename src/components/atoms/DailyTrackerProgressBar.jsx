@@ -51,46 +51,44 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
     };
   }, []);
 
-  // Calculate duration for active entry
-  const getActiveDuration = () => {
-    if (!activeEntry) return '0:00:00';
+  // Helper function to calculate elapsed seconds
+  const getElapsedSeconds = () => {
+    if (!activeEntry) return 0;
 
     try {
       const startTime = new Date(activeEntry.startTime);
       const currentTimeMs = currentTime.getTime();
       const startTimeMs = startTime.getTime();
-      const seconds = Math.floor((currentTimeMs - startTimeMs) / 1000);
-
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      return Math.floor((currentTimeMs - startTimeMs) / 1000);
     } catch (error) {
-      console.error('Error calculating duration:', error);
-      return '0:00:00';
+      console.error('Error calculating elapsed seconds:', error);
+      return 0;
     }
+  };
+
+  // Calculate duration for active entry
+  const getActiveDuration = () => {
+    if (!activeEntry) return '0:00:00';
+
+    const seconds = getElapsedSeconds();
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Format duration for display
   const formatDisplayDuration = () => {
     if (!activeEntry) return '0s';
 
-    try {
-      const startTime = new Date(activeEntry.startTime);
-      const currentTimeMs = currentTime.getTime();
-      const startTimeMs = startTime.getTime();
-      const seconds = Math.floor((currentTimeMs - startTimeMs) / 1000);
+    const seconds = getElapsedSeconds();
 
-      if (seconds < 60) return `${seconds}s`;
-      const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return `${minutes} min`;
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = minutes % 60;
-      return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
-    } catch (error) {
-      console.error('Error formatting duration:', error);
-      return '0s';
-    }
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
   };
 
   // Don't show if no active entry
