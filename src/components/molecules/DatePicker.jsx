@@ -136,12 +136,12 @@ const DatePicker = ({
     }
   }, [showPicker, focusedDate, calendarDays]);
 
-  // Update current display date when calendar days change
+  // Update current display date when calendar days change (only in days view)
   useEffect(() => {
-    if (calendarDays.length > 0 && calendarDays[15]) {
+    if (calendarDays.length > 0 && calendarDays[15] && viewMode === 'days') {
       setCurrentDisplayDate(new Date(calendarDays[15]));
     }
-  }, [calendarDays]);
+  }, [calendarDays, viewMode]);
 
   // Format date for display in the selected timezone
   const formatDate = (date, formatStr) => {
