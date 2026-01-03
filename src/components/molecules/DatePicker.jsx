@@ -254,8 +254,6 @@ const DatePicker = ({
               aria-activedescendant={selectedDate ? `date-${format(selectedDate, 'yyyy-MM-dd')}` : undefined}
             >
               {calendarDays.map((day, index) => {
-                if (!day) return <div key={index} className="h-8"></div>;
-
                 // Convert day to the selected timezone for display and comparison
                 const zonedDay = selectedTimezone ? toZonedTime(day, selectedTimezone) : day;
                 const isSelected = isDateSelected(day);
