@@ -1407,6 +1407,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     <button
                       onClick={handleStop}
                       className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg flex items-center space-x-2"
+                      aria-label="Pause timer"
                     >
                       <Pause className="w-4 h-4" />
                     </button>
