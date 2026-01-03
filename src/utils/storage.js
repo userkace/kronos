@@ -192,7 +192,7 @@ export const loadSidebarState = () => {
 // Save sort order preference to LocalStorage
 export const saveSortOrder = (sortOrder) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.SORT_ORDER, sortOrder);
+    localStorage.setItem(STORAGE_KEYS.SORT_ORDER, JSON.stringify(sortOrder));
   } catch (error) {
     console.error('Error saving sort order:', error);
   }
@@ -201,7 +201,8 @@ export const saveSortOrder = (sortOrder) => {
 // Load sort order preference from LocalStorage
 export const loadSortOrder = () => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.SORT_ORDER) || 'desc'; // Default to descending (newest first)
+    const stored = localStorage.getItem(STORAGE_KEYS.SORT_ORDER);
+    return stored !== null ? JSON.parse(stored) : 'desc'; // Default to descending (newest first)
   } catch (error) {
     console.error('Error loading sort order:', error);
     return 'desc'; // Default to descending on error
