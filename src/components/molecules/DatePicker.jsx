@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { format, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowDownLeft } from 'lucide-react';
 import { useTimezone } from '../../contexts/TimezoneContext';
 
 const DatePicker = ({
@@ -13,6 +13,8 @@ const DatePicker = ({
 }) => {
   const [showPicker, setShowPicker] = React.useState(false);
   const [focusedDate, setFocusedDate] = React.useState(selectedDate || new Date());
+  const [viewMode, setViewMode] = React.useState('days'); // 'days', 'months', 'years'
+  const [currentDisplayDate, setCurrentDisplayDate] = React.useState(new Date());
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
   const { selectedTimezone } = useTimezone();
@@ -133,6 +135,13 @@ const DatePicker = ({
     }
   }, [showPicker, focusedDate, calendarDays]);
 
+  // Update current display date when calendar days change
+  useEffect(() => {
+    if (calendarDays.length > 0 && calendarDays[15]) {
+      setCurrentDisplayDate(new Date(calendarDays[15]));
+    }
+  }, [calendarDays]);
+
   // Format date for display in the selected timezone
   const formatDate = (date, formatStr) => {
     if (!date || !selectedTimezone) return '';
@@ -181,6 +190,48 @@ const DatePicker = ({
     return dateToCompare > todayToCompare;
   };
 
+  // Handle month selection
+  const handleMonthSelect = (monthIndex) => {
+    const newDate = new Date(currentDisplayDate);
+    newDate.setMonth(monthIndex);
+    setCurrentDisplayDate(newDate);
+    
+    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
+                     (newDate.getMonth() - currentDisplayDate.getMonth());
+    onMonthChange(monthDiff);
+    setViewMode('days');
+  };
+
+  // Handle year selection
+  const handleYearSelect = (year) => {
+    const newDate = new Date(currentDisplayDate);
+    newDate.setFullYear(year);
+    setCurrentDisplayDate(newDate);
+    
+    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
+                     (newDate.getMonth() - currentDisplayDate.getMonth());
+    onMonthChange(monthDiff);
+    setViewMode('months');
+  };
+
+  // Get months array
+  const getMonths = () => {
+    return [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+  };
+
+  // Get years array (current year ± 10 years)
+  const getYears = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
   return (
     <div className={`relative ${className}`}>
       <button
@@ -217,121 +268,271 @@ const DatePicker = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onMonthChange(-1);
+                  if (viewMode === 'days') {
+                    onMonthChange(-1);
+                  } else if (viewMode === 'months') {
+                    const newDate = new Date(currentDisplayDate);
+                    newDate.setFullYear(newDate.getFullYear() - 1);
+                    setCurrentDisplayDate(newDate);
+                  } else if (viewMode === 'years') {
+                    const newDate = new Date(currentDisplayDate);
+                    newDate.setFullYear(newDate.getFullYear() - 20);
+                    setCurrentDisplayDate(newDate);
+                  }
                 }}
                 className="p-1 rounded-full hover:bg-gray-100"
-                aria-label="Previous month"
+                aria-label={viewMode === 'days' ? "Previous month" : viewMode === 'months' ? "Previous year" : "Previous years"}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <div 
-                className="font-medium"
-                id="month-year"
-                aria-live="polite"
-              >
-                {formatDate(calendarDays[15] || new Date(), 'MMMM yyyy')}
+              <div className="flex gap-1 items-center">
+                {viewMode === 'days' && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewMode('months');
+                      }}
+                      className="font-medium hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                      aria-label="Select month"
+                    >
+                      {formatDate(calendarDays[15] || new Date(), 'MMMM')}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewMode('years');
+                      }}
+                      className="font-medium hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                      aria-label="Select year"
+                    >
+                      {formatDate(calendarDays[15] || new Date(), 'yyyy')}
+                    </button>
+                  </>
+                )}
+                {viewMode === 'months' && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewMode('days');
+                      }}
+                      className="p-1 rounded-full hover:bg-gray-100"
+                      aria-label="Back to days"
+                    >
+                      <ArrowDownLeft className="w-4 h-4" />
+                    </button>
+                    <div 
+                      className="font-medium"
+                      aria-live="polite"
+                    >
+                      {formatDate(currentDisplayDate, 'yyyy')}
+                    </div>
+                  </>
+                )}
+                {viewMode === 'years' && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewMode('months');
+                      }}
+                      className="p-1 rounded-full hover:bg-gray-100"
+                      aria-label="Back to months"
+                    >
+                      <ArrowDownLeft className="w-4 h-4" />
+                    </button>
+                    <div 
+                      className="font-medium"
+                      aria-live="polite"
+                    >
+                      {Math.floor(currentDisplayDate.getFullYear() / 10) * 10}-{Math.floor(currentDisplayDate.getFullYear() / 10) * 10 + 9}
+                    </div>
+                  </>
+                )}
               </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onMonthChange(1);
+                  if (viewMode === 'days') {
+                    onMonthChange(1);
+                  } else if (viewMode === 'months') {
+                    const newDate = new Date(currentDisplayDate);
+                    newDate.setFullYear(newDate.getFullYear() + 1);
+                    setCurrentDisplayDate(newDate);
+                  } else if (viewMode === 'years') {
+                    const newDate = new Date(currentDisplayDate);
+                    newDate.setFullYear(newDate.getFullYear() + 20);
+                    setCurrentDisplayDate(newDate);
+                  }
                 }}
                 className="p-1 rounded-full hover:bg-gray-100"
-                aria-label="Next month"
+                aria-label={viewMode === 'days' ? "Next month" : viewMode === 'months' ? "Next year" : "Next years"}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
 
             {/* Day headers */}
-            <div 
-              role="row" 
-              className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2"
-              aria-hidden="true"
-            >
-              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day, i) => (
-                <div key={day} className="py-1" role="columnheader" aria-label={day}>
-                  <abbr title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]}>
-                    {day}
-                  </abbr>
-                </div>
-              ))}
-            </div>
+            {viewMode === 'days' && (
+              <div 
+                role="row" 
+                className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2"
+                aria-hidden="true"
+              >
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day, i) => (
+                  <div key={day} className="py-1" role="columnheader" aria-label={day}>
+                    <abbr title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]}>
+                      {day}
+                    </abbr>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Calendar days */}
-            <div 
-              role="grid" 
-              aria-labelledby="month-year"
-              className="grid grid-cols-7 gap-1 w-full"
-              aria-activedescendant={focusedDate ? `date-${format(focusedDate, 'yyyy-MM-dd')}` : undefined}
-            >
-              {calendarDays.map((day, index) => {
-                // Convert day to the selected timezone for display and comparison
-                const zonedDay = selectedTimezone ? toZonedTime(day, selectedTimezone) : day;
-                const isSelected = isDateSelected(day);
-                const isToday = isDateToday(day);
-                
-                // Check if day is in the current month being displayed
-                const currentMonth = calendarDays[15] ? 
-                  toZonedTime(calendarDays[15], selectedTimezone).getMonth() : 
-                  toZonedTime(new Date(), selectedTimezone).getMonth();
-                const isCurrentMonth = zonedDay.getMonth() === currentMonth;
+            {viewMode === 'days' && (
+              <div 
+                role="grid" 
+                aria-labelledby="month-year"
+                className="grid grid-cols-7 gap-1 w-full"
+                aria-activedescendant={focusedDate ? `date-${format(focusedDate, 'yyyy-MM-dd')}` : undefined}
+              >
+                {calendarDays.map((day, index) => {
+                  // Convert day to the selected timezone for display and comparison
+                  const zonedDay = selectedTimezone ? toZonedTime(day, selectedTimezone) : day;
+                  const isSelected = isDateSelected(day);
+                  const isToday = isDateToday(day);
+                  
+                  // Check if day is in the current month being displayed
+                  const currentMonth = calendarDays[15] ? 
+                    toZonedTime(calendarDays[15], selectedTimezone).getMonth() : 
+                    toZonedTime(new Date(), selectedTimezone).getMonth();
+                  const isCurrentMonth = zonedDay.getMonth() === currentMonth;
 
-                return (
-                  <div 
-                    key={index}
-                    role="gridcell"
-                    className="flex items-center justify-center w-8 h-8 mx-auto"
-                    aria-selected={isSelected}
-                  >
-                    <button
-                      onClick={(e) => {
-                        onDateChange(day);
-                        setFocusedDate(day);
-                        
-                        // Check if the selected date is in a different month than the current view
-                        // Use timezone-aware comparison to avoid edge cases with timezone conversion
-                        const currentViewDate = calendarDays[15] ? 
-                          toZonedTime(calendarDays[15], selectedTimezone) : 
-                          toZonedTime(new Date(), selectedTimezone);
-                        const currentViewMonth = currentViewDate.getMonth();
-                        const currentViewYear = currentViewDate.getFullYear();
-                        
-                        const selectedDateInTZ = toZonedTime(day, selectedTimezone);
-                        const selectedMonth = selectedDateInTZ.getMonth();
-                        const selectedYear = selectedDateInTZ.getFullYear();
-
-                        if (selectedMonth !== currentViewMonth || selectedYear !== currentViewYear) {
-                          const monthDiff = (selectedYear - currentViewYear) * 12 + (selectedMonth - currentViewMonth);
-                          onMonthChange(monthDiff);
-                        }
-
-                        setShowPicker(false);
-                        triggerRef.current?.focus();
-                      }}
-                      id={`date-${format(zonedDay, 'yyyy-MM-dd')}`}
-                      data-date={day.toISOString()}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                        isSelected
-                          ? 'bg-blue-600 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-                          : isToday
-                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 focus:bg-blue-200'
-                            : isFutureDate(day)
-                              ? 'text-gray-300 cursor-not-allowed'
-                              : !isCurrentMonth
-                                ? 'text-gray-400 hover:bg-gray-50 focus:bg-gray-50'
-                                : 'hover:bg-gray-100 focus:bg-gray-100'
-                      } focus:outline-none`}
-                      disabled={isFutureDate(day)}
-                      aria-label={`${format(zonedDay, 'EEEE, MMMM d, yyyy')}${isSelected ? ' (selected)' : ''}${!isCurrentMonth ? ' (not in current month)' : ''}`}
-                      tabIndex={isSelected ? 0 : -1}
+                  return (
+                    <div 
+                      key={index}
+                      role="gridcell"
+                      className="flex items-center justify-center w-8 h-8 mx-auto"
+                      aria-selected={isSelected}
                     >
-                      {zonedDay.getDate()}
+                      <button
+                        onClick={(e) => {
+                          onDateChange(day);
+                          setFocusedDate(day);
+                          
+                          // Check if the selected date is in a different month than the current view
+                          // Use timezone-aware comparison to avoid edge cases with timezone conversion
+                          const currentViewDate = calendarDays[15] ? 
+                            toZonedTime(calendarDays[15], selectedTimezone) : 
+                            toZonedTime(new Date(), selectedTimezone);
+                          const currentViewMonth = currentViewDate.getMonth();
+                          const currentViewYear = currentViewDate.getFullYear();
+                          
+                          const selectedDateInTZ = toZonedTime(day, selectedTimezone);
+                          const selectedMonth = selectedDateInTZ.getMonth();
+                          const selectedYear = selectedDateInTZ.getFullYear();
+
+                          if (selectedMonth !== currentViewMonth || selectedYear !== currentViewYear) {
+                            const monthDiff = (selectedYear - currentViewYear) * 12 + (selectedMonth - currentViewMonth);
+                            onMonthChange(monthDiff);
+                          }
+
+                          setShowPicker(false);
+                          triggerRef.current?.focus();
+                        }}
+                        id={`date-${format(zonedDay, 'yyyy-MM-dd')}`}
+                        data-date={day.toISOString()}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                          isSelected
+                            ? 'bg-blue-600 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                            : isToday
+                              ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 focus:bg-blue-200'
+                              : isFutureDate(day)
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : !isCurrentMonth
+                                  ? 'text-gray-400 hover:bg-gray-50 focus:bg-gray-50'
+                                  : 'hover:bg-gray-100 focus:bg-gray-100'
+                        } focus:outline-none`}
+                        disabled={isFutureDate(day)}
+                        aria-label={`${format(zonedDay, 'EEEE, MMMM d, yyyy')}${isSelected ? ' (selected)' : ''}${!isCurrentMonth ? ' (not in current month)' : ''}`}
+                        tabIndex={isSelected ? 0 : -1}
+                      >
+                        {zonedDay.getDate()}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Month selection */}
+            {viewMode === 'months' && (
+              <div 
+                role="grid" 
+                className="grid grid-cols-3 gap-2 w-full"
+                aria-label="Month selection"
+              >
+                {getMonths().map((month, index) => {
+                  const isCurrentMonth = new Date().getMonth() === index && 
+                                       new Date().getFullYear() === currentDisplayDate.getFullYear();
+                  const isSelected = selectedDate && 
+                                   selectedDate.getMonth() === index && 
+                                   selectedDate.getFullYear() === currentDisplayDate.getFullYear();
+                  
+                  return (
+                    <button
+                      key={month}
+                      onClick={() => handleMonthSelect(index)}
+                      className={`p-3 text-sm rounded-lg font-medium ${
+                        isSelected
+                          ? 'bg-blue-600 text-white'
+                          : isCurrentMonth
+                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                            : 'hover:bg-gray-100'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                      aria-label={`Select ${month}`}
+                      aria-selected={isSelected}
+                    >
+                      {month.slice(0, 3)}
                     </button>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Year selection */}
+            {viewMode === 'years' && (
+              <div 
+                role="grid" 
+                className="grid grid-cols-4 gap-2 w-full max-h-64 overflow-y-auto"
+                aria-label="Year selection"
+              >
+                {getYears().map((year) => {
+                  const isCurrentYear = new Date().getFullYear() === year;
+                  const isSelected = selectedDate && selectedDate.getFullYear() === year;
+                  
+                  return (
+                    <button
+                      key={year}
+                      onClick={() => handleYearSelect(year)}
+                      className={`p-2 text-sm rounded-lg font-medium ${
+                        isSelected
+                          ? 'bg-blue-600 text-white'
+                          : isCurrentYear
+                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                            : 'hover:bg-gray-100'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                      aria-label={`Select year ${year}`}
+                      aria-selected={isSelected}
+                    >
+                      {year}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
