@@ -477,19 +477,31 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   const calculateDailyBreakTotal = useCallback(() => {
     let totalBreakSeconds = 0;
 
-    // Get completed entries only (filter out active entries), then sort by start time
+    // Get completed entries only (filter out active entries)
     const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-    const allEntries = [...completedEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-
-    // Add active entry to the list if it exists
+    
+    // Handle active entry by inserting it in correct chronological position
+    let allEntriesChronological = [...completedEntries].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
     if (activeEntry) {
-      allEntries.push(activeEntry);
+      // Find the correct position to insert active entry chronologically
+      const activeStartTime = new Date(activeEntry.startTime);
+      let insertIndex = allEntriesChronological.findIndex(entry => 
+        new Date(entry.startTime) > activeStartTime
+      );
+      
+      // If no entry starts after active entry, add to the end
+      if (insertIndex === -1) {
+        insertIndex = allEntriesChronological.length;
+      }
+      
+      // Insert active entry at the correct chronological position
+      allEntriesChronological.splice(insertIndex, 0, activeEntry);
     }
 
     // Calculate break times between consecutive entries
-    for (let i = 1; i < allEntries.length; i++) {
-      const currentEntry = allEntries[i];
-      const previousEntry = allEntries[i - 1];
+    for (let i = 1; i < allEntriesChronological.length; i++) {
+      const currentEntry = allEntriesChronological[i];
+      const previousEntry = allEntriesChronological[i - 1];
 
       // Only calculate break if previous entry has an end time
       if (previousEntry.endTime && !previousEntry.isActive) {
