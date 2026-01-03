@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 
 /**
  * Optimized helper function to create chronological sequence with breaks
@@ -84,6 +84,10 @@ const createReversedSequence = (chronologicalWithBreaks, completedEntries) => {
  * @param {Object} calculateBreakTime.entry - First entry for break calculation
  * @param {Object} calculateBreakTime.previousEntry - Previous entry for break calculation
  * @returns {Array<Object>} Unified display array containing entry and break objects with type and data properties
+ * 
+ * @note The calculateBreakTime function should be wrapped in useCallback in the parent component
+ * to prevent unnecessary recalculations of the useMemo. If not wrapped, the hook will still work
+ * but may have performance implications.
  */
 export const useUnifiedDisplay = (
   activeEntry,
@@ -92,6 +96,13 @@ export const useUnifiedDisplay = (
   showBreaks,
   calculateBreakTime
 ) => {
+  // Memoize the calculateBreakTime function to stabilize the dependency
+  // This prevents unnecessary recalculations if the parent doesn't use useCallback
+  const stableCalculateBreakTime = useCallback(
+    (entry, previousEntry) => calculateBreakTime(entry, previousEntry),
+    [calculateBreakTime]
+  );
+
   return useMemo(() => {
     const unifiedDisplay = [];
     
@@ -122,7 +133,7 @@ export const useUnifiedDisplay = (
     }
 
     // Create chronological sequence with breaks for all entries
-    const chronologicalWithBreaks = createChronologicalWithBreaks(allEntriesChronological, calculateBreakTime);
+    const chronologicalWithBreaks = createChronologicalWithBreaks(allEntriesChronological, stableCalculateBreakTime);
 
     // Separate active entry and breaks from completed entries for display
     let activeEntryDisplay = [];
@@ -156,5 +167,5 @@ export const useUnifiedDisplay = (
     unifiedDisplay.push(...activeEntryDisplay, ...displaySequence);
 
     return unifiedDisplay;
-  }, [activeEntry, selectedDateEntries, sortOrder, showBreaks, calculateBreakTime]);
+  }, [activeEntry, selectedDateEntries, sortOrder, showBreaks, stableCalculateBreakTime]);
 };
