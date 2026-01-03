@@ -1545,6 +1545,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     return null;
                   }
 
+                  // Validate entry has required time properties
+                  if (!entry.startTime || !entry.endTime) {
+                    error('Invalid time entry detected - missing startTime or endTime');
+                    return null;
+                  }
+
                   const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
                   const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
                   const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
