@@ -78,7 +78,7 @@ const PomodoroProgressBar = ({ onViewChange, className }) => {
   const getPhaseText = () => {
     switch (currentPhase) {
       case 'work':
-        return 'Work Session';
+        return truncateTaskName(currentTask);
       case 'shortBreak':
         return 'Short Break';
       case 'longBreak':
@@ -90,14 +90,14 @@ const PomodoroProgressBar = ({ onViewChange, className }) => {
 
   // Truncate task name to 20 characters
   const truncateTaskName = (taskName) => {
-    if (!taskName || taskName.length <= 20) {
+    if (!taskName || taskName.length <= 15) {
       return taskName;
     }
-    return taskName.substring(0, 20) + '...';
+    return taskName.substring(0, 15) + '...';
   };
 
   return (
-    <div 
+    <div
       className={`mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${className}`}
       onClick={() => onViewChange && onViewChange('pomodoro')}
     >
@@ -138,7 +138,7 @@ const PomodoroProgressBar = ({ onViewChange, className }) => {
         </span>
         {currentPhase === 'work' && isTrackingTask && currentTask && (
           <span className="ml-2" title={currentTask}>
-            {truncateTaskName(currentTask)}
+            Work Session
           </span>
         )}
       </div>
