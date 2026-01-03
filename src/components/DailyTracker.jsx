@@ -702,6 +702,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       return;
     }
 
+    // Prevent continuing if Pomodoro is running
+    if (pomodoroIsRunning) {
+      warning('Cannot continue timer while Pomodoro is active');
+      return;
+    }
+
     // Stop any active entry first
     if (activeEntry) {
       handleStop();
@@ -1491,7 +1497,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
                       <button
                         onClick={() => handleContinue(entry)}
-                        className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full flex items-center space-x-1"
+                        disabled={pomodoroIsRunning}
+                        className={`p-3 rounded-full flex items-center space-x-1 transition-colors ${
+                          pomodoroIsRunning
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                        title={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : ''}
                       >
                         <Play className="w-4 h-4" />
                       </button>
