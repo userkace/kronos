@@ -6,6 +6,7 @@ class StorageEventSystem {
     this.listeners = new Map();
     this.lastKnownData = new Map();
     this.isInitialized = false;
+    this.originalMethods = {};
   }
 
   // Initialize the event system
@@ -24,25 +25,33 @@ class StorageEventSystem {
   // Start monitoring localStorage for in-tab changes
   startInTabMonitoring() {
     // Override localStorage methods to detect in-tab changes
-    const originalSetItem = localStorage.setItem.bind(localStorage);
-    const originalRemoveItem = localStorage.removeItem.bind(localStorage);
-    const originalClear = localStorage.clear.bind(localStorage);
+    this.originalMethods.setItem = localStorage.setItem.bind(localStorage);
+    this.originalMethods.removeItem = localStorage.removeItem.bind(localStorage);
+    this.originalMethods.clear = localStorage.clear.bind(localStorage);
 
     localStorage.setItem = (key, value) => {
       const oldValue = localStorage.getItem(key);
       try {
-        originalSetItem(key, value);
-      } finally {
+        this.originalMethods.setItem(key, value);
+        // Only notify listeners if the operation succeeded
         this.detectChanges(key, oldValue, value);
+      } catch (error) {
+        // Re-throw the error after logging
+        console.error('localStorage.setItem failed:', error);
+        throw error;
       }
     };
 
     localStorage.removeItem = (key) => {
       const oldValue = localStorage.getItem(key);
       try {
-        originalRemoveItem(key);
-      } finally {
+        this.originalMethods.removeItem(key);
+        // Only notify listeners if the operation succeeded
         this.detectChanges(key, oldValue, null);
+      } catch (error) {
+        // Re-throw the error after logging
+        console.error('localStorage.removeItem failed:', error);
+        throw error;
       }
     };
 
@@ -55,12 +64,15 @@ class StorageEventSystem {
       }
       
       try {
-        originalClear();
-      } finally {
-        // Notify about all cleared keys
+        this.originalMethods.clear();
+        // Only notify listeners if the operation succeeded
         Object.keys(currentValues).forEach(key => {
           this.detectChanges(key, currentValues[key], null);
         });
+      } catch (error) {
+        // Re-throw the error after logging
+        console.error('localStorage.clear failed:', error);
+        throw error;
       }
     };
   }
@@ -140,8 +152,21 @@ class StorageEventSystem {
   // Cleanup method
   destroy() {
     window.removeEventListener('storage', this.handleNativeStorageChange);
+    
+    // Restore original localStorage methods if they were overridden
+    if (this.originalMethods.setItem) {
+      localStorage.setItem = this.originalMethods.setItem;
+    }
+    if (this.originalMethods.removeItem) {
+      localStorage.removeItem = this.originalMethods.removeItem;
+    }
+    if (this.originalMethods.clear) {
+      localStorage.clear = this.originalMethods.clear;
+    }
+    
     this.listeners.clear();
     this.lastKnownData.clear();
+    this.originalMethods = {};
     this.isInitialized = false;
   }
 }
