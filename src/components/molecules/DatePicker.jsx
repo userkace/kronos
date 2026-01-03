@@ -43,7 +43,7 @@ const DatePicker = ({
     if (!showPicker) return;
 
     const currentDate = focusedDate || selectedDate || new Date();
-    let newDate = new Date(currentDate);
+    let newDate = new Date(currentDate); //Gets overwritten
     let shouldUpdate = false;
 
     switch (e.key) {
