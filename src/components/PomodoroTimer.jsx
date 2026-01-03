@@ -136,7 +136,7 @@ const PomodoroTimer = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900">Pomodoro Timer</h1>
-              <p className="text-gray-600 mt-2">Stay focused with time management technique</p>
+              <p className="text-gray-600 mt-2">Boost productivity with focused work sessions</p>
             </div>
             <div className="flex items-center space-x-2">
               <button
