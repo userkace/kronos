@@ -1212,23 +1212,25 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   {calculateDailyTotal()}
                 </span>
               </div>
-              <AnimatePresence>
-              {showBreaks && (() => {
+              {(() => {
                 const breakTotal = calculateDailyBreakTotal();
-                return breakTotal !== '0s' && (
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0, x: -50 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0, x: -50 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
-                  >
-                    <Coffee className="w-4 h-4 mr-2" />
-                    {breakTotal}
-                  </motion.span>
+                return (
+                  <AnimatePresence>
+                    {showBreaks && breakTotal !== '0s' && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0, x: -50 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0, x: -50 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
+                      >
+                        <Coffee className="w-4 h-4 mr-2" />
+                        {breakTotal}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 );
               })()}
-            </AnimatePresence>
             </div>
             <div className="flex items-center space-x-2">
               <button
