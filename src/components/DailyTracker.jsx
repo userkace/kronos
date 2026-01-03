@@ -1288,7 +1288,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               <button
                 onClick={handleStart}
                 disabled={pomodoroIsRunning}
-                className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-colors ${
+                className={`p-3 rounded-full font-semibold flex items-center space-x-2 transition-colors ${
                   pomodoroIsRunning
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                     : activeEntry
@@ -1298,24 +1298,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 title={pomodoroIsRunning ? 'Cannot start timer while Pomodoro is active' : ''}
               >
                 {activeEntry ? (
-                  <>
-                    <Plus className="w-5 h-5" />
-                    <span>New</span>
-                  </>
+                  <Plus className="w-5 h-5" />
                 ) : (
-                  <>
-                    <Plus className="w-5 h-5" />
-                    <span>Start</span>
-                  </>
+                    <Play className="w-5 h-5" />
                 )}
               </button>
               {activeEntry && (
                 <button
                   onClick={handleStop}
-                  className="px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white transition-colors"
+                  className="p-3 rounded-lg font-semibold flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white transition-colors"
                 >
                   <Square className="w-5 h-5" />
-                  <span>Stop</span>
                 </button>
               )}
             </div>
@@ -1407,10 +1400,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   <div className="opacity-0 group-hover:opacity-100 transition-all">
                     <button
                       onClick={handleStop}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+                      className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg flex items-center space-x-2"
                     >
                       <Pause className="w-4 h-4" />
-                      <span>Pause</span>
                     </button>
                   </div>
                   {!isToday() && (
@@ -1499,17 +1491,15 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
                       <button
                         onClick={() => handleContinue(entry)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-1"
+                        className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full flex items-center space-x-1"
                       >
                         <Play className="w-4 h-4" />
-                        <span>Continue</span>
                       </button>
                       <button
                         onClick={() => handleOpenModal('edit', entry)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center space-x-1"
+                        className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
                       >
                         <Edit className="w-4 h-4" />
-                        <span>Edit</span>
                       </button>
                       {getDuplicateCount(entry.description) > 1 && (
                         <button
