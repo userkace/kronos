@@ -8,7 +8,9 @@ const STORAGE_KEYS = {
   WEEK_START: 'kronos_week_start',
   ONBOARDING_COMPLETED: 'kronos_onboarding_completed',
   CLOCK_FORMAT: 'kronos_clock_format',
-  SIDEBAR_STATE: 'kronos_sidebar_state'
+  SIDEBAR_STATE: 'kronos_sidebar_state',
+  SORT_ORDER: 'kronos_sort_order',
+  SHOW_BREAKS: 'kronos_show_breaks'
 };
 
 // Save timesheet data to LocalStorage
@@ -168,13 +170,61 @@ export const saveSidebarState = (isOpen) => {
   }
 };
 
-// Load sidebar state from LocalStorage
+/**
+ * Loads the sidebar state from LocalStorage
+ * @returns {boolean} - Returns true if the sidebar should be open, false otherwise
+ */
 export const loadSidebarState = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_STATE);
-    return stored !== null ? JSON.parse(stored) : true; // Default to open
+    const saved = localStorage.getItem(STORAGE_KEYS.SIDEBAR_STATE);
+    // Handle both old object format and new boolean format for backward compatibility
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return typeof parsed === 'object' ? parsed.isOpen !== false : parsed !== false;
+    }
+    return true; // Default to open
   } catch (error) {
     console.error('Error loading sidebar state:', error);
-    return true;
+    return true; // Default to open on error
+  }
+};
+
+// Save sort order preference to LocalStorage
+export const saveSortOrder = (sortOrder) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SORT_ORDER, JSON.stringify(sortOrder));
+  } catch (error) {
+    console.error('Error saving sort order:', error);
+  }
+};
+
+// Load sort order preference from LocalStorage
+export const loadSortOrder = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.SORT_ORDER);
+    return stored !== null ? JSON.parse(stored) : 'desc'; // Default to descending (newest first)
+  } catch (error) {
+    console.error('Error loading sort order:', error);
+    return 'desc'; // Default to descending on error
+  }
+};
+
+// Save break visibility preference to LocalStorage
+export const saveShowBreaks = (showBreaks) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SHOW_BREAKS, JSON.stringify(showBreaks));
+  } catch (error) {
+    console.error('Error saving show breaks preference:', error);
+  }
+};
+
+// Load break visibility preference from LocalStorage
+export const loadShowBreaks = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.SHOW_BREAKS);
+    return stored !== null ? JSON.parse(stored) : true; // Default to true (show breaks)
+  } catch (error) {
+    console.error('Error loading show breaks preference:', error);
+    return true; // Default to showing breaks on error
   }
 };

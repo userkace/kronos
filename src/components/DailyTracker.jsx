@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, Calendar } from 'lucide-react';
+import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown, Calendar, Coffee } from 'lucide-react';
+import DatePicker from './molecules/DatePicker';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
@@ -27,10 +29,18 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     faviconManager.init();
   }, []);
 
+  // State for the current task input and active entry
   const [currentTask, setCurrentTask] = useState('');
+  const {
+    sortOrder,
+    changeSortOrder,
+    showBreaks,
+    toggleShowBreaks
+  } = useUserPreferences();
   const [activeEntry, setActiveEntry] = useState(null);
   const [selectedDateEntries, setSelectedDateEntries] = useState([]); // Renamed from todayEntries
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const currentTimeRef = useRef(new Date());
+  const [_, setCurrentTime] = useState(0); // Just for triggering re-renders
   const [selectedDate, setSelectedDate] = useState(new Date()); // Initialize to today in UTC
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -40,6 +50,88 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Check if timezone is properly initialized
   const isTimezoneInitialized = timezone && timezone !== 'UTC';
+
+  // State for calendar view
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  /**
+   * Generates an array of dates for a calendar view, including days from the previous and next months
+   * to ensure a complete grid. Handles timezone conversion to ensure dates are displayed correctly
+   * in the user's selected timezone.
+   *
+   * @param {Date} date - The reference date for which to generate the calendar month.
+   *                      The calendar will display the month containing this date.
+   * @returns {Date[]} An array of Date objects representing the calendar days, where:
+   *                   - The first items (if any) are the trailing days from the previous month
+   *                   - Followed by all days of the current month
+   *                   - Ending with leading days from the next month (if needed to complete the grid)
+   *                   - The array length is always a multiple of 7 (complete weeks)
+   *                   - All dates are in UTC to maintain consistency across timezones
+   *
+   * @example
+   * // Returns an array of Date objects for the calendar view of March 2023
+   * // including days from February 26 to April 1 (assuming March 1, 2023 is a Wednesday)
+   * getCalendarDays(new Date('2023-03-15T00:00:00Z'));
+   */
+  const getCalendarDays = (date) => {
+    // Use the original date for year/month calculation to avoid timezone offset issues
+    const originalDate = new Date(date);
+    const year = originalDate.getFullYear();
+    const month = originalDate.getMonth();
+
+    // Convert to target timezone for day-of-week calculations only
+    const zonedFirstDay = toZonedTime(new Date(Date.UTC(year, month, 1)), timezone);
+
+    // Day of week of first day (0 = Sunday, 6 = Saturday) in target timezone
+    const firstDayOfWeek = zonedFirstDay.getDay();
+    
+    // Total days in month - use UTC calculation which is consistent across timezones
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+
+    // Calculate days to show from previous month
+    const daysFromPrevMonth = firstDayOfWeek;
+
+    // Calculate total days to show - always ensure 6 rows (42 days) for consistent layout
+    const totalDaysToShow = 42;
+    const daysFromNextMonth = totalDaysToShow - (daysInMonth + daysFromPrevMonth);
+
+    const days = [];
+
+    // Add days from previous month
+    if (daysFromPrevMonth > 0) {
+      const prevMonthDays = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      for (let i = 0; i < daysFromPrevMonth; i++) {
+        const day = new Date(Date.UTC(year, month - 1, prevMonthDays - daysFromPrevMonth + i + 1));
+        days.push(day);
+      }
+    }
+
+    // Add days from current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(Date.UTC(year, month, i)));
+    }
+
+    // Add days from next month if needed
+    if (daysFromNextMonth > 0) {
+      for (let i = 1; i <= daysFromNextMonth; i++) {
+        days.push(new Date(Date.UTC(year, month + 1, i)));
+      }
+    }
+
+    return days;
+  };
+
+  // Handle month navigation
+  const handleMonthChange = (increment) => {
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(newMonth.getMonth() + increment);
+    setCurrentMonth(newMonth);
+  };
+
+  // Get calendar days for the current month view, memoized to prevent unnecessary recalculations
+  const calendarDays = React.useMemo(() => {
+    return getCalendarDays(currentMonth);
+  }, [currentMonth, timezone]);
 
   // Array of funny default task descriptions
   const funnyDefaultTasks = [
@@ -199,7 +291,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       entries.forEach(entry => {
         // Skip if we've already seen this ID (true duplicates)
         if (seenIds.has(entry.id)) {
-          console.log(`Skipping duplicate entry ${entry.id} from ${dateKey}`);
           return;
         }
 
@@ -214,7 +305,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       });
     });
 
-    console.log('Cleaned data keys:', Object.keys(cleanedData));
     saveTimesheetData(cleanedData);
     return cleanedData;
   };
@@ -226,12 +316,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return toZonedTime(now, timezone);
   };
 
-  // Debug logging for timezone (moved after function definitions)
-  console.log('=== Timezone Debug ===');
-  console.log('Received timezone prop:', timezone);
-  console.log('Current system timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
-  console.log('Current system time:', new Date());
-  console.log('Current time in selected timezone:', getCurrentDateInTimezone());
 
   // Update selectedDate to today when timezone changes
   useEffect(() => {
@@ -252,89 +336,31 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const storageKey = getStorageDateKey(selectedDate);
       const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
 
-      // Debug logging
-      console.log('=== DailyTracker Debug ===');
-      console.log('Selected Date (raw):', selectedDate);
-      console.log('Selected Date (toString):', selectedDate.toString());
-      console.log('Timezone:', timezone);
-      console.log('Storage Key:', storageKey);
-      console.log('Display Date:', displayDate);
-      console.log('Is Today:', isToday());
-      console.log('Available keys in storage:', Object.keys(loadedData || {}));
-
-      // Additional timezone debug
-      console.log('=== Date Calculation Debug ===');
-      console.log('Current system time:', new Date());
-      console.log('Current time in selected timezone:', getCurrentDateInTimezone());
-      console.log('Today in selected timezone:', formatInTimezone(new Date(), 'yyyy-MM-dd'));
-      console.log('Selected date in selected timezone:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
-
-      // Check what's actually stored for each key
-      console.log('=== Storage Contents Debug ===');
-      Object.keys(loadedData || {}).forEach(key => {
-        console.log(`Key "${key}" has ${loadedData[key].length} entries`);
-        if (loadedData[key].length > 0) {
-          console.log(`  First entry:`, loadedData[key][0]);
-        }
-      });
-
       if (loadedData && loadedData[storageKey]) {
         const dayEntries = loadedData[storageKey] || [];
-        console.log('Entries found for storage key:', dayEntries.length, dayEntries);
-        console.log('=== State Update Debug ===');
-        console.log('About to setSelectedDateEntries with', dayEntries.length, 'entries for key:', storageKey);
         // Sort entries by start time (earliest first)
         const sortedEntries = dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
         setSelectedDateEntries(sortedEntries);
-        console.log('setSelectedDateEntries called with sorted entries');
 
         // Check for active entry (only for current date in selected timezone)
         const todayInSelectedTimezone = formatInTimezone(new Date(), 'yyyy-MM-dd');
         const isCurrentDate = todayInSelectedTimezone === displayDate;
 
-        console.log('=== Active Entry Debug ===');
-        console.log('Is Current Date:', isCurrentDate);
-        console.log('Current activeEntry:', activeEntry);
-        console.log('Day entries:', dayEntries);
-        console.log('Active entry in data:', dayEntries.find(entry => entry.isActive));
-
-        // Log details of all entries to see their structure
-        console.log('=== Entry Details ===');
-        dayEntries.forEach((entry, index) => {
-          console.log(`Entry ${index}:`, {
-            id: entry.id,
-            description: entry.description,
-            isActive: entry.isActive,
-            startTime: entry.startTime,
-            endTime: entry.endTime
-          });
-        });
-
         if (isCurrentDate) {
           const activeEntry = dayEntries.find(entry => entry.isActive);
           if (activeEntry) {
-            console.log('Setting active entry:', activeEntry);
             setActiveEntry(activeEntry);
           } else {
-            console.log('No active entry found, clearing active entry');
             setActiveEntry(null);
           }
         } else {
-          console.log('Not current date, clearing active entry');
-        // Only clear if there's no active timer at all
-        if (!activeEntry) {
-          console.log('Clearing activeEntry - no timer running');
-          setActiveEntry(null);
-        } else {
-          console.log('Keeping activeEntry on other day:', activeEntry);
+          // Only clear if there's no active timer at all
+          if (!activeEntry) {
+            setActiveEntry(null);
+          }
         }
-      }
     } else {
-      console.log('No entries found for storage key:', storageKey);
-      console.log('=== State Update Debug (Empty) ===');
-      console.log('About to setSelectedDateEntries with [] for key:', storageKey);
       setSelectedDateEntries([]);
-      console.log('setSelectedDateEntries called with empty array');
 
       // Before clearing activeEntry, check if there's an active timer in any date
       let foundActive = null;
@@ -343,15 +369,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         const activeInDate = entries.find(entry => entry.isActive);
         if (activeInDate) {
           foundActive = activeInDate;
-          console.log('Found active entry in different date key (no entries for current):', dateKey, activeInDate);
         }
       });
 
       if (foundActive) {
-        console.log('Setting activeEntry from different date (no entries for current):', foundActive);
         setActiveEntry(foundActive);
       } else {
-        console.log('No activeEntry found anywhere, clearing');
         setActiveEntry(null);
       }
     }
@@ -362,7 +385,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Add storage event listener for cross-tab synchronization
     const handleStorageChange = (e) => {
       if (e.key === 'kronos_timesheet_data') {
-        console.log('Storage changed, reloading data');
         loadData();
       }
     };
@@ -372,17 +394,15 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const currentData = loadTimesheetData();
       const storageKey = getStorageDateKey(selectedDate);
       const currentEntries = currentData[storageKey] || [];
-      
+
       // Check if entries have changed
       if (currentEntries.length !== selectedDateEntries.length) {
-        console.log('Entries count changed, reloading data');
         loadData();
       } else {
         // Check if any entry IDs are different
         const currentIds = currentEntries.map(e => e.id).sort();
         const selectedIds = selectedDateEntries.map(e => e.id).sort();
         if (JSON.stringify(currentIds) !== JSON.stringify(selectedIds)) {
-          console.log('Entries changed, reloading data');
           loadData();
         }
       }
@@ -417,27 +437,28 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return todayInSelectedTimezone === selectedDateInTimezone;
   };
 
-  // Update current time every second for real-time display (only after timezone is initialized)
+  // Update current time every second for real-time display
   useEffect(() => {
-    if (!isTimezoneInitialized) return;
-
     const timer = setInterval(() => {
-      setCurrentTime(getCurrentDateInTimezone());
+      currentTimeRef.current = new Date();
+      setCurrentTime(prev => prev + 1); // Just increment to trigger re-render
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timezone, isTimezoneInitialized]); // Re-create timer when timezone changes or initializes
+  }, []); // No dependencies - runs once on mount
 
-  // Update page title with cumulative work time when Daily Tracker is active (only after timezone is initialized)
+  // Memoize the updateWorkTimeTitle function
+  const updateWorkTimeTitle = useCallback(() => {
+    setCurrentTime(prev => prev + 1);
+    const totalWorkTime = calculateDailyTotal();
+    document.title = `${totalWorkTime} - Kronos`;
+  }, [timezone, selectedDateEntries, activeEntry, isTimezoneInitialized]);
+
+  // Update page title with cumulative work time when Daily Tracker is active
   useEffect(() => {
     if (!isTimezoneInitialized) return;
 
-    const updateWorkTimeTitle = () => {
-      const totalWorkTime = calculateDailyTotal();
-      document.title = `${totalWorkTime} - Kronos`;
-    };
-
-    // Update title immediately
+    // Initial update
     updateWorkTimeTitle();
 
     // Update title every second to reflect active timer time
@@ -448,7 +469,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       clearInterval(titleTimer);
       document.title = 'Kronos';
     };
-  }, [timezone, selectedDateEntries, activeEntry, currentTime, isTimezoneInitialized]); // Re-create timer when dependencies change or timezone initializes
+  }, [updateWorkTimeTitle, isTimezoneInitialized]);
 
   // Update favicon based on active entry state
   useEffect(() => {
@@ -457,35 +478,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Save entries to localStorage whenever they change (for timer entries only)
   useEffect(() => {
-    console.log('=== Timer Save Triggered ===');
-    console.log('selectedDateEntries changed, length:', selectedDateEntries.length);
-    console.log('isToday():', isToday());
-    console.log('selectedDate:', selectedDate.toString());
-
     // Only save if we have timer entries AND we're viewing today
     const hasTimerEntries = selectedDateEntries.some(entry =>
       entry.isActive || (entry.startTime && !entry.date) // Timer entries don't have a date field
     );
 
-    console.log('hasTimerEntries:', hasTimerEntries);
-
     if (hasTimerEntries && isToday()) {
       const storageKey = getStorageDateKey(); // Use current date in selected timezone
-      const displayDate = formatInTimezone(getCurrentDateInTimezone(), 'yyyy-MM-dd');
-      console.log('=== Timer Save Debug ===');
-      console.log('Saving timer entries...');
-      console.log('Current selectedDateEntries:', selectedDateEntries);
-      console.log('Storage key for timer save:', storageKey);
-      console.log('Currently viewing date:', formatInTimezone(selectedDate, 'yyyy-MM-dd'));
-      console.log('Is today:', isToday());
-
+      
       const allData = loadTimesheetData() || {};
       allData[storageKey] = selectedDateEntries;
-
       saveTimesheetData(allData);
-      console.log('Timer entries saved to key:', storageKey);
-    } else {
-      console.log('Timer save skipped - conditions not met');
     }
   }, [selectedDateEntries, timezone]); // Re-save only when entries or timezone changes, NOT when selectedDate changes
 
@@ -495,7 +498,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Convert both times to the selected timezone for accurate calculation
     const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-    const currentTimeInTimezone = currentTime; // Use the updated currentTime state
+    const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone);
 
     const seconds = differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
     return formatDuration(seconds);
@@ -562,7 +565,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Add active entry time
     if (activeEntry) {
       const startTimeInTimezone = toZonedTime(parseISO(activeEntry.startTime), timezone);
-      const currentTimeInTimezone = toZonedTime(new Date(), timezone); // Always convert fresh for timezone consistency
+      const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone); // Use the ref for consistent time
       totalSeconds += differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
     }
 
@@ -604,10 +607,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Save directly to localStorage for today's date (in selected timezone)
     const storageKey = getStorageDateKey(); // Use current date in selected timezone for timers
-    console.log('=== Timer Save Debug ===');
-    console.log('Saving timer with storage key:', storageKey);
-    console.log('Current date:', new Date());
-    console.log('Current date in timezone:', getCurrentDateInTimezone());
 
     const allData = loadTimesheetData() || {};
     if (!allData[storageKey]) {
@@ -642,7 +641,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const timerStartDate = format(toZonedTime(parseISO(activeEntry.startTime), timezone), 'yyyy-MM-dd');
     const currentDateInTimezone = format(currentTimeInTimezone, 'yyyy-MM-dd');
     const storageKey = getStorageDateKey(timerStartDate);
-    
+
     const allData = loadTimesheetData() || {};
     if (!allData[storageKey]) {
       allData[storageKey] = [];
@@ -680,7 +679,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const currentDateBase = parse(currentDateInTimezone, 'yyyy-MM-dd', new Date());
       const midnightInTimezone = parse('00:00:00', 'HH:mm:ss', currentDateBase);
       const midnightUTC = fromZonedTime(midnightInTimezone, timezone);
-      
+
       // Create the today/present segment (midnight to current time)
       const todayEntry = {
         id: Date.now(),
@@ -699,17 +698,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       }
       allData[newStorageKey].push(todayEntry);
       saveTimesheetData(allData);
-      
+
       // Update display to show the current day's entries if we're viewing today
       if (isToday()) {
         const newDateEntries = allData[newStorageKey] || [];
         const sortedNewEntries = newDateEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
         setSelectedDateEntries(sortedNewEntries);
       }
-      
+
       success(`Task time recorded for both ${timerStartDate} and ${currentDateInTimezone}`);
     }
-    
+
     setActiveEntry(null);
 
     // Update display if we're viewing the timer's original date
@@ -768,7 +767,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       warning('Cannot add manual entries while Pomodoro is active');
       return;
     }
-    
+
     setModalState({
       isOpen: true,
       mode,
@@ -810,13 +809,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     for (let i = 0; i < sortedEntries.length - 1; i++) {
       const currentEntry = sortedEntries[i];
       const nextEntry = sortedEntries[i + 1];
-      
+
       // Get all entries between current and next
-      const entriesBetween = entries.filter(entry => 
+      const entriesBetween = entries.filter(entry =>
         new Date(entry.startTime) > new Date(currentEntry.startTime) &&
         new Date(entry.startTime) < new Date(nextEntry.startTime)
       );
-      
+
       if (entriesBetween.length > 0) return true;
     }
 
@@ -1099,13 +1098,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Calculate total work hours using merged overlapping periods
     const mergedPeriods = mergeOverlappingPeriods(completedEntries);
 
-    console.log('=== Break Calculation Debug ===');
-    console.log('Original entries:', completedEntries.length);
-    console.log('Merged periods:', mergedPeriods.length);
-    mergedPeriods.forEach((period, index) => {
-      console.log(`Period ${index}: ${period.start.toISOString()} - ${period.end.toISOString()}`);
-    });
-
     const totalWorkMinutes = mergedPeriods.reduce((total, period) => {
       return total + differenceInMinutes(period.end, period.start);
     }, 0);
@@ -1113,12 +1105,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const totalWorkHours = totalWorkMinutes / 60;
     const timeSpanMinutes = differenceInMinutes(latestEnd, earliestStart);
     const breakHoursDecimal = Math.max(0, (timeSpanMinutes - totalWorkMinutes) / 60);
-
-    console.log('Earliest start:', earliestStart.toISOString());
-    console.log('Latest end:', latestEnd.toISOString());
-    console.log('Time span minutes:', timeSpanMinutes);
-    console.log('Total work minutes:', totalWorkMinutes);
-    console.log('Break hours decimal:', breakHoursDecimal);
 
     // Create work details from unique task descriptions separated by semicolons
     // This avoids duplicates when entries with the same description are split apart
@@ -1137,12 +1123,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     // Use the entry date in the selected timezone for storage key
     const storageKey = format(firstEntryDate, 'yyyy-MM-dd');
     const dayKey = storageKey;
-
-    console.log('=== Weekly Save Debug ===');
-    console.log('First entry start time (ISO):', completedEntries[0]?.startTime);
-    console.log('First entry date in timezone:', firstEntryDate);
-    console.log('Storage key for weekly:', storageKey);
-    console.log('Selected date:', selectedDate);
 
     // Update the day's data
     if (!weeklyData[dayKey]) {
@@ -1164,14 +1144,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       breakHours: breakHoursDecimal.toFixed(2)
     };
 
-    console.log('=== Weekly Timesheet Save Debug ===');
-    console.log('Earliest start (raw):', earliestStart.toISOString());
-    console.log('Latest end (raw):', latestEnd.toISOString());
-    console.log('Timezone:', timezone);
-    console.log('Time In (saved):', format(earliestStart, 'HH:mm'));
-    console.log('Time Out (saved):', format(latestEnd, 'HH:mm'));
-    console.log('Break Hours (saved):', breakHoursDecimal.toFixed(2));
-
     // Save the updated weekly timesheet
     saveWeeklyTimesheet(weeklyData);
 
@@ -1191,11 +1163,19 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           {/* Date Navigation */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}, {formatInTimezone(selectedDate, 'MMM d, yyyy')}
-              </h1>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    <span className="sm:hidden">{formatInTimezone(selectedDate, 'MMM. d, yyyy')}</span>
+                    <span className="hidden sm:inline">{formatInTimezone(selectedDate, 'MMMM d, yyyy')}</span>
+                  </h1>
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
+                <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${isToday() ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                  {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}
+                </span>
               <button
                 onClick={handlePreviousDay}
                 className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
@@ -1219,19 +1199,68 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
               <button
                 onClick={handleNextDay}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                title="Next Day"
+                className={`p-2 rounded-lg transition-colors ${
+                  isToday()
+                    ? 'cursor-not-allowed text-gray-400'
+                    : 'hover:bg-gray-200'
+                }`}
+                title={isToday() ? "Current day" : "Next Day"}
+                disabled={isToday()}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
+
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 text-gray-600">
-            <Clock className="w-5 h-5" />
-            <span className="text-2xl font-semibold text-gray-900">
-              {calculateDailyTotal()}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline space-x-2 text-gray-600">
+              <Clock className="w-5 h-5 self-center mt-1" />
+              <span className="text-2xl font-semibold text-gray-900">
+                {calculateDailyTotal()}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => changeSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                title={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
+                aria-label={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
+              >
+                {sortOrder === 'asc' ? (
+                  <ArrowUp className="w-5 h-5" />
+                ) : (
+                  <ArrowDown className="w-5 h-5" />
+                )}
+              </button>
+              <button
+                onClick={toggleShowBreaks}
+                className={`p-2 rounded-lg transition-colors ${
+                  showBreaks
+                    ? 'text-orange-600 bg-orange-50 hover:bg-orange-100'
+                    : 'text-gray-500 hover:bg-gray-200'
+                }`}
+                title={showBreaks ? 'Hide break times' : 'Show break times'}
+                aria-label={showBreaks ? 'Hide break times' : 'Show break times'}
+                aria-pressed={showBreaks}
+              >
+                <Coffee className="w-5 h-5" />
+              </button>
+              <DatePicker
+                selectedDate={selectedDate}
+                onDateChange={(date) => {
+                  setSelectedDate(date);
+                  // Only update the month if the selected date is in a different month
+                  const newMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+                  if (newMonth.getMonth() !== currentMonth.getMonth() ||
+                      newMonth.getFullYear() !== currentMonth.getFullYear()) {
+                    setCurrentMonth(newMonth);
+                  }
+                }}
+                onMonthChange={handleMonthChange}
+                calendarDays={calendarDays}
+              />
+            </div>
           </div>
         </div>
 
@@ -1385,7 +1414,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     {!isToday() && (
                       <>
                         <span className="text-sm font-medium">
-                          {formatInTimezone(currentTime, 'MMMM d')}
+                          {formatInTimezone(currentTimeRef.current, 'MMMM d')}
                         </span>
                       </>
                     )}
@@ -1423,7 +1452,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           )}
 
           {/* Break Time Display between running and previous entry */}
-          {(() => {
+          {showBreaks && (() => {
             const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
             if (activeEntry && completedEntriesAsc.length > 0) {
               const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
@@ -1445,8 +1474,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
           {/* Completed Entries */}
           {(() => {
-            const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-            const displayEntries = completedEntriesAsc.slice().reverse();
+            const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+            const displayEntries = sortOrder === 'asc'
+              ? [...completedEntries]
+              : [...completedEntries].reverse();
 
             return displayEntries.map((entry, index) => {
               // Convert both times to the selected timezone for accurate calculation
@@ -1454,8 +1485,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
               const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
 
-              const previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
-              const breakTime = calculateBreakTime(entry, previousEntry);
+              // Get the correct previous entry based on sort order
+              let previousEntry = null;
+              if (sortOrder === 'asc') {
+                // In ascending order, previous entry is at index - 1
+                previousEntry = index > 0 ? displayEntries[index - 1] : null;
+              } else {
+                // In descending order, previous entry is at index + 1
+                previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
+              }
+              const breakTime = previousEntry ? calculateBreakTime(entry, previousEntry) : null;
 
               return (
                 <React.Fragment key={entry.id}>
@@ -1521,7 +1560,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 </div>
 
                 {/* Break Time Display between this entry and the previous older entry */}
-                {breakTime && (
+                {showBreaks && breakTime && (
                   <div className="text-center py-2">
                     <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
                       <span className="font-medium">Break</span>
