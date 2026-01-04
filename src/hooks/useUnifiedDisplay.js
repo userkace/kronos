@@ -36,7 +36,7 @@ const createChronologicalWithBreaks = (entries, calculateBreakTime) => {
 /**
  * Optimized helper function to reverse sequence while preserving break positions
  */
-const createReversedSequence = (chronologicalWithBreaks, completedEntries) => {
+const createReversedSequence = (chronologicalWithBreaks, entriesForDisplay) => {
   const reversedSequence = [];
   const entryPositions = new Map();
 
@@ -48,7 +48,7 @@ const createReversedSequence = (chronologicalWithBreaks, completedEntries) => {
   });
 
   // Sort entries by display order (newest first)
-  const displayEntries = [...completedEntries].reverse();
+  const displayEntries = [...entriesForDisplay].reverse();
 
   // Build reversed sequence
   displayEntries.forEach(entry => {
