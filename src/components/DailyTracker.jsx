@@ -1482,7 +1482,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         <div className="space-y-3">
           {/* Unified Task Entries with Layout Animation */}
           <AnimatePresence mode="popLayout">
-            {unifiedDisplay.map((item, index) => {
+            {unifiedDisplay.map((item) => {
                 if (item.type === 'active') {
 
                   return (
@@ -1597,7 +1597,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                               <span className="text-sm">
                                 {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
                               </span>
-                              <span className="font-mono font-semibold">
+                              <span className="font-mono">
                                 {formatDisplayDuration(duration)}
                               </span>
                             </div>

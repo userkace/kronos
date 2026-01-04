@@ -42,11 +42,11 @@ const createReversedSequence = (chronologicalWithBreaks, entriesForDisplay, acti
   const entryPositions = new Map();
 
   // Map entry positions in chronological order
-  chronologicalWithBreaks.forEach((item, index) => {
+  for (const [index, item] of chronologicalWithBreaks.entries()) {
     if (item.type === 'entry') {
       entryPositions.set(item.data.id, index);
     }
-  });
+  }
 
   // Sort entries by display order (newest first)
   const displayEntries = [...entriesForDisplay].reverse();
