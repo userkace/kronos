@@ -117,7 +117,8 @@ export const useUnifiedDisplay = (
     const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
 
     // Handle active entry by inserting it in correct chronological position using shared utility
-    const allEntriesChronological = insertActiveEntryChronologically(completedEntries, activeEntry);
+    // selectedDateEntries are already sorted chronologically in DailyTracker, so skip sorting for performance
+    const allEntriesChronological = insertActiveEntryChronologically(completedEntries, activeEntry, true);
 
     // Create chronological sequence with breaks for all entries
     const chronologicalWithBreaks = createChronologicalWithBreaks(allEntriesChronological, calculateBreakTime);
