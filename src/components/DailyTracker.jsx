@@ -1182,13 +1182,15 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         } else if (typeof item.data !== 'number' || isNaN(item.data) || item.data < 0) {
           errors.push(`Invalid break entry detected - break time must be a positive number`);
         }
-      } else {
+      } else if (item.type === 'entry') {
         const entry = item.data;
         if (!entry || !entry.id) {
           errors.push(`Invalid time entry detected - missing required data`);
         } else if (!entry.startTime || (!entry.endTime && !entry.isActive)) {
           errors.push(`Invalid time entry detected - missing startTime or endTime`);
         }
+      } else {
+        errors.push(`Invalid entry type detected at position ${index + 1}: ${item.type}`);
       }
     });
 
