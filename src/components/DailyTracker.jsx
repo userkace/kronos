@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown, Calendar, Coffee } from 'lucide-react';
@@ -7,7 +8,9 @@ import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
+import { insertActiveEntryChronologically } from '../utils/entryUtils';
 import { usePomodoro } from '../contexts/PomodoroContext';
+import { useUnifiedDisplay } from '../hooks/useUnifiedDisplay';
 import {
   saveTimesheetData,
   loadTimesheetData,
@@ -67,7 +70,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Day of week of first day (0 = Sunday, 6 = Saturday) in target timezone
     const firstDayOfWeek = zonedFirstDay.getDay();
-    
+
     // Total days in month - use UTC calculation which is consistent across timezones
     const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 
@@ -439,12 +442,77 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     if (hasTimerEntries && isToday()) {
       const storageKey = getStorageDateKey(); // Use current date in selected timezone
-      
+
       const allData = loadTimesheetData() || {};
       allData[storageKey] = selectedDateEntries;
       saveTimesheetData(allData);
     }
   }, [selectedDateEntries, timezone]); // Re-save only when entries or timezone changes, NOT when selectedDate changes
+
+  // Format duration for display (h min format)
+  const formatDisplayDuration = useCallback((seconds) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+  }, []);
+
+  // Calculate break time between two consecutive entries
+  const calculateBreakTime = useCallback((currentEntry, previousEntry) => {
+    if (!currentEntry || !previousEntry || !previousEntry.endTime || !currentEntry.startTime) return null;
+
+    const prevEndInTimezone = toZonedTime(parseISO(previousEntry.endTime), timezone);
+    const currentStartInTimezone = toZonedTime(parseISO(currentEntry.startTime), timezone);
+
+    const breakSeconds = differenceInSeconds(currentStartInTimezone, prevEndInTimezone);
+
+    // Handle negative break times which indicate data inconsistency
+    if (breakSeconds < 0) {
+      console.warn(
+        `Data inconsistency detected: Negative break time (${breakSeconds}s) between entries. ` +
+        `Previous entry (${previousEntry.id}) ends at ${previousEntry.endTime}, ` +
+        `current entry (${currentEntry.id}) starts at ${currentEntry.startTime}. ` +
+        `This may indicate overlapping times or out-of-order entries.`
+      );
+      return null;
+    }
+
+    // Only show breaks longer than 10 seconds to avoid noise
+    if (breakSeconds <= 10) return null;
+
+    return breakSeconds;
+  }, [timezone]);
+
+  // Calculate total break time for the day
+  const dailyBreakTotal = useMemo(() => {
+    let totalBreakSeconds = 0;
+
+    // Get completed entries only (filter out active entries)
+    const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
+
+    // Handle active entry by inserting it in correct chronological position using shared utility
+    // selectedDateEntries are already sorted chronologically, so skip sorting for performance
+    const chronologicalCompletedAndActive = insertActiveEntryChronologically(completedEntries, activeEntry, true);
+
+    // Calculate break times between consecutive entries
+    for (let i = 1; i < chronologicalCompletedAndActive.length; i++) {
+      const currentEntry = chronologicalCompletedAndActive[i];
+      const previousEntry = chronologicalCompletedAndActive[i - 1];
+
+      // Only calculate break if previous entry has an end time and is not active
+      // Also ensure neither current nor previous entry is the active entry
+      if (previousEntry.endTime && !previousEntry.isActive && !currentEntry.isActive) {
+        const breakTime = calculateBreakTime(currentEntry, previousEntry);
+        if (breakTime) {
+          totalBreakSeconds += breakTime;
+        }
+      }
+    }
+
+    return formatDisplayDuration(totalBreakSeconds);
+  }, [selectedDateEntries, activeEntry, calculateBreakTime, formatDisplayDuration]);
 
   // Calculate duration for active entry
   const getActiveDuration = (entry) => {
@@ -466,18 +534,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Format duration for display (h min format)
-  const formatDisplayDuration = (seconds) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
-  };
-
   // Format break time with seconds always included
   const formatBreakDuration = (seconds) => {
+    // Validate that seconds is a positive number
+    if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) {
+      return 'Invalid break time';
+    }
+
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -485,21 +548,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m ${remainingSeconds}s` : `${hours}h ${remainingSeconds}s`;
-  };
-
-  // Calculate break time between two consecutive entries
-  const calculateBreakTime = (currentEntry, previousEntry) => {
-    if (!currentEntry || !previousEntry || !previousEntry.endTime || !currentEntry.startTime) return null;
-
-    const prevEndInTimezone = toZonedTime(parseISO(previousEntry.endTime), timezone);
-    const currentStartInTimezone = toZonedTime(parseISO(currentEntry.startTime), timezone);
-
-    const breakSeconds = differenceInSeconds(currentStartInTimezone, prevEndInTimezone);
-
-    // Only show breaks longer than 10 seconds to avoid noise
-    if (breakSeconds <= 10) return null;
-
-    return breakSeconds;
   };
 
   // Calculate total daily time
@@ -1115,6 +1163,71 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     success(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
   };
 
+  // Validate unified display items and collect errors
+  const validateUnifiedDisplay = useCallback((items) => {
+    const errors = [];
+
+    items.forEach((item, index) => {
+      if (!item || !item.type) {
+        errors.push(`Invalid entry detected at position ${index + 1}`);
+        return;
+      }
+
+      if (item.type === 'active') {
+        if (item.data === null || item.data === undefined || !item.data.id) {
+          errors.push(`Invalid active entry detected - missing required data`);
+        }
+      } else if (item.type === 'break') {
+        if (!item.breakKey) {
+          errors.push(`Invalid break entry detected - missing required data`);
+        } else if (typeof item.data !== 'number' || isNaN(item.data) || item.data < 0) {
+          errors.push(`Invalid break entry detected - break time must be a positive number`);
+        }
+      } else if (item.type === 'entry') {
+        const entry = item.data;
+        if (!entry || !entry.id) {
+          errors.push(`Invalid time entry detected - missing required data`);
+        } else if (!entry.startTime || (!entry.endTime && !entry.isActive)) {
+          errors.push(`Invalid time entry detected - missing startTime or endTime`);
+        }
+      } else {
+        errors.push(`Invalid entry type detected at position ${index + 1}: ${item.type}`);
+      }
+    });
+
+    return errors;
+  }, []);
+
+  // Memoized unified display computation for entries and breaks
+  const unifiedDisplay = useUnifiedDisplay(
+    activeEntry,
+    selectedDateEntries,
+    sortOrder,
+    showBreaks,
+    calculateBreakTime
+  );
+
+  // Track previously shown errors to prevent repeated toast messages
+  const [previousErrors, setPreviousErrors] = useState(new Set());
+
+  // Show consolidated error message when invalid entries are detected
+  useEffect(() => {
+    const errors = validateUnifiedDisplay(unifiedDisplay);
+    if (errors.length > 0) {
+      const errorString = errors.join('; ');
+      const errorHash = btoa(errorString); // Create a hash of the error string
+
+      // Only show error if it's different from previously shown errors
+      if (!previousErrors.has(errorHash)) {
+        error(`Data validation errors detected: ${errorString}`);
+        setPreviousErrors(prev => new Set([...prev, errorHash]));
+      }
+    } else {
+      // Clear previous errors when there are no current errors
+      setPreviousErrors(new Set());
+    }
+  }, [unifiedDisplay, validateUnifiedDisplay, error]);
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
       <div className="max-w-4xl mx-auto">
@@ -1174,11 +1287,28 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-baseline space-x-2 text-gray-600">
-              <Clock className="w-5 h-5 self-center mt-1" />
-              <span className="text-2xl font-semibold text-gray-900">
-                {calculateDailyTotal()}
-              </span>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-baseline space-x-2 text-gray-600">
+                <Clock className="w-5 h-5 self-center mt-1" />
+                <span className="text-2xl font-semibold text-gray-900">
+                  {calculateDailyTotal()}
+                </span>
+              </div>
+              <AnimatePresence>
+                {showBreaks && dailyBreakTotal !== '0s' && (
+                  <motion.span
+                    key="break-total"
+                    initial={{ opacity: 0, scale: 0, x: -50 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0, x: -50 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
+                  >
+                    <Coffee className="w-4 h-4 mr-2" />
+                    {dailyBreakTotal}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -1350,188 +1480,183 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
         {/* Task List */}
         <div className="space-y-3">
-          {/* Active Entry */}
-          {activeEntry && (
-            <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-semibold text-gray-900 text-lg">
-                      {activeEntry.description}
-                    </h3>
-                  </div>
-                  <p className="text-green-700 text-sm mb-2">
-                    {activeEntry.project || ''}
-                  </p>
-                  <div className="flex items-center space-x-4 text-green-600">
-                    {!isToday() && (
-                      <>
-                        <span className="text-sm font-medium">
-                          {formatInTimezone(currentTimeRef.current, 'MMMM d')}
-                        </span>
-                      </>
-                    )}
-                    <span className="text-sm">
-                      {formatInTimezone(parseISO(activeEntry.startTime), 'h:mm a')} - now
-                    </span>
-                    <span className="font-mono font-semibold">
-                      {getActiveDuration(activeEntry)}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="opacity-0 group-hover:opacity-100 transition-all">
-                    <button
-                      onClick={handleStop}
-                      className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg flex items-center space-x-2"
-                      aria-label="Pause timer"
+          {/* Unified Task Entries with Layout Animation */}
+          <AnimatePresence mode="popLayout">
+            {unifiedDisplay.map((item) => {
+                if (item.type === 'active') {
+
+                  return (
+                    <motion.div
+                      key={`active-${item.data.id}`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 0, y: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      layoutId={`entry-${item.data.id}`}
                     >
-                      <Pause className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {!isToday() && (
-                    <button
-                      onClick={handleToday}
-                      className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
-                      title="Back to Today"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>Today</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Break Time Display between running and previous entry */}
-          {showBreaks && (() => {
-            const completedEntriesAsc = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-            if (activeEntry && completedEntriesAsc.length > 0) {
-              const lastCompleted = completedEntriesAsc[completedEntriesAsc.length - 1];
-              const breakTimeBetweenActiveAndLast = calculateBreakTime(activeEntry, lastCompleted);
-              if (breakTimeBetweenActiveAndLast) {
-                return (
-                  <div className="text-center py-2">
-                    <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
-                      <span className="font-medium">Break</span>
-                      <span>•</span>
-                      <span>{formatBreakDuration(breakTimeBetweenActiveAndLast)}</span>
-                    </div>
-                  </div>
-                );
-              }
-            }
-            return null;
-          })()}
-
-          {/* Completed Entries */}
-          {(() => {
-            const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-            const displayEntries = sortOrder === 'asc'
-              ? [...completedEntries]
-              : [...completedEntries].reverse();
-
-            return displayEntries.map((entry, index) => {
-              // Convert both times to the selected timezone for accurate calculation
-              const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
-              const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
-              const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
-
-              // Get the correct previous entry based on sort order
-              let previousEntry = null;
-              if (sortOrder === 'asc') {
-                // In ascending order, previous entry is at index - 1
-                previousEntry = index > 0 ? displayEntries[index - 1] : null;
-              } else {
-                // In descending order, previous entry is at index + 1
-                previousEntry = index < displayEntries.length - 1 ? displayEntries[index + 1] : null;
-              }
-              const breakTime = previousEntry ? calculateBreakTime(entry, previousEntry) : null;
-
-              return (
-                <React.Fragment key={entry.id}>
-                  {/* Entry Card */}
-                  <div
-                    className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all"
-                  >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {entry.description}
-                      </h3>
-                      <p className="text-gray-500 text-sm mb-2">
-                        {entry.project || ''}
-                      </p>
-                      <div className="flex items-center space-x-4 text-gray-600">
-                        <span className="text-sm">
-                          {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
-                        </span>
-                        <span className="font-mono">
-                          {formatDisplayDuration(duration)}
-                        </span>
+                      <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h3 className="font-semibold text-gray-900 text-lg">
+                                {item.data.description}
+                              </h3>
+                            </div>
+                            <p className="text-green-700 text-sm mb-2">
+                              {item.data.project || ''}
+                            </p>
+                            <div className="flex items-center space-x-4 text-green-600">
+                              {!isToday() && (
+                                <>
+                                  <span className="text-sm font-medium">
+                                    {formatInTimezone(currentTimeRef.current, 'MMMM d')}
+                                  </span>
+                                </>
+                              )}
+                              <span className="text-sm">
+                                {formatInTimezone(parseISO(item.data.startTime), 'h:mm a')} - now
+                              </span>
+                              <span className="font-mono font-semibold">
+                                {getActiveDuration(item.data)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="opacity-0 group-hover:opacity-100 transition-all">
+                              <button
+                                onClick={handleStop}
+                                className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg flex items-center space-x-2"
+                                aria-label="Pause timer"
+                              >
+                                <Pause className="w-4 h-4" />
+                              </button>
+                            </div>
+                            {!isToday() && (
+                              <button
+                                onClick={handleToday}
+                                className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
+                                title="Back to Today"
+                              >
+                                <Calendar className="w-4 h-4" />
+                                <span>Today</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => handleContinue(entry)}
-                        disabled={pomodoroIsRunning}
-                        className={`p-3 rounded-full flex items-center space-x-1 transition-colors ${
-                          pomodoroIsRunning
-                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
-                        }`}
-                        title={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : ''}
-                        aria-label={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : `Continue task: ${entry.description}`}
-                      >
-                        <Play className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleOpenModal('edit', entry)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
-                        aria-label={`Edit task: ${entry.description}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      {getDuplicateCount(entry.description) > 1 && (
-                        <button
-                          onClick={() => handleMergeEntries(entry.description)}
-                          disabled={shouldDisableMerge(entry.description)}
-                          className={`px-3 py-2 rounded-lg flex items-center space-x-1 ${
-                            shouldDisableMerge(entry.description)
-                              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                              : 'bg-purple-600 hover:bg-purple-700 text-white'
-                          }`}
-                          title={
-                            shouldDisableMerge(entry.description)
-                              ? hasPomodoroSource(entry.description)
-                                ? 'Cannot merge: Pomodoro entries cannot be merged'
-                                : 'Cannot merge: entries are split by other tasks or contain active entries'
-                              : `Merge ${getDuplicateCount(entry.description)} entries`
-                          }
-                        >
-                          <Merge className="w-4 h-4" />
-                          <span>Merge ({getDuplicateCount(entry.description)})</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                    </motion.div>
+                  );
+                } else if (item.type === 'break') {
 
-                {/* Break Time Display between this entry and the previous older entry */}
-                {showBreaks && breakTime && (
-                  <div className="text-center py-2">
-                    <div className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm">
-                      <span className="font-medium">Break</span>
-                      <span>•</span>
-                      <span>{formatBreakDuration(breakTime)}</span>
-                    </div>
-                  </div>
-                )}
-                </React.Fragment>
-              );
-            });
-          })()}
+                  return (
+                    <motion.div
+                      key={item.breakKey}
+                      layoutId={`break-${item.breakKey}`}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="text-center py-2"
+                    >
+                      <div
+                        className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
+                      >
+                        <span className="font-medium">Break</span>
+                        <span>•</span>
+                        <span>{formatBreakDuration(item.data)}</span>
+                      </div>
+                    </motion.div>
+                  );
+                } else if (item.type === 'entry') {
+                  // Entry type (default case)
+                  const entry = item.data;
+
+                  const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
+                  const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
+                  const duration = differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
+
+                  return (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, x: 0 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      layoutId={`entry-${entry.id}`}
+                    >
+                      <div className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">
+                              {entry.description}
+                            </h3>
+                            <p className="text-gray-600 text-sm mb-2">
+                              {entry.project || ''}
+                            </p>
+                            <div className="flex items-center space-x-4 text-gray-500">
+                              <span className="text-sm">
+                                {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
+                              </span>
+                              <span className="font-mono">
+                                {formatDisplayDuration(duration)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
+                            <button
+                              onClick={() => handleContinue(entry)}
+                              disabled={pomodoroIsRunning}
+                              className={`p-3 rounded-full flex items-center space-x-1 ${
+                                pomodoroIsRunning
+                                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                  : 'bg-green-600 hover:bg-green-700 text-white'
+                              }`}
+                              aria-label={`Continue task: ${entry.description}`}
+                              title={pomodoroIsRunning ? 'Cannot continue while Pomodoro is active' : 'Continue this task'}
+                            >
+                              <Play className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenModal('edit', entry)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
+                              aria-label={`Edit task: ${entry.description}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            {getDuplicateCount(entry.description) > 1 && (
+                              <button
+                                onClick={() => handleMergeEntries(entry.description)}
+                                disabled={shouldDisableMerge(entry.description)}
+                                className={`px-3 py-2 rounded-lg flex items-center space-x-1 ${
+                                  shouldDisableMerge(entry.description)
+                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                                }`}
+                                title={
+                                  shouldDisableMerge(entry.description)
+                                    ? hasPomodoroSource(entry.description)
+                                      ? 'Cannot merge: Pomodoro entries cannot be merged'
+                                      : 'Cannot merge: entries are split by other tasks or contain active entries'
+                                    : `Merge ${getDuplicateCount(entry.description)} entries`
+                                }
+                              >
+                                <Merge className="w-4 h-4" />
+                                <span>Merge ({getDuplicateCount(entry.description)})</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                } else {
+                  // Fallback for unexpected item types
+                  console.warn('Unexpected item type in unified display:', item.type, item);
+                  return null;
+                }
+            })}
+
+          </AnimatePresence>
         </div>
 
         {/* Empty State */}
@@ -1541,10 +1666,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
               <Clock className="w-16 h-16 mx-auto mb-4" />
             </div>
             <h3 className="text-xl font-semibold text-gray-500 mb-2">
-              No time entries yet
+              {isToday()
+                ? "No time entries yet"
+                : "No time entries for this date"
+              }
             </h3>
             <p className="text-gray-400">
-              Start tracking your time by entering a task above and clicking Start
+              {isToday()
+                ? "Start tracking your time by entering a task above and clicking Start"
+                : "Add manual time entries for this date using the Add Manual Entry button above"
+              }
             </p>
           </div>
         )}
