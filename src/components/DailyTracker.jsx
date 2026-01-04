@@ -1200,7 +1200,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         const entry = item.data;
         if (!entry || !entry.id) {
           errors.push(`Invalid time entry detected - missing required data`);
-        } else if (!entry.startTime || !entry.endTime) {
+        } else if (!entry.startTime || (!entry.endTime && !entry.isActive)) {
           errors.push(`Invalid time entry detected - missing startTime or endTime`);
         }
       }
