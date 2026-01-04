@@ -37,7 +37,7 @@ const createChronologicalWithBreaks = (entries, calculateBreakTime) => {
 /**
  * Optimized helper function to reverse sequence while preserving break positions
  */
-const createReversedSequence = (chronologicalWithBreaks, entriesForDisplay) => {
+const createReversedSequence = (chronologicalWithBreaks, entriesForDisplay, activeEntry) => {
   const reversedSequence = [];
   const entryPositions = new Map();
 
@@ -64,7 +64,20 @@ const createReversedSequence = (chronologicalWithBreaks, entriesForDisplay) => {
 
       // Add segment in reverse order
       for (let i = chronologicalIndex; i >= segmentStart; i--) {
-        reversedSequence.push(chronologicalWithBreaks[i]);
+        const item = chronologicalWithBreaks[i];
+        
+        // Filter out active entries and breaks associated with active entries
+        if (item.type === 'entry' && item.data.isActive) {
+          // Skip active entries
+          continue;
+        } else if (item.type === 'break') {
+          // Skip breaks associated with active entry
+          if (item.beforeEntryId === activeEntry?.id || item.afterEntryId === activeEntry?.id) {
+            continue;
+          }
+        }
+        
+        reversedSequence.push(item);
       }
     }
   });
@@ -133,7 +146,7 @@ export const useUnifiedDisplay = (
     // Apply display order to completed entries only
     let displaySequence;
     if (sortOrder === 'desc') {
-      displaySequence = createReversedSequence(chronologicalWithBreaks, completedEntries);
+      displaySequence = createReversedSequence(chronologicalWithBreaks, allEntriesChronological, activeEntry);
     } else {
       displaySequence = completedEntriesDisplay;
     }
