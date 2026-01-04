@@ -539,7 +539,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) {
       return 'Invalid break time';
     }
-    
+
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -1165,7 +1165,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Validate unified display items and collect errors
   const validateUnifiedDisplay = useCallback((items) => {
     const errors = [];
-    
+
     items.forEach((item, index) => {
       if (!item || !item.type) {
         errors.push(`Invalid entry detected at position ${index + 1}`);
@@ -1215,7 +1215,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     if (errors.length > 0) {
       const errorString = errors.join('; ');
       const errorHash = btoa(errorString); // Create a hash of the error string
-      
+
       // Only show error if it's different from previously shown errors
       if (!previousErrors.has(errorHash)) {
         error(`Data validation errors detected: ${errorString}`);
@@ -1225,7 +1225,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       // Clear previous errors when there are no current errors
       setPreviousErrors(new Set());
     }
-  }, [unifiedDisplay, validateUnifiedDisplay, previousErrors]);
+  }, [unifiedDisplay, validateUnifiedDisplay, previousErrors, error]);
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
