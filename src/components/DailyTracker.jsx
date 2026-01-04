@@ -1176,6 +1176,47 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     success(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
   };
 
+  // Validate unified display items and collect errors
+  const validateUnifiedDisplay = useCallback((items) => {
+    const errors = [];
+    
+    items.forEach((item, index) => {
+      if (!item || !item.type) {
+        errors.push(`Invalid entry detected at position ${index + 1}`);
+        return;
+      }
+
+      if (item.type === 'active') {
+        if (item.data === null || item.data === undefined || !item.data.id) {
+          errors.push(`Invalid active entry detected - missing required data`);
+        }
+      } else if (item.type === 'break') {
+        if (item.data === null || item.data === undefined || !item.breakKey) {
+          errors.push(`Invalid break entry detected - missing required data`);
+        } else if (typeof item.data !== 'number' || isNaN(item.data) || item.data < 0) {
+          errors.push(`Invalid break entry detected - break time must be a positive number`);
+        }
+      } else {
+        const entry = item.data;
+        if (!entry || !entry.id) {
+          errors.push(`Invalid time entry detected - missing required data`);
+        } else if (!entry.startTime || !entry.endTime) {
+          errors.push(`Invalid time entry detected - missing startTime or endTime`);
+        }
+      }
+    });
+
+    return errors;
+  }, []);
+
+  // Show consolidated error message when invalid entries are detected
+  useEffect(() => {
+    const errors = validateUnifiedDisplay(unifiedDisplay);
+    if (errors.length > 0) {
+      error(`Data validation errors detected: ${errors.join('; ')}`);
+    }
+  }, [unifiedDisplay, validateUnifiedDisplay]);
+
   // Memoized unified display computation for entries and breaks
   const unifiedDisplay = useUnifiedDisplay(
     activeEntry,
@@ -1440,16 +1481,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           {/* Unified Task Entries with Layout Animation */}
           <AnimatePresence mode="popLayout">
             {unifiedDisplay.map((item, index) => {
-                // Handle unexpected item types with warning and fallback
+                // Skip invalid items - validation and error reporting handled by useEffect
                 if (!item || !item.type) {
-                  warning('Invalid entry detected in task list');
                   return null;
                 }
 
                 if (item.type === 'active') {
-                  // Validate active item has required data and ID
+                  // Skip invalid active items - validation handled by useEffect
                   if (item.data === null || item.data === undefined || !item.data.id) {
-                    error('Invalid active entry detected - missing required data');
                     return null;
                   }
 
@@ -1515,15 +1554,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     </motion.div>
                   );
                 } else if (item.type === 'break') {
-                  // Validate break item has required data and breakKey
+                  // Skip invalid break items - validation handled by useEffect
                   if (item.data === null || item.data === undefined || !item.breakKey) {
-                    error('Invalid break entry detected - missing required data');
                     return null;
                   }
 
-                  // Validate that break data is a positive number
+                  // Skip invalid break times - validation handled by useEffect
                   if (typeof item.data !== 'number' || isNaN(item.data) || item.data < 0) {
-                    error('Invalid break entry detected - break time must be a positive number');
                     return null;
                   }
 
@@ -1550,15 +1587,13 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   // Entry type
                   const entry = item.data;
 
-                  // Validate entry has required data and ID
+                  // Skip invalid time entries - validation handled by useEffect
                   if (!entry || !entry.id) {
-                    error('Invalid time entry detected - missing required data');
                     return null;
                   }
 
-                  // Validate entry has required time properties
+                  // Skip entries with missing time properties - validation handled by useEffect
                   if (!entry.startTime || !entry.endTime) {
-                    error('Invalid time entry detected - missing startTime or endTime');
                     return null;
                   }
 
