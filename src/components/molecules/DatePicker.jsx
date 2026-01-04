@@ -20,10 +20,52 @@ const DatePicker = ({
   const [monthTransitionDirection, setMonthTransitionDirection] = React.useState(0);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [viewTransitionDirection, setViewTransitionDirection] = React.useState(0);
+  const [useBlurAnimation, setUseBlurAnimation] = React.useState(true);
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
-  const timeoutRef = useRef(null);
   const { selectedTimezone } = useTimezone();
+
+  // Detect performance capabilities and disable blur animation if needed
+  useEffect(() => {
+    const checkPerformance = () => {
+      // Check for reduced motion preference
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setUseBlurAnimation(false);
+        return;
+      }
+      
+      // Check for low-end device indicators
+      const navigator = window.navigator;
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      
+      // Disable blur on slow connections or low-end devices
+      if (connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
+        setUseBlurAnimation(false);
+        return;
+      }
+      
+      // Check hardware concurrency (CPU cores)
+      if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+        setUseBlurAnimation(false);
+        return;
+      }
+      
+      // Simple performance test
+      const start = performance.now();
+      let count = 0;
+      for (let i = 0; i < 1000000; i++) {
+        count += Math.random();
+      }
+      const end = performance.now();
+      
+      // If the test takes more than 10ms, disable blur
+      if (end - start > 10) {
+        setUseBlurAnimation(false);
+      }
+    };
+    
+    checkPerformance();
+  }, []);
 
   // Handle view mode transitions with direction
   const handleViewModeChange = (newMode) => {
@@ -32,14 +74,8 @@ const DatePicker = ({
     const newIndex = modeOrder.indexOf(newMode);
     setViewTransitionDirection(newIndex > currentIndex ? 1 : -1);
     setViewMode(newMode);
-    
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
     // Reset transition direction after a short delay
-    timeoutRef.current = setTimeout(() => setViewTransitionDirection(0), 300);
+    setTimeout(() => setViewTransitionDirection(0), 300);
   };
 
   // Handle month change with transition
@@ -47,14 +83,8 @@ const DatePicker = ({
     setMonthTransitionDirection(delta);
     setIsTransitioning(true);
     onMonthChange(delta);
-    
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
     // Reset transition state after animation completes
-    timeoutRef.current = setTimeout(() => {
+    setTimeout(() => {
       setIsTransitioning(false);
       setMonthTransitionDirection(0);
     }, 350);
@@ -78,10 +108,6 @@ const DatePicker = ({
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      // Cleanup timeout on unmount
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
     };
   }, [showPicker]);
 
@@ -435,11 +461,12 @@ const DatePicker = ({
                 <motion.div
                   key={viewMode}
                   className="w-full"
+                  style={{ willChange: useBlurAnimation ? 'transform, opacity, filter' : 'transform, opacity' }}
                   initial={{ 
                     opacity: 0, 
                     ...(viewTransitionDirection !== 0 ? {
                       scale: 0.9,
-                      filter: 'blur(4px)'
+                      ...(useBlurAnimation && { filter: 'blur(4px)' })
                     } : {
                       x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0
                     })
@@ -447,14 +474,14 @@ const DatePicker = ({
                   animate={{ 
                     opacity: 1, 
                     scale: 1,
-                    filter: 'blur(0px)',
+                    filter: useBlurAnimation ? 'blur(0px)' : 'none',
                     x: 0
                   }}
                   exit={{ 
                     opacity: 0, 
                     ...(viewTransitionDirection !== 0 ? {
                       scale: 0.9,
-                      filter: 'blur(4px)'
+                      ...(useBlurAnimation && { filter: 'blur(4px)' })
                     } : {
                       x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0
                     })
@@ -465,8 +492,15 @@ const DatePicker = ({
                     opacity: { duration: 0.15 },
                     ...(viewTransitionDirection !== 0 && {
                       scale: { duration: 0.25 },
-                      filter: { duration: 0.2 }
+                      ...(useBlurAnimation && { filter: { duration: 0.2 } })
                     })
+                  }}
+                  onAnimationComplete={() => {
+                    // Reset will-change after animation completes
+                    const element = document.querySelector('[style*="will-change"]');
+                    if (element) {
+                      element.style.willChange = 'auto';
+                    }
                   }}
                 >
                   {/* Day headers */}
