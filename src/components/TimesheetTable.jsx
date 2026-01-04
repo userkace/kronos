@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   format,
   startOfWeek,
@@ -16,6 +16,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
   const { weekStart: userWeekStart } = useUserPreferences();
   const [weekDays, setWeekDays] = useState([]);
   const [copiedField, setCopiedField] = useState(null);
+  const copiedTimeoutRef = useRef(null);
   const { success, error } = useToast();
 
   // Recalculate week days when userWeekStart or currentDate changes
@@ -137,7 +138,13 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       await navigator.clipboard.writeText(textToCopy);
       setCopiedField(fieldIdentifier);
       success('Copied to clipboard!');
-      setTimeout(() => setCopiedField(null), 2000); // Reset after 2 seconds
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+      copiedTimeoutRef.current = setTimeout(() => {
+        setCopiedField(null);
+        copiedTimeoutRef.current = null;
+      }, 2000); // Reset after 2 seconds
     } catch (err) {
       console.error('Failed to copy text: ', err);
       error('Failed to copy text');
@@ -162,6 +169,15 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
   useEffect(() => {
     setLocalData(timesheetData);
   }, [timesheetData]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="overflow-x-auto">
