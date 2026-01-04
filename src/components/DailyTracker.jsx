@@ -1597,7 +1597,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                                 {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
                               </span>
                               <span className="font-mono font-semibold">
-                                {formatDuration(duration)}
+                                {formatDisplayDuration(duration)}
                               </span>
                             </div>
                           </div>
