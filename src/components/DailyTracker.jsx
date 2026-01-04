@@ -1191,7 +1191,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           errors.push(`Invalid active entry detected - missing required data`);
         }
       } else if (item.type === 'break') {
-        if (item.data === null || item.data === undefined || !item.breakKey) {
+        if (!item.breakKey) {
           errors.push(`Invalid break entry detected - missing required data`);
         } else if (typeof item.data !== 'number' || isNaN(item.data) || item.data < 0) {
           errors.push(`Invalid break entry detected - break time must be a positive number`);
@@ -1555,7 +1555,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   );
                 } else if (item.type === 'break') {
                   // Skip invalid break items - validation handled by useEffect
-                  if (item.data === null || item.data === undefined || !item.breakKey) {
+                  if (!item.breakKey) {
                     return null;
                   }
 
