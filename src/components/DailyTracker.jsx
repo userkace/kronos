@@ -493,12 +493,12 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
 
     // Handle active entry by inserting it in correct chronological position using shared utility
-    const allEntriesChronological = insertActiveEntryChronologically(completedEntries, activeEntry);
+    const chronologicalCompletedAndActive = insertActiveEntryChronologically(completedEntries, activeEntry);
 
     // Calculate break times between consecutive entries
-    for (let i = 1; i < allEntriesChronological.length; i++) {
-      const currentEntry = allEntriesChronological[i];
-      const previousEntry = allEntriesChronological[i - 1];
+    for (let i = 1; i < chronologicalCompletedAndActive.length; i++) {
+      const currentEntry = chronologicalCompletedAndActive[i];
+      const previousEntry = chronologicalCompletedAndActive[i - 1];
 
       // Only calculate break if previous entry has an end time and is not active
       // Also ensure neither current nor previous entry is the active entry
