@@ -131,19 +131,17 @@ export const useUnifiedDisplay = (
     // Separate active entry and breaks from completed entries for display
     let activeEntryDisplay = [];
     let completedEntriesDisplay = [];
-    let activeEntryId = null;
 
     chronologicalWithBreaks.forEach(item => {
       if (item.type === 'entry' && item.data.isActive) {
-        activeEntryId = item.data.id;
         activeEntryDisplay.push({
           type: 'active',
           data: item.data
         });
       } else if (item.type === 'break') {
         // Only include breaks that are not associated with the active entry
-        // Breaks with beforeEntryId or afterEntryId matching activeEntryId are excluded
-        if (item.beforeEntryId !== activeEntryId && item.afterEntryId !== activeEntryId) {
+        // Breaks with beforeEntryId or afterEntryId matching activeEntry?.id are excluded
+        if (item.beforeEntryId !== activeEntry?.id && item.afterEntryId !== activeEntry?.id) {
           completedEntriesDisplay.push(item);
         }
       } else {
