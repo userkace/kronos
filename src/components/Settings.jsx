@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import TimezoneSelect from './TimezoneSelect';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -18,6 +18,7 @@ const Settings = () => {
   const [weekStartValue, setWeekStartValue] = useState(weekStart);
   const [clockFormatValue, setClockFormatValue] = useState(clockFormat);
   const [isResetting, setIsResetting] = useState(false);
+  const reloadTimeoutRef = useRef(null);
 
   const handleTimezoneChange = (newTimezone) => {
     setTimezone(newTimezone);
@@ -63,7 +64,10 @@ const Settings = () => {
           warning('All data cleared. The app will reload in 3 seconds...');
 
           // Reload the page after clearing data
-          setTimeout(() => {
+          if (reloadTimeoutRef.current) {
+            clearTimeout(reloadTimeoutRef.current);
+          }
+          reloadTimeoutRef.current = setTimeout(() => {
             window.location.reload();
           }, 3000);
         } catch (err) {
@@ -73,6 +77,15 @@ const Settings = () => {
       }
     }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (reloadTimeoutRef.current) {
+        clearTimeout(reloadTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 m-6">

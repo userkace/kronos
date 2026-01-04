@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 const ToastContext = createContext();
@@ -13,6 +13,7 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const timeoutRefs = useRef(new Map());
 
   const addToast = (message, type = 'info', duration = 3000) => {
     const id = Date.now();
@@ -21,15 +22,28 @@ export const ToastProvider = ({ children }) => {
     setToasts(prev => [...prev, newToast]);
     
     if (duration > 0) {
-      setTimeout(() => {
+      // Clear any existing timeout for this ID
+      if (timeoutRefs.current.has(id)) {
+        clearTimeout(timeoutRefs.current.get(id));
+      }
+      
+      const timeoutId = setTimeout(() => {
         removeToast(id);
+        timeoutRefs.current.delete(id);
       }, duration);
+      
+      timeoutRefs.current.set(id, timeoutId);
     }
     
     return id;
   };
 
   const removeToast = (id) => {
+    // Clear timeout if it exists
+    if (timeoutRefs.current.has(id)) {
+      clearTimeout(timeoutRefs.current.get(id));
+      timeoutRefs.current.delete(id);
+    }
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
@@ -37,6 +51,16 @@ export const ToastProvider = ({ children }) => {
   const error = (message, duration) => addToast(message, 'error', duration);
   const info = (message, duration) => addToast(message, 'info', duration);
   const warning = (message, duration) => addToast(message, 'warning', duration);
+
+  // Cleanup all timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeoutRefs.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeoutRefs.current.clear();
+    };
+  }, []);
 
   return (
     <ToastContext.Provider value={{ addToast, removeToast, success, error, info, warning }}>

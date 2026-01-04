@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { format, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight, ArrowDownLeft } from 'lucide-react';
@@ -23,6 +23,8 @@ const DatePicker = ({
   const [viewTransitionDirection, setViewTransitionDirection] = React.useState(0);
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
+  const timeoutRef = useRef(null);
+  const monthTimeoutRef = useRef(null);
   const { selectedTimezone } = useTimezone();
   const { getTransition, getVariants, shouldReduceMotion } = useMotionPreferences();
 
@@ -34,7 +36,13 @@ const DatePicker = ({
     setViewTransitionDirection(newIndex > currentIndex ? 1 : -1);
     setViewMode(newMode);
     // Reset transition direction after a short delay
-    setTimeout(() => setViewTransitionDirection(0), 300);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setViewTransitionDirection(0);
+      timeoutRef.current = null;
+    }, 300);
   };
 
   // Handle month change with transition
@@ -46,9 +54,13 @@ const DatePicker = ({
     setIsTransitioning(true);
     onMonthChange(delta);
     // Reset transition state after animation completes
-    setTimeout(() => {
+    if (monthTimeoutRef.current) {
+      clearTimeout(monthTimeoutRef.current);
+    }
+    monthTimeoutRef.current = setTimeout(() => {
       setIsTransitioning(false);
       setMonthTransitionDirection(0);
+      monthTimeoutRef.current = null;
     }, 350);
   };
 
@@ -72,6 +84,18 @@ const DatePicker = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showPicker]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (monthTimeoutRef.current) {
+        clearTimeout(monthTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
