@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { insertActiveEntryChronologically } from '../utils/entryUtils';
 
 /**
  * Optimized helper function to create chronological sequence with breaks
@@ -102,28 +103,8 @@ export const useUnifiedDisplay = (
     // Filter completed entries once
     const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
 
-    // Sort completed entries chronologically
-    const chronologicalEntries = [...completedEntries].sort((a, b) =>
-      new Date(a.startTime) - new Date(b.startTime)
-    );
-
-    // Handle active entry by inserting it in correct chronological position
-    let allEntriesChronological = [...chronologicalEntries];
-    if (activeEntry) {
-      // Find the correct position to insert active entry chronologically
-      const activeStartTime = new Date(activeEntry.startTime);
-      let insertIndex = allEntriesChronological.findIndex(entry =>
-        new Date(entry.startTime) > activeStartTime
-      );
-
-      // If no entry starts after active entry, add to the end
-      if (insertIndex === -1) {
-        insertIndex = allEntriesChronological.length;
-      }
-
-      // Insert active entry at the correct chronological position
-      allEntriesChronological.splice(insertIndex, 0, activeEntry);
-    }
+    // Handle active entry by inserting it in correct chronological position using shared utility
+    const allEntriesChronological = insertActiveEntryChronologically(completedEntries, activeEntry);
 
     // Create chronological sequence with breaks for all entries
     const chronologicalWithBreaks = createChronologicalWithBreaks(allEntriesChronological, calculateBreakTime);
