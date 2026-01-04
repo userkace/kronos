@@ -1476,7 +1476,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 0, y: 0 }}
                       transition={{ duration: 0.3, ease: "easeOut" }}
-                      layout
+                      layoutId={`active-${item.data.id}`}
                     >
                       <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
                         <div className="flex items-center justify-between">
@@ -1535,7 +1535,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   return (
                     <motion.div
                       key={item.breakKey}
-                      layout
+                      layoutId={`break-${item.breakKey}`}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
@@ -1566,7 +1566,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 0 }}
                       transition={{ duration: 0.3, ease: "easeOut" }}
-                      layout
+                      layoutId={`entry-${entry.id}`}
                     >
                       <div className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all">
                         <div className="flex items-center justify-between">
