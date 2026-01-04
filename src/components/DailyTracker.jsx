@@ -1209,14 +1209,6 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     return errors;
   }, []);
 
-  // Show consolidated error message when invalid entries are detected
-  useEffect(() => {
-    const errors = validateUnifiedDisplay(unifiedDisplay);
-    if (errors.length > 0) {
-      error(`Data validation errors detected: ${errors.join('; ')}`);
-    }
-  }, [unifiedDisplay, validateUnifiedDisplay]);
-
   // Memoized unified display computation for entries and breaks
   const unifiedDisplay = useUnifiedDisplay(
     activeEntry,
@@ -1225,6 +1217,14 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     showBreaks,
     calculateBreakTime
   );
+
+  // Show consolidated error message when invalid entries are detected
+  useEffect(() => {
+    const errors = validateUnifiedDisplay(unifiedDisplay);
+    if (errors.length > 0) {
+      error(`Data validation errors detected: ${errors.join('; ')}`);
+    }
+  }, [unifiedDisplay, validateUnifiedDisplay]);
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
