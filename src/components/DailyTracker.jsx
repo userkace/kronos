@@ -1204,13 +1204,26 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     calculateBreakTime
   );
 
+  // Track previously shown errors to prevent repeated toast messages
+  const [previousErrors, setPreviousErrors] = useState(new Set());
+
   // Show consolidated error message when invalid entries are detected
   useEffect(() => {
     const errors = validateUnifiedDisplay(unifiedDisplay);
     if (errors.length > 0) {
-      error(`Data validation errors detected: ${errors.join('; ')}`);
+      const errorString = errors.join('; ');
+      const errorHash = btoa(errorString); // Create a hash of the error string
+      
+      // Only show error if it's different from previously shown errors
+      if (!previousErrors.has(errorHash)) {
+        error(`Data validation errors detected: ${errorString}`);
+        setPreviousErrors(prev => new Set([...prev, errorHash]));
+      }
+    } else {
+      // Clear previous errors when there are no current errors
+      setPreviousErrors(new Set());
     }
-  }, [unifiedDisplay, validateUnifiedDisplay]);
+  }, [unifiedDisplay, validateUnifiedDisplay, previousErrors]);
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
