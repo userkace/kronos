@@ -14,7 +14,7 @@ const createChronologicalWithBreaks = (entries, calculateBreakTime) => {
     if (i > 0) {
       const previousEntry = entries[i - 1];
       const breakTime = calculateBreakTime(entry, previousEntry);
-      if (breakTime) {
+      if (breakTime !== null && typeof breakTime === 'number' && breakTime > 0) {
         chronologicalWithBreaks.push({
           type: 'break',
           data: breakTime,
