@@ -1491,7 +1491,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 0, y: 0 }}
                       transition={{ duration: 0.3, ease: "easeOut" }}
-                      layoutId={`active-${item.data.id}`}
+                      layoutId={`entry-${item.data.id}`}
                     >
                       <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
                         <div className="flex items-center justify-between">
