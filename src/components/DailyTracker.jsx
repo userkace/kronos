@@ -1604,6 +1604,19 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                           </div>
                           <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
                             <button
+                              onClick={() => handleContinue(entry)}
+                              disabled={pomodoroIsRunning}
+                              className={`p-3 rounded-full flex items-center space-x-1 ${
+                                pomodoroIsRunning
+                                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                  : 'bg-green-600 hover:bg-green-700 text-white'
+                              }`}
+                              aria-label={`Continue task: ${entry.description}`}
+                              title={pomodoroIsRunning ? 'Cannot continue while Pomodoro is active' : 'Continue this task'}
+                            >
+                              <Play className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => handleOpenModal('edit', entry)}
                               className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
                               aria-label={`Edit task: ${entry.description}`}
