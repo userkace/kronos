@@ -4,6 +4,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight, ArrowDownLeft } from 'lucide-react';
 import { useTimezone } from '../../contexts/TimezoneContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMotionPreferences } from '../../hooks/useMotionPreferences';
 
 const DatePicker = ({
   selectedDate,
@@ -20,52 +21,10 @@ const DatePicker = ({
   const [monthTransitionDirection, setMonthTransitionDirection] = React.useState(0);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [viewTransitionDirection, setViewTransitionDirection] = React.useState(0);
-  const [useBlurAnimation, setUseBlurAnimation] = React.useState(true);
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
   const { selectedTimezone } = useTimezone();
-
-  // Detect performance capabilities and disable blur animation if needed
-  useEffect(() => {
-    const checkPerformance = () => {
-      // Check for reduced motion preference
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        setUseBlurAnimation(false);
-        return;
-      }
-      
-      // Check for low-end device indicators
-      const navigator = window.navigator;
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      
-      // Disable blur on slow connections or low-end devices
-      if (connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
-        setUseBlurAnimation(false);
-        return;
-      }
-      
-      // Check hardware concurrency (CPU cores)
-      if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
-        setUseBlurAnimation(false);
-        return;
-      }
-      
-      // Simple performance test
-      const start = performance.now();
-      let count = 0;
-      for (let i = 0; i < 1000000; i++) {
-        count += Math.random();
-      }
-      const end = performance.now();
-      
-      // If the test takes more than 10ms, disable blur
-      if (end - start > 10) {
-        setUseBlurAnimation(false);
-      }
-    };
-    
-    checkPerformance();
-  }, []);
+  const { getTransition, getVariants, shouldReduceMotion } = useMotionPreferences();
 
   // Handle view mode transitions with direction
   const handleViewModeChange = (newMode) => {
@@ -339,10 +298,10 @@ const DatePicker = ({
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
             tabIndex="-1"
-            initial={{ opacity: 0, scale: 0.8, originX: 1, originY: 0 }}
+            initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8, originX: 1, originY: 0 }}
             animate={{ opacity: 1, scale: 1, originX: 1, originY: 0 }}
-            exit={{ opacity: 0, scale: 0.8, originX: 1, originY: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8, originX: 1, originY: 0 }}
+            transition={getTransition({ duration: 0.2, ease: "easeOut" })}
           >
           <div className="p-4">
             {/* Month Navigation */}
@@ -461,12 +420,11 @@ const DatePicker = ({
                 <motion.div
                   key={viewMode}
                   className="w-full"
-                  style={{ willChange: useBlurAnimation ? 'transform, opacity, filter' : 'transform, opacity' }}
+                  style={{ willChange: shouldReduceMotion ? 'transform, opacity' : 'transform, opacity, filter' }}
                   initial={{ 
                     opacity: 0, 
                     ...(viewTransitionDirection !== 0 ? {
-                      scale: 0.9,
-                      ...(useBlurAnimation && { filter: 'blur(4px)' })
+                      scale: shouldReduceMotion ? 1 : 0.9
                     } : {
                       x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0
                     })
@@ -474,27 +432,24 @@ const DatePicker = ({
                   animate={{ 
                     opacity: 1, 
                     scale: 1,
-                    filter: useBlurAnimation ? 'blur(0px)' : 'none',
                     x: 0
                   }}
                   exit={{ 
                     opacity: 0, 
                     ...(viewTransitionDirection !== 0 ? {
-                      scale: 0.9,
-                      ...(useBlurAnimation && { filter: 'blur(4px)' })
+                      scale: shouldReduceMotion ? 1 : 0.9
                     } : {
                       x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0
                     })
                   }}
-                  transition={{ 
+                  transition={getTransition({ 
                     duration: viewTransitionDirection !== 0 ? 0.2 : 0.3,
                     ease: [0.25, 0.46, 0.45, 0.94],
                     opacity: { duration: 0.15 },
                     ...(viewTransitionDirection !== 0 && {
-                      scale: { duration: 0.25 },
-                      ...(useBlurAnimation && { filter: { duration: 0.2 } })
+                      scale: { duration: 0.25 }
                     })
-                  }}
+                  })}
                   onAnimationComplete={() => {
                     // Reset will-change after animation completes
                     const element = document.querySelector('[style*="will-change"]');
@@ -533,11 +488,11 @@ const DatePicker = ({
                           initial={{ x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           exit={{ x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0, opacity: 0 }}
-                          transition={{ 
+                          transition={getTransition({ 
                             duration: 0.3, 
                             ease: [0.25, 0.46, 0.45, 0.94],
                             opacity: { duration: 0.15 }
-                          }}
+                          })}
                         >
                         {calendarDays.map((day, index) => {
                           // Convert day to the selected timezone for display and comparison
@@ -637,9 +592,9 @@ const DatePicker = ({
                             } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                             aria-label={`Select ${month}`}
                             aria-selected={isSelected}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ duration: 0.15 }}
+                            whileHover={!shouldReduceMotion ? { scale: 1.05 } : undefined}
+                            whileTap={!shouldReduceMotion ? { scale: 0.95 } : undefined}
+                            transition={getTransition({ duration: 0.15 })}
                           >
                             {month.slice(0, 3)}
                           </motion.button>
@@ -672,9 +627,9 @@ const DatePicker = ({
                             } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                             aria-label={`Select year ${year}`}
                             aria-selected={isSelected}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ duration: 0.15 }}
+                            whileHover={!shouldReduceMotion ? { scale: 1.05 } : undefined}
+                            whileTap={!shouldReduceMotion ? { scale: 0.95 } : undefined}
+                            transition={getTransition({ duration: 0.15 })}
                           >
                             {year}
                           </motion.button>
