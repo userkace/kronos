@@ -1448,7 +1448,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
                 if (item.type === 'active') {
                   // Validate active item has required data and ID
-                  if (!item.data || !item.data.id) {
+                  if (item.data === null || item.data === undefined || !item.data.id) {
                     error('Invalid active entry detected - missing required data');
                     return null;
                   }
@@ -1516,7 +1516,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   );
                 } else if (item.type === 'break') {
                   // Validate break item has required data and breakKey
-                  if (!item.data || !item.breakKey) {
+                  if (item.data === null || item.data === undefined || !item.breakKey) {
                     error('Invalid break entry detected - missing required data');
                     return null;
                   }
