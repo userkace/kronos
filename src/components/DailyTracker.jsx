@@ -1567,7 +1567,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       </div>
                     </motion.div>
                   );
-                } else if (item.type === 'entry' || !item.type) {
+                } else if (item.type === 'entry') {
                   // Entry type (default case)
                   const entry = item.data;
 
