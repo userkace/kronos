@@ -1225,7 +1225,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       // Clear previous errors when there are no current errors
       setPreviousErrors(new Set());
     }
-  }, [unifiedDisplay, validateUnifiedDisplay, previousErrors, error]);
+  }, [unifiedDisplay, validateUnifiedDisplay, error]);
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
