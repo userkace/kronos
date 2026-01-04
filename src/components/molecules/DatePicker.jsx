@@ -39,6 +39,9 @@ const DatePicker = ({
 
   // Handle month change with transition
   const handleMonthChange = (delta) => {
+    // Prevent multiple rapid transitions
+    if (isTransitioning) return;
+    
     setMonthTransitionDirection(delta);
     setIsTransitioning(true);
     onMonthChange(delta);
