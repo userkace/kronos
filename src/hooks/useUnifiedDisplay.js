@@ -133,7 +133,7 @@ export const useUnifiedDisplay = (
     // Apply display order to completed entries only
     let displaySequence;
     if (sortOrder === 'desc') {
-      displaySequence = createReversedSequence(completedEntriesDisplay, allEntriesChronological);
+      displaySequence = createReversedSequence(chronologicalWithBreaks, completedEntries);
     } else {
       displaySequence = completedEntriesDisplay;
     }
