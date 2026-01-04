@@ -5,10 +5,10 @@ import { useMemo, useCallback } from 'react';
  */
 const createChronologicalWithBreaks = (entries, calculateBreakTime) => {
   const chronologicalWithBreaks = [];
-  
+
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
-    
+
     // Add break before this entry if there's a previous entry
     if (i > 0) {
       const previousEntry = entries[i - 1];
@@ -23,13 +23,13 @@ const createChronologicalWithBreaks = (entries, calculateBreakTime) => {
         });
       }
     }
-    
+
     chronologicalWithBreaks.push({
       type: 'entry',
       data: entry
     });
   }
-  
+
   return chronologicalWithBreaks;
 };
 
@@ -39,35 +39,35 @@ const createChronologicalWithBreaks = (entries, calculateBreakTime) => {
 const createReversedSequence = (chronologicalWithBreaks, completedEntries) => {
   const reversedSequence = [];
   const entryPositions = new Map();
-  
+
   // Map entry positions in chronological order
   chronologicalWithBreaks.forEach((item, index) => {
     if (item.type === 'entry') {
       entryPositions.set(item.data.id, index);
     }
   });
-  
+
   // Sort entries by display order (newest first)
   const displayEntries = [...completedEntries].reverse();
-  
+
   // Build reversed sequence
   displayEntries.forEach(entry => {
     const chronologicalIndex = entryPositions.get(entry.id);
     if (chronologicalIndex !== undefined) {
       // Find segment start (beginning of breaks before this entry)
       let segmentStart = chronologicalIndex;
-      while (segmentStart > 0 && 
+      while (segmentStart > 0 &&
              chronologicalWithBreaks[segmentStart - 1].type !== 'entry') {
         segmentStart--;
       }
-      
+
       // Add segment in reverse order
       for (let i = chronologicalIndex; i >= segmentStart; i--) {
         reversedSequence.push(chronologicalWithBreaks[i]);
       }
     }
   });
-  
+
   return reversedSequence;
 };
 
@@ -75,7 +75,7 @@ const createReversedSequence = (chronologicalWithBreaks, completedEntries) => {
  * Custom hook to compute unified display of entries and breaks
  * Extracted from DailyTracker component for better testability and maintainability
  * Optimized for performance with reduced complexity
- * 
+ *
  * @param {Object|null} activeEntry - Currently active timer entry or null if no active entry
  * @param {Array<Object>} selectedDateEntries - Array of timer entries for the selected date
  * @param {string} sortOrder - Sort order for display ('asc' for chronological, 'desc' for reverse chronological)
@@ -84,7 +84,7 @@ const createReversedSequence = (chronologicalWithBreaks, completedEntries) => {
  * @param {Object} calculateBreakTime.entry - Current entry for break calculation
  * @param {Object} calculateBreakTime.previousEntry - Previous entry for break calculation
  * @returns {Array<Object>} Unified display array containing entry and break objects with type and data properties
- * 
+ *
  * @note IMPORTANT: The calculateBreakTime function MUST be wrapped in useCallback in the parent component
  * to prevent unnecessary recalculations of the useMemo. If not wrapped, the hook will still work
  * but will have significant performance implications as the useMemo will recalculate on every render.
@@ -98,12 +98,12 @@ export const useUnifiedDisplay = (
 ) => {
   return useMemo(() => {
     const unifiedDisplay = [];
-    
+
     // Filter completed entries once
     const completedEntries = selectedDateEntries.filter(entry => !entry.isActive && entry.endTime);
-    
+
     // Sort completed entries chronologically
-    const chronologicalEntries = [...completedEntries].sort((a, b) => 
+    const chronologicalEntries = [...completedEntries].sort((a, b) =>
       new Date(a.startTime) - new Date(b.startTime)
     );
 
@@ -112,15 +112,15 @@ export const useUnifiedDisplay = (
     if (activeEntry) {
       // Find the correct position to insert active entry chronologically
       const activeStartTime = new Date(activeEntry.startTime);
-      let insertIndex = allEntriesChronological.findIndex(entry => 
+      let insertIndex = allEntriesChronological.findIndex(entry =>
         new Date(entry.startTime) > activeStartTime
       );
-      
+
       // If no entry starts after active entry, add to the end
       if (insertIndex === -1) {
         insertIndex = allEntriesChronological.length;
       }
-      
+
       // Insert active entry at the correct chronological position
       allEntriesChronological.splice(insertIndex, 0, activeEntry);
     }
@@ -132,7 +132,7 @@ export const useUnifiedDisplay = (
     let activeEntryDisplay = [];
     let completedEntriesDisplay = [];
     let activeEntryId = null;
-    
+
     chronologicalWithBreaks.forEach(item => {
       if (item.type === 'entry' && item.data.isActive) {
         activeEntryId = item.data.id;
