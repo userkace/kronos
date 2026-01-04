@@ -474,7 +474,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   }, [timezone]);
 
   // Calculate total break time for the day
-  const calculateDailyBreakTotal = useCallback(() => {
+  const dailyBreakTotal = useMemo(() => {
     let totalBreakSeconds = 0;
 
     // Get completed entries only (filter out active entries)
@@ -1241,7 +1241,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 </span>
               </div>
               <AnimatePresence>
-                {showBreaks && calculateDailyBreakTotal() !== '0s' && (
+                {showBreaks && dailyBreakTotal !== '0s' && (
                   <motion.span
                     key="break-total"
                     initial={{ opacity: 0, scale: 0, x: -50 }}
@@ -1251,7 +1251,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
                   >
                     <Coffee className="w-4 h-4 mr-2" />
-                    {calculateDailyBreakTotal()}
+                    {dailyBreakTotal}
                   </motion.span>
                 )}
               </AnimatePresence>
