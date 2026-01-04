@@ -22,6 +22,7 @@ const DatePicker = ({
   const [viewTransitionDirection, setViewTransitionDirection] = React.useState(0);
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
+  const timeoutRef = useRef(null);
   const { selectedTimezone } = useTimezone();
 
   // Handle view mode transitions with direction
@@ -31,8 +32,14 @@ const DatePicker = ({
     const newIndex = modeOrder.indexOf(newMode);
     setViewTransitionDirection(newIndex > currentIndex ? 1 : -1);
     setViewMode(newMode);
+    
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
     // Reset transition direction after a short delay
-    setTimeout(() => setViewTransitionDirection(0), 300);
+    timeoutRef.current = setTimeout(() => setViewTransitionDirection(0), 300);
   };
 
   // Handle month change with transition
@@ -40,8 +47,14 @@ const DatePicker = ({
     setMonthTransitionDirection(delta);
     setIsTransitioning(true);
     onMonthChange(delta);
+    
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
     // Reset transition state after animation completes
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setIsTransitioning(false);
       setMonthTransitionDirection(0);
     }, 350);
@@ -65,6 +78,10 @@ const DatePicker = ({
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      // Cleanup timeout on unmount
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, [showPicker]);
 
