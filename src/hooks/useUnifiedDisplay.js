@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 
 /**
  * Optimized helper function to create chronological sequence with breaks
