@@ -1566,8 +1566,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       </div>
                     </motion.div>
                   );
-                } else {
-                  // Entry type
+                } else if (item.type === 'entry' || !item.type) {
+                  // Entry type (default case)
                   const entry = item.data;
 
                   const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
@@ -1589,34 +1589,21 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                             <h3 className="font-semibold text-gray-900">
                               {entry.description}
                             </h3>
-                            <p className="text-gray-500 text-sm mb-2">
+                            <p className="text-gray-600 text-sm mb-2">
                               {entry.project || ''}
                             </p>
-                            <div className="flex items-center space-x-4 text-gray-600">
+                            <div className="flex items-center space-x-4 text-gray-500">
                               <span className="text-sm">
                                 {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
                               </span>
-                              <span className="font-mono">
-                                {formatDisplayDuration(duration)}
+                              <span className="font-mono font-semibold">
+                                {formatDuration(duration)}
                               </span>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
                             <button
-                              onClick={() => handleContinue(entry)}
-                              disabled={pomodoroIsRunning}
-                              className={`p-3 rounded-full flex items-center space-x-1 transition-colors ${
-                                pomodoroIsRunning
-                                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                  : 'bg-green-600 hover:bg-green-700 text-white'
-                              }`}
-                              title={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : ''}
-                              aria-label={pomodoroIsRunning ? 'Cannot continue timer while Pomodoro is active' : `Continue task: ${entry.description}`}
-                            >
-                              <Play className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenModal('edit', entry)}
+                              onClick={() => handleEdit(entry)}
                               className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
                               aria-label={`Edit task: ${entry.description}`}
                             >
@@ -1648,6 +1635,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                       </div>
                     </motion.div>
                   );
+                } else {
+                  // Fallback for unexpected item types
+                  console.warn('Unexpected item type in unified display:', item.type, item);
+                  return null;
                 }
             })}
 
