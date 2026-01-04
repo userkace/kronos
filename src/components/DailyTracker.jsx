@@ -467,6 +467,17 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     const breakSeconds = differenceInSeconds(currentStartInTimezone, prevEndInTimezone);
 
+    // Handle negative break times which indicate data inconsistency
+    if (breakSeconds < 0) {
+      console.warn(
+        `Data inconsistency detected: Negative break time (${breakSeconds}s) between entries. ` +
+        `Previous entry (${previousEntry.id}) ends at ${previousEntry.endTime}, ` +
+        `current entry (${currentEntry.id}) starts at ${currentEntry.startTime}. ` +
+        `This may indicate overlapping times or out-of-order entries.`
+      );
+      return null;
+    }
+
     // Only show breaks longer than 10 seconds to avoid noise
     if (breakSeconds <= 10) return null;
 
