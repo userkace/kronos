@@ -82,8 +82,8 @@ const createReversedSequence = (chronologicalWithBreaks, entriesForDisplay) => {
  * @param {string} sortOrder - Sort order for display ('asc' for chronological, 'desc' for reverse chronological)
  * @param {boolean} showBreaks - Whether to include break periods between entries in the display
  * @param {Function} calculateBreakTime - Function to calculate break time between two entries
- * @param {Object} calculateBreakTime.entry - Current entry for break calculation
- * @param {Object} calculateBreakTime.previousEntry - Previous entry for break calculation
+ * @param {Object} entry - Current entry for break calculation
+ * @param {Object} previousEntry - Previous entry for break calculation
  * @returns {Array<Object>} Unified display array containing entry and break objects with type and data properties
  *
  * @note IMPORTANT: The calculateBreakTime function MUST be wrapped in useCallback in the parent component
