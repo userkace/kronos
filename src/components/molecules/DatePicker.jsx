@@ -542,7 +542,7 @@ const DatePicker = ({
                     <div className="relative overflow-hidden">
                       <AnimatePresence mode="wait">
                         <motion.div
-                          key={formatDate(calendarDays[15] || new Date(), 'yyyy-MM')}
+                          key={selectedTimezone ? formatDate(calendarDays[15] || new Date(), 'yyyy-MM') : format(calendarDays[15] || new Date(), 'yyyy-MM')}
                           role="grid"
                           aria-labelledby="month-year"
                           className="grid grid-cols-7 gap-1 w-full"
