@@ -18,9 +18,9 @@ const DatePicker = ({
   const [viewMode, setViewMode] = React.useState('days'); // 'days', 'months', 'years'
   const [currentDisplayDate, setCurrentDisplayDate] = React.useState(new Date());
   const [yearRangeStart, setYearRangeStart] = React.useState(new Date().getFullYear() - 10);
-  const [monthTransitionDirection, setMonthTransitionDirection] = React.useState(0);
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [viewTransitionDirection, setViewTransitionDirection] = React.useState(0);
+  const [monthTransitionDirection, setMonthTransitionDirection] = React.useState(0);
+  const animatedContentRef = useRef(null);
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -445,6 +445,7 @@ const DatePicker = ({
             <div className="relative overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
+                  ref={animatedContentRef}
                   key={viewMode}
                   className="w-full"
                   style={{ willChange: shouldReduceMotion ? 'transform, opacity' : 'transform, opacity, filter' }}
@@ -478,10 +479,9 @@ const DatePicker = ({
                     })
                   })}
                   onAnimationComplete={() => {
-                    // Reset will-change after animation completes
-                    const element = document.querySelector('[style*="will-change"]');
-                    if (element) {
-                      element.style.willChange = 'auto';
+                    // Reset will-change after animation completes using the ref
+                    if (animatedContentRef.current) {
+                      animatedContentRef.current.style.willChange = 'auto';
                     }
                   }}
                 >
