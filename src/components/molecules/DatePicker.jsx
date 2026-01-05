@@ -26,6 +26,7 @@ const DatePicker = ({
   const timeoutRef = useRef(null);
   const monthTimeoutRef = useRef(null);
   const animatedContentRef = useRef(null);
+  const mountedRef = useRef(true);
   const { selectedTimezone } = useTimezone();
   const { getTransition, getDuration, shouldReduceMotion } = useMotionPreferences();
 
@@ -95,6 +96,7 @@ const DatePicker = ({
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -515,7 +517,7 @@ const DatePicker = ({
                   {...contentAnimations}
                   onAnimationComplete={() => {
                     // Reset will-change after animation completes
-                    if (animatedContentRef.current) {
+                    if (mountedRef.current && animatedContentRef.current) {
                       animatedContentRef.current.style.willChange = 'auto';
                     }
                   }}
