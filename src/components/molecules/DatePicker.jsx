@@ -25,6 +25,7 @@ const DatePicker = ({
   const triggerRef = useRef(null);
   const timeoutRef = useRef(null);
   const monthTimeoutRef = useRef(null);
+  const animatedContentRef = useRef(null);
   const { selectedTimezone } = useTimezone();
   const { getTransition, getVariants, shouldReduceMotion } = useMotionPreferences();
 
@@ -451,6 +452,7 @@ const DatePicker = ({
             <div className="relative overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
+                  ref={animatedContentRef}
                   key={viewMode}
                   className="w-full"
                   style={{ willChange: shouldReduceMotion ? 'transform, opacity' : 'transform, opacity, filter' }}
@@ -485,9 +487,8 @@ const DatePicker = ({
                   })}
                   onAnimationComplete={() => {
                     // Reset will-change after animation completes
-                    const element = document.querySelector('[style*="will-change"]');
-                    if (element) {
-                      element.style.willChange = 'auto';
+                    if (animatedContentRef.current) {
+                      animatedContentRef.current.style.willChange = 'auto';
                     }
                   }}
                 >
