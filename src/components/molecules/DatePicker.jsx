@@ -52,7 +52,7 @@ const DatePicker = ({
   const handleMonthChange = (delta) => {
     // Prevent multiple rapid transitions
     if (isTransitioning) return;
-    
+
     setMonthTransitionDirection(delta);
     setIsTransitioning(true);
     if (onMonthChange) {
@@ -74,7 +74,7 @@ const DatePicker = ({
   // Close the popup when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (popupRef.current && !popupRef.current.contains(event.target) && 
+      if (popupRef.current && !popupRef.current.contains(event.target) &&
           triggerRef.current && !triggerRef.current.contains(event.target)) {
         setShowPicker(false);
       }
@@ -176,10 +176,10 @@ const DatePicker = ({
     if (shouldUpdate) {
       e.preventDefault();
       setFocusedDate(newDate);
-      
+
       // Update month view if needed
       if (!isSameMonth(newDate, currentDate)) {
-        const monthDiff = (newDate.getFullYear() - currentDate.getFullYear()) * 12 + 
+        const monthDiff = (newDate.getFullYear() - currentDate.getFullYear()) * 12 +
                          (newDate.getMonth() - currentDate.getMonth());
         handleMonthChange(monthDiff);
       }
@@ -257,11 +257,11 @@ const DatePicker = ({
   // Handle month selection
   const handleMonthSelect = (monthIndex) => {
     const newDate = new Date(currentDisplayDate);
-    
+
     newDate.setMonth(monthIndex);
     setCurrentDisplayDate(newDate);
-    
-    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
+
+    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 +
                      (newDate.getMonth() - currentDisplayDate.getMonth());
     handleMonthChange(monthDiff);
     handleViewModeChange('days');
@@ -270,11 +270,11 @@ const DatePicker = ({
   // Handle year selection
   const handleYearSelect = (year) => {
     const newDate = new Date(currentDisplayDate);
-    
+
     newDate.setFullYear(year);
     setCurrentDisplayDate(newDate);
-    
-    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
+
+    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 +
                      (newDate.getMonth() - currentDisplayDate.getMonth());
     handleMonthChange(monthDiff);
     handleViewModeChange('months');
@@ -330,7 +330,7 @@ const DatePicker = ({
             role="dialog"
             aria-modal="true"
             aria-label="Calendar"
-            className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 focus:outline-none"
+            className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 focus:outline-none"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
             tabIndex="-1"
@@ -421,7 +421,7 @@ const DatePicker = ({
                     >
                       <ArrowDownLeft className="w-4 h-4" />
                     </button>
-                    <div 
+                    <div
                       className="font-medium"
                       aria-live="polite"
                     >
@@ -458,28 +458,28 @@ const DatePicker = ({
                   key={viewMode}
                   className="w-full"
                   style={{ willChange: shouldReduceMotion ? 'transform, opacity' : 'transform, opacity, filter' }}
-                  initial={{ 
-                    opacity: 0, 
+                  initial={{
+                    opacity: 0,
                     ...(viewTransitionDirection !== 0 ? {
                       scale: shouldReduceMotion ? 1 : 0.9
                     } : {
                       x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0
                     })
                   }}
-                  animate={{ 
-                    opacity: 1, 
+                  animate={{
+                    opacity: 1,
                     scale: 1,
                     x: 0
                   }}
-                  exit={{ 
-                    opacity: 0, 
+                  exit={{
+                    opacity: 0,
                     ...(viewTransitionDirection !== 0 ? {
                       scale: shouldReduceMotion ? 1 : 0.9
                     } : {
                       x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0
                     })
                   }}
-                  transition={getTransition({ 
+                  transition={getTransition({
                     duration: viewTransitionDirection !== 0 ? 0.2 : 0.3,
                     ease: [0.25, 0.46, 0.45, 0.94],
                     opacity: { duration: 0.15 },
@@ -496,8 +496,8 @@ const DatePicker = ({
                 >
                   {/* Day headers */}
                   {viewMode === 'days' && (
-                    <div 
-                      role="row" 
+                    <div
+                      role="row"
                       className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2"
                       aria-hidden="true"
                     >
@@ -515,17 +515,17 @@ const DatePicker = ({
                   {viewMode === 'days' && (
                     <div className="relative overflow-hidden">
                       <AnimatePresence mode="wait">
-                        <motion.div 
+                        <motion.div
                           key={formatDate(calendarDays[15] || new Date(), 'yyyy-MM')}
-                          role="grid" 
+                          role="grid"
                           aria-labelledby="month-year"
                           className="grid grid-cols-7 gap-1 w-full"
                           aria-activedescendant={focusedDate ? `date-${format(focusedDate, 'yyyy-MM-dd')}` : undefined}
                           initial={{ x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           exit={{ x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0, opacity: 0 }}
-                          transition={getTransition({ 
-                            duration: 0.3, 
+                          transition={getTransition({
+                            duration: 0.3,
                             ease: [0.25, 0.46, 0.45, 0.94],
                             opacity: { duration: 0.15 }
                           })}
@@ -535,15 +535,15 @@ const DatePicker = ({
                           const zonedDay = selectedTimezone ? toZonedTime(day, selectedTimezone) : day;
                           const isSelected = isDateSelected(day);
                           const isToday = isDateToday(day);
-                          
+
                           // Check if day is in the current month being displayed
-                          const currentMonth = calendarDays[15] ? 
-                            toZonedTime(calendarDays[15], selectedTimezone).getMonth() : 
+                          const currentMonth = calendarDays[15] ?
+                            toZonedTime(calendarDays[15], selectedTimezone).getMonth() :
                             toZonedTime(new Date(), selectedTimezone).getMonth();
                           const isCurrentMonth = zonedDay.getMonth() === currentMonth;
 
                           return (
-                            <div 
+                            <div
                               key={index}
                               role="gridcell"
                               className="flex items-center justify-center w-8 h-8 mx-auto"
@@ -553,15 +553,15 @@ const DatePicker = ({
                                 onClick={(e) => {
                                   onDateChange(day);
                                   setFocusedDate(day);
-                                  
+
                                   // Check if the selected date is in a different month than the current view
                                   // Use timezone-aware comparison to avoid edge cases with timezone conversion
-                                  const currentViewDate = calendarDays[15] ? 
-                                    toZonedTime(calendarDays[15], selectedTimezone) : 
+                                  const currentViewDate = calendarDays[15] ?
+                                    toZonedTime(calendarDays[15], selectedTimezone) :
                                     toZonedTime(new Date(), selectedTimezone);
                                   const currentViewMonth = currentViewDate.getMonth();
                                   const currentViewYear = currentViewDate.getFullYear();
-                                  
+
                                   const selectedDateInTZ = toZonedTime(day, selectedTimezone);
                                   const selectedMonth = selectedDateInTZ.getMonth();
                                   const selectedYear = selectedDateInTZ.getFullYear();
@@ -603,18 +603,18 @@ const DatePicker = ({
 
                   {/* Month selection */}
                   {viewMode === 'months' && (
-                    <div 
-                      role="grid" 
+                    <div
+                      role="grid"
                       className="grid grid-cols-3 gap-2 w-full"
                       aria-label="Month selection"
                     >
                       {getMonths().map((month, index) => {
-                        const isCurrentMonth = new Date().getMonth() === index && 
+                        const isCurrentMonth = new Date().getMonth() === index &&
                                              new Date().getFullYear() === currentDisplayDate.getFullYear();
-                        const isSelected = selectedDate && 
-                                         selectedDate.getMonth() === index && 
+                        const isSelected = selectedDate &&
+                                         selectedDate.getMonth() === index &&
                                          selectedDate.getFullYear() === currentDisplayDate.getFullYear();
-                        
+
                         return (
                           <motion.button
                             key={month}
@@ -641,15 +641,15 @@ const DatePicker = ({
 
                   {/* Year selection */}
                   {viewMode === 'years' && (
-                    <div 
-                      role="grid" 
+                    <div
+                      role="grid"
                       className="grid grid-cols-4 gap-2 w-full max-h-64 overflow-y-auto"
                       aria-label="Year selection"
                     >
                       {getYears().map((year) => {
                         const isCurrentYear = new Date().getFullYear() === year;
                         const isSelected = selectedDate && selectedDate.getFullYear() === year;
-                        
+
                         return (
                           <motion.button
                             key={year}
