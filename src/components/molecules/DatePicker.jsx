@@ -27,7 +27,7 @@ const DatePicker = ({
   const monthTimeoutRef = useRef(null);
   const animatedContentRef = useRef(null);
   const { selectedTimezone } = useTimezone();
-  const { getTransition, getVariants, shouldReduceMotion } = useMotionPreferences();
+  const { getTransition, getVariants, shouldReduceMotion, getDuration } = useMotionPreferences();
 
   // Handle view mode transitions with direction
   const handleViewModeChange = (newMode) => {
@@ -36,14 +36,16 @@ const DatePicker = ({
     const newIndex = modeOrder.indexOf(newMode);
     setViewTransitionDirection(newIndex > currentIndex ? 1 : -1);
     setViewMode(newMode);
-    // Reset transition direction after a short delay
+    // Reset transition direction after animation completes
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+    // Calculate actual animation duration based on motion preferences
+    const animationDuration = getDuration(viewTransitionDirection !== 0 ? 0.2 : 0.3, 0.1);
     timeoutRef.current = setTimeout(() => {
       setViewTransitionDirection(0);
       timeoutRef.current = null;
-    }, 300);
+    }, animationDuration * 1000);
   };
 
   // Handle month change with transition
@@ -60,11 +62,13 @@ const DatePicker = ({
     if (monthTimeoutRef.current) {
       clearTimeout(monthTimeoutRef.current);
     }
+    // Calculate actual animation duration based on motion preferences
+    const monthAnimationDuration = getDuration(0.3, 0.15);
     monthTimeoutRef.current = setTimeout(() => {
       setIsTransitioning(false);
       setMonthTransitionDirection(0);
       monthTimeoutRef.current = null;
-    }, 350);
+    }, monthAnimationDuration * 1000);
   };
 
   // Close the popup when clicking outside
