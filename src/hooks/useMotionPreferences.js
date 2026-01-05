@@ -1,5 +1,5 @@
 import { useReducedMotion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Custom hook that combines framer-motion's useReducedMotion with additional performance checks
@@ -73,12 +73,12 @@ export const useMotionPreferences = () => {
   }, [prefersReducedMotion]);
 
   // Helper function to get appropriate animation duration
-  const getDuration = (normalDuration, reducedDuration = 0.1) => {
+  const getDuration = useCallback((normalDuration, reducedDuration = 0.1) => {
     return performanceSettings.reducedDuration ? reducedDuration : normalDuration;
-  };
+  }, [performanceSettings.reducedDuration]);
 
   // Helper function to get appropriate animation variants
-  const getVariants = (variants) => {
+  const getVariants = useCallback((variants) => {
     if (performanceSettings.disableComplexAnimations) {
       // Return simplified variants that remove complex transforms and filters
       return Object.keys(variants).reduce((acc, key) => {
@@ -92,10 +92,10 @@ export const useMotionPreferences = () => {
       }, {});
     }
     return variants;
-  };
+  }, [performanceSettings.disableComplexAnimations]);
 
   // Helper function to get transition settings
-  const getTransition = (baseTransition) => {
+  const getTransition = useCallback((baseTransition) => {
     if (performanceSettings.disableComplexAnimations) {
       return {
         duration: getDuration(baseTransition.duration || 0.3, 0.1),
@@ -111,7 +111,7 @@ export const useMotionPreferences = () => {
     }
 
     return baseTransition;
-  };
+  }, [performanceSettings.disableComplexAnimations, performanceSettings.reducedDuration, getDuration]);
 
   return {
     // Boolean flags
