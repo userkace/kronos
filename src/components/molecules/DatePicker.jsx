@@ -330,7 +330,7 @@ const DatePicker = ({
             role="dialog"
             aria-modal="true"
             aria-label="Calendar"
-            className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 focus:outline-none"
+            className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 focus:outline-none overflow-visible"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
             tabIndex="-1"
@@ -605,7 +605,7 @@ const DatePicker = ({
                   {viewMode === 'months' && (
                     <div
                       role="grid"
-                      className="grid grid-cols-3 gap-2 w-full"
+                      className="grid grid-cols-3 gap-2 w-full p-1"
                       aria-label="Month selection"
                     >
                       {getMonths().map((month, index) => {
@@ -643,7 +643,7 @@ const DatePicker = ({
                   {viewMode === 'years' && (
                     <div
                       role="grid"
-                      className="grid grid-cols-4 gap-2 w-full max-h-64 overflow-y-auto"
+                      className="grid grid-cols-4 gap-2 w-full max-h-64 overflow-y-auto p-1"
                       aria-label="Year selection"
                     >
                       {getYears().map((year) => {
