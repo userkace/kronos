@@ -253,13 +253,12 @@ const DatePicker = ({
   // Handle month selection
   const handleMonthSelect = (monthIndex) => {
     const newDate = new Date(currentDisplayDate);
-    const oldDate = new Date(currentDisplayDate); // Keep original for calculation
     
     newDate.setMonth(monthIndex);
     setCurrentDisplayDate(newDate);
     
-    const monthDiff = (newDate.getFullYear() - oldDate.getFullYear()) * 12 + 
-                     (newDate.getMonth() - oldDate.getMonth());
+    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
+                     (newDate.getMonth() - currentDisplayDate.getMonth());
     handleMonthChange(monthDiff);
     handleViewModeChange('days');
   };
@@ -267,13 +266,12 @@ const DatePicker = ({
   // Handle year selection
   const handleYearSelect = (year) => {
     const newDate = new Date(currentDisplayDate);
-    const oldDate = new Date(currentDisplayDate); // Keep original for calculation
     
     newDate.setFullYear(year);
     setCurrentDisplayDate(newDate);
     
-    const monthDiff = (newDate.getFullYear() - oldDate.getFullYear()) * 12 + 
-                     (newDate.getMonth() - oldDate.getMonth());
+    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
+                     (newDate.getMonth() - currentDisplayDate.getMonth());
     handleMonthChange(monthDiff);
     handleViewModeChange('months');
   };
