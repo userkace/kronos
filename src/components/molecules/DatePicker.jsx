@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { format, addMonths, subMonths, addDays, subDays, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight, ArrowDownLeft } from 'lucide-react';
@@ -304,6 +304,63 @@ const DatePicker = ({
     return `${startYear}-${endYear}`;
   };
 
+  // Memoized animation objects to prevent unnecessary re-renders
+  const buttonAnimations = useMemo(() => ({
+    whileHover: !shouldReduceMotion ? { scale: 1.05 } : undefined,
+    whileTap: !shouldReduceMotion ? { scale: 0.95 } : undefined,
+    transition: getTransition({ duration: 0.15 })
+  }), [shouldReduceMotion, getTransition]);
+
+  const popupAnimations = useMemo(() => ({
+    initial: { opacity: 0, scale: shouldReduceMotion ? 1 : 0.8, originX: 1, originY: 0 },
+    animate: { opacity: 1, scale: 1, originX: 1, originY: 0 },
+    exit: { opacity: 0, scale: shouldReduceMotion ? 1 : 0.8, originX: 1, originY: 0 },
+    transition: getTransition({ duration: 0.2, ease: "easeOut" })
+  }), [shouldReduceMotion, getTransition]);
+
+  const contentAnimations = useMemo(() => ({
+    initial: {
+      opacity: 0,
+      ...(viewTransitionDirection !== 0 ? {
+        scale: shouldReduceMotion ? 1 : 0.9
+      } : {
+        x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0
+      })
+    },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      x: 0
+    },
+    exit: {
+      opacity: 0,
+      ...(viewTransitionDirection !== 0 ? {
+        scale: shouldReduceMotion ? 1 : 0.9
+      } : {
+        x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0
+      })
+    },
+    transition: getTransition({
+      duration: viewTransitionDirection !== 0 ? 0.2 : 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94],
+      opacity: { duration: 0.15 },
+      ...(viewTransitionDirection !== 0 && {
+        scale: { duration: 0.25 }
+      })
+    })
+  }), [shouldReduceMotion, getTransition, viewTransitionDirection, monthTransitionDirection]);
+
+  const calendarAnimations = useMemo(() => ({
+    initial: { x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0, opacity: 0 },
+    animate: { x: 0, opacity: 1 },
+    exit: { x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0, opacity: 0 },
+    transition: getTransition({
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94],
+      opacity: { duration: 0.15 }
+    })
+  }), [getTransition, monthTransitionDirection]);
+
   return (
     <div className={`relative ${className}`}>
       <button
@@ -334,10 +391,7 @@ const DatePicker = ({
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
             tabIndex="-1"
-            initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8, originX: 1, originY: 0 }}
-            animate={{ opacity: 1, scale: 1, originX: 1, originY: 0 }}
-            exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.8, originX: 1, originY: 0 }}
-            transition={getTransition({ duration: 0.2, ease: "easeOut" })}
+            {...popupAnimations}
           >
           <div className="p-4">
             {/* Month Navigation */}
@@ -458,35 +512,7 @@ const DatePicker = ({
                   key={viewMode}
                   className="w-full"
                   style={{ willChange: shouldReduceMotion ? 'transform, opacity' : 'transform, opacity, filter' }}
-                  initial={{
-                    opacity: 0,
-                    ...(viewTransitionDirection !== 0 ? {
-                      scale: shouldReduceMotion ? 1 : 0.9
-                    } : {
-                      x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0
-                    })
-                  }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1,
-                    x: 0
-                  }}
-                  exit={{
-                    opacity: 0,
-                    ...(viewTransitionDirection !== 0 ? {
-                      scale: shouldReduceMotion ? 1 : 0.9
-                    } : {
-                      x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0
-                    })
-                  }}
-                  transition={getTransition({
-                    duration: viewTransitionDirection !== 0 ? 0.2 : 0.3,
-                    ease: [0.25, 0.46, 0.45, 0.94],
-                    opacity: { duration: 0.15 },
-                    ...(viewTransitionDirection !== 0 && {
-                      scale: { duration: 0.25 }
-                    })
-                  })}
+                  {...contentAnimations}
                   onAnimationComplete={() => {
                     // Reset will-change after animation completes
                     if (animatedContentRef.current) {
@@ -521,14 +547,7 @@ const DatePicker = ({
                           aria-labelledby="month-year"
                           className="grid grid-cols-7 gap-1 w-full"
                           aria-activedescendant={focusedDate ? `date-${format(focusedDate, 'yyyy-MM-dd')}` : undefined}
-                          initial={{ x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          exit={{ x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0, opacity: 0 }}
-                          transition={getTransition({
-                            duration: 0.3,
-                            ease: [0.25, 0.46, 0.45, 0.94],
-                            opacity: { duration: 0.15 }
-                          })}
+                          {...calendarAnimations}
                         >
                         {calendarDays.map((day, index) => {
                           // Convert day to the selected timezone for display and comparison
@@ -628,9 +647,7 @@ const DatePicker = ({
                             } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                             aria-label={`Select ${month}`}
                             aria-selected={isSelected}
-                            whileHover={!shouldReduceMotion ? { scale: 1.05 } : undefined}
-                            whileTap={!shouldReduceMotion ? { scale: 0.95 } : undefined}
-                            transition={getTransition({ duration: 0.15 })}
+                            {...buttonAnimations}
                           >
                             {month.slice(0, 3)}
                           </motion.button>
@@ -663,9 +680,7 @@ const DatePicker = ({
                             } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                             aria-label={`Select year ${year}`}
                             aria-selected={isSelected}
-                            whileHover={!shouldReduceMotion ? { scale: 1.05 } : undefined}
-                            whileTap={!shouldReduceMotion ? { scale: 0.95 } : undefined}
-                            transition={getTransition({ duration: 0.15 })}
+                            {...buttonAnimations}
                           >
                             {year}
                           </motion.button>
