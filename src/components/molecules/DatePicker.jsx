@@ -52,7 +52,9 @@ const DatePicker = ({
     
     setMonthTransitionDirection(delta);
     setIsTransitioning(true);
-    onMonthChange(delta);
+    if (onMonthChange) {
+      onMonthChange(delta);
+    }
     // Reset transition state after animation completes
     if (monthTimeoutRef.current) {
       clearTimeout(monthTimeoutRef.current);
@@ -250,11 +252,13 @@ const DatePicker = ({
   // Handle month selection
   const handleMonthSelect = (monthIndex) => {
     const newDate = new Date(currentDisplayDate);
+    const oldDate = new Date(currentDisplayDate); // Keep original for calculation
+    
     newDate.setMonth(monthIndex);
     setCurrentDisplayDate(newDate);
     
-    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
-                     (newDate.getMonth() - currentDisplayDate.getMonth());
+    const monthDiff = (newDate.getFullYear() - oldDate.getFullYear()) * 12 + 
+                     (newDate.getMonth() - oldDate.getMonth());
     handleMonthChange(monthDiff);
     handleViewModeChange('days');
   };
@@ -262,11 +266,13 @@ const DatePicker = ({
   // Handle year selection
   const handleYearSelect = (year) => {
     const newDate = new Date(currentDisplayDate);
+    const oldDate = new Date(currentDisplayDate); // Keep original for calculation
+    
     newDate.setFullYear(year);
     setCurrentDisplayDate(newDate);
     
-    const monthDiff = (newDate.getFullYear() - currentDisplayDate.getFullYear()) * 12 + 
-                     (newDate.getMonth() - currentDisplayDate.getMonth());
+    const monthDiff = (newDate.getFullYear() - oldDate.getFullYear()) * 12 + 
+                     (newDate.getMonth() - oldDate.getMonth());
     handleMonthChange(monthDiff);
     handleViewModeChange('months');
   };
