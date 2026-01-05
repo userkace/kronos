@@ -451,7 +451,7 @@ const DatePicker = ({
             </div>
 
             {/* Main content area with view transitions */}
-            <div className="relative overflow-hidden">
+            <div className="relative">
               <AnimatePresence mode="wait">
                 <motion.div
                   ref={animatedContentRef}
@@ -605,7 +605,7 @@ const DatePicker = ({
                   {viewMode === 'months' && (
                     <div
                       role="grid"
-                      className="grid grid-cols-3 gap-2 w-full p-1"
+                      className="grid grid-cols-3 gap-2 w-full"
                       aria-label="Month selection"
                     >
                       {getMonths().map((month, index) => {
@@ -643,7 +643,7 @@ const DatePicker = ({
                   {viewMode === 'years' && (
                     <div
                       role="grid"
-                      className="grid grid-cols-4 gap-2 w-full max-h-64 overflow-y-auto p-1"
+                      className="grid grid-cols-4 gap-2 w-full max-h-64 overflow-y-auto"
                       aria-label="Year selection"
                     >
                       {getYears().map((year) => {

@@ -79,7 +79,6 @@ const MotionTestComponent = () => {
             <li>Slow network connections (2G or slower)</li>
             <li>Devices with less than 4 CPU cores</li>
             <li>Low memory devices (&lt;4GB RAM)</li>
-            <li>Slow JavaScript performance</li>
           </ul>
         </div>
       </div>
