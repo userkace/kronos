@@ -27,7 +27,7 @@ const DatePicker = ({
   const monthTimeoutRef = useRef(null);
   const animatedContentRef = useRef(null);
   const { selectedTimezone } = useTimezone();
-  const { getTransition, getVariants, shouldReduceMotion, getDuration } = useMotionPreferences();
+  const { getTransition, getDuration, shouldReduceMotion } = useMotionPreferences();
 
   // Handle view mode transitions with direction
   const handleViewModeChange = (newMode) => {
