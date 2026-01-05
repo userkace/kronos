@@ -21,7 +21,6 @@ const DatePicker = ({
   const [monthTransitionDirection, setMonthTransitionDirection] = React.useState(0);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [viewTransitionDirection, setViewTransitionDirection] = React.useState(0);
-  const [activeAnimation, setActiveAnimation] = React.useState(null); // 'view' | 'month' | null
   const popupRef = useRef(null);
   const triggerRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -32,16 +31,11 @@ const DatePicker = ({
 
   // Handle view mode transitions with direction
   const handleViewModeChange = (newMode) => {
-    // Prevent animation conflicts
-    if (activeAnimation === 'month') return;
-    
     const modeOrder = ['days', 'months', 'years'];
     const currentIndex = modeOrder.indexOf(viewMode);
     const newIndex = modeOrder.indexOf(newMode);
     setViewTransitionDirection(newIndex > currentIndex ? 1 : -1);
     setViewMode(newMode);
-    setActiveAnimation('view');
-    
     // Reset transition direction after animation completes
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -50,20 +44,17 @@ const DatePicker = ({
     const animationDuration = getDuration(viewTransitionDirection !== 0 ? 0.2 : 0.3, 0.1);
     timeoutRef.current = setTimeout(() => {
       setViewTransitionDirection(0);
-      setActiveAnimation(null);
       timeoutRef.current = null;
     }, animationDuration * 1000);
   };
 
   // Handle month change with transition
   const handleMonthChange = (delta) => {
-    // Prevent multiple rapid transitions and conflicts with view animations
-    if (isTransitioning || activeAnimation === 'view') return;
+    // Prevent multiple rapid transitions
+    if (isTransitioning) return;
 
     setMonthTransitionDirection(delta);
     setIsTransitioning(true);
-    setActiveAnimation('month');
-    
     if (onMonthChange) {
       onMonthChange(delta);
     }
@@ -76,7 +67,6 @@ const DatePicker = ({
     monthTimeoutRef.current = setTimeout(() => {
       setIsTransitioning(false);
       setMonthTransitionDirection(0);
-      setActiveAnimation(null);
       monthTimeoutRef.current = null;
     }, monthAnimationDuration * 1000);
   };
@@ -331,7 +321,7 @@ const DatePicker = ({
   const contentAnimations = useMemo(() => ({
     initial: {
       opacity: 0,
-      ...(activeAnimation === 'view' && viewTransitionDirection !== 0 ? {
+      ...(viewTransitionDirection !== 0 ? {
         scale: shouldReduceMotion ? 1 : 0.9
       } : {
         x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0
@@ -344,21 +334,21 @@ const DatePicker = ({
     },
     exit: {
       opacity: 0,
-      ...(activeAnimation === 'view' && viewTransitionDirection !== 0 ? {
+      ...(viewTransitionDirection !== 0 ? {
         scale: shouldReduceMotion ? 1 : 0.9
       } : {
         x: monthTransitionDirection > 0 ? '-100%' : monthTransitionDirection < 0 ? '100%' : 0
       })
     },
     transition: getTransition({
-      duration: activeAnimation === 'view' ? 0.2 : 0.3,
+      duration: viewTransitionDirection !== 0 ? 0.2 : 0.3,
       ease: [0.25, 0.46, 0.45, 0.94],
       opacity: { duration: 0.15 },
-      ...(activeAnimation === 'view' && {
+      ...(viewTransitionDirection !== 0 && {
         scale: { duration: 0.25 }
       })
     })
-  }), [shouldReduceMotion, getTransition, viewTransitionDirection, monthTransitionDirection, activeAnimation]);
+  }), [shouldReduceMotion, getTransition, viewTransitionDirection, monthTransitionDirection]);
 
   const calendarAnimations = useMemo(() => ({
     initial: { x: monthTransitionDirection > 0 ? '100%' : monthTransitionDirection < 0 ? '-100%' : 0, opacity: 0 },
@@ -550,93 +540,14 @@ const DatePicker = ({
                   {/* Calendar days */}
                   {viewMode === 'days' && (
                     <div className="relative overflow-hidden">
-                      {activeAnimation !== 'view' ? (
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={formatDate(calendarDays[15] || new Date(), 'yyyy-MM')}
-                            role="grid"
-                            aria-labelledby="month-year"
-                            className="grid grid-cols-7 gap-1 w-full"
-                            aria-activedescendant={focusedDate ? `date-${format(focusedDate, 'yyyy-MM-dd')}` : undefined}
-                            {...calendarAnimations}
-                          >
-                        {calendarDays.map((day, index) => {
-                          // Convert day to the selected timezone for display and comparison
-                          const zonedDay = selectedTimezone ? toZonedTime(day, selectedTimezone) : day;
-                          const isSelected = isDateSelected(day);
-                          const isToday = isDateToday(day);
-
-                          // Check if day is in the current month being displayed
-                          const currentMonth = calendarDays[15] ?
-                            toZonedTime(calendarDays[15], selectedTimezone).getMonth() :
-                            toZonedTime(new Date(), selectedTimezone).getMonth();
-                          const isCurrentMonth = zonedDay.getMonth() === currentMonth;
-
-                          return (
-                            <div
-                              key={index}
-                              role="gridcell"
-                              className="flex items-center justify-center w-8 h-8 mx-auto"
-                              aria-selected={isSelected}
-                            >
-                              <button
-                                onClick={(e) => {
-                                  onDateChange(day);
-                                  setFocusedDate(day);
-
-                                  // Check if the selected date is in a different month than the current view
-                                  // Use timezone-aware comparison to avoid edge cases with timezone conversion
-                                  const currentViewDate = calendarDays[15] ?
-                                    toZonedTime(calendarDays[15], selectedTimezone) :
-                                    toZonedTime(new Date(), selectedTimezone);
-                                  const currentViewMonth = currentViewDate.getMonth();
-                                  const currentViewYear = currentViewDate.getFullYear();
-
-                                  const selectedDateInTZ = toZonedTime(day, selectedTimezone);
-                                  const selectedMonth = selectedDateInTZ.getMonth();
-                                  const selectedYear = selectedDateInTZ.getFullYear();
-
-                                  if (selectedMonth !== currentViewMonth || selectedYear !== currentViewYear) {
-                                    const monthDiff = (selectedYear - currentViewYear) * 12 + (selectedMonth - currentViewMonth);
-                                    handleMonthChange(monthDiff);
-                                  }
-
-                                  setShowPicker(false);
-                                  triggerRef.current?.focus();
-                                }}
-                                id={`date-${format(zonedDay, 'yyyy-MM-dd')}`}
-                                data-date={day.toISOString()}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                                  isSelected
-                                    ? 'bg-blue-600 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-                                    : isToday
-                                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 focus:bg-blue-200'
-                                      : isFutureDate(day)
-                                        ? 'text-gray-300 cursor-not-allowed'
-                                        : !isCurrentMonth
-                                          ? 'text-gray-400 hover:bg-gray-50 focus:bg-gray-50'
-                                          : 'hover:bg-gray-100 focus:bg-gray-100'
-                                } focus:outline-none`}
-                                disabled={isFutureDate(day)}
-                                aria-label={`${format(zonedDay, 'EEEE, MMMM d, yyyy')}${isSelected ? ' (selected)' : ''}${!isCurrentMonth ? ' (not in current month)' : ''}`}
-                                tabIndex={isSelected ? 0 : -1}
-                              >
-                                {zonedDay.getDate()}
-                              </button>
-                            </div>
-                          );
-                        })}
-                          </motion.div>
-                        </AnimatePresence>
-                      ) : (
+                      <AnimatePresence mode="wait">
                         <motion.div
+                          key={formatDate(calendarDays[15] || new Date(), 'yyyy-MM')}
                           role="grid"
                           aria-labelledby="month-year"
                           className="grid grid-cols-7 gap-1 w-full"
                           aria-activedescendant={focusedDate ? `date-${format(focusedDate, 'yyyy-MM-dd')}` : undefined}
-                          initial={{ opacity: 1 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                          {...calendarAnimations}
                         >
                         {calendarDays.map((day, index) => {
                           // Convert day to the selected timezone for display and comparison
@@ -705,7 +616,7 @@ const DatePicker = ({
                           );
                         })}
                         </motion.div>
-                      )}
+                      </AnimatePresence>
                     </div>
                   )}
 
