@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 /**
  * Custom hook that combines framer-motion's useReducedMotion with additional performance checks
  * to determine whether animations should be disabled or simplified for accessibility and performance.
- * 
+ *
  * @returns {Object} - Object containing motion preferences and animation settings
  */
 export const useMotionPreferences = () => {
@@ -30,35 +30,22 @@ export const useMotionPreferences = () => {
       // Check for performance constraints that might require reduced animations
       const navigator = window.navigator;
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      
+
       let disableComplex = false;
       let reducedDuration = false;
-      
+
       // Check for slow network connections
       if (connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
         disableComplex = true;
         reducedDuration = true;
       }
-      
+
       // Check for low-end devices (less than 4 CPU cores)
       if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
         disableComplex = true;
         reducedDuration = true;
       }
-      
-      // Simple performance test
-      const start = performance.now();
-      let count = 0;
-      for (let i = 0; i < 1000000; i++) {
-        count += Math.random();
-      }
-      const end = performance.now();
-      
-      // If the test takes more than 10ms, reduce animations
-      if (end - start > 10) {
-        reducedDuration = true;
-      }
-      
+
       // Check for low memory devices (if available)
       if (navigator.deviceMemory && navigator.deviceMemory < 4) {
         disableComplex = true;
@@ -79,7 +66,7 @@ export const useMotionPreferences = () => {
       const handleConnectionChange = () => {
         checkPerformanceCapabilities();
       };
-      
+
       connection.addEventListener('change', handleConnectionChange);
       return () => connection.removeEventListener('change', handleConnectionChange);
     }
@@ -115,14 +102,14 @@ export const useMotionPreferences = () => {
         ease: 'easeOut'
       };
     }
-    
+
     if (performanceSettings.reducedDuration) {
       return {
         ...baseTransition,
         duration: getDuration(baseTransition.duration || 0.3, 0.15)
       };
     }
-    
+
     return baseTransition;
   };
 
@@ -132,12 +119,12 @@ export const useMotionPreferences = () => {
     prefersReducedMotion,
     disableComplexAnimations: performanceSettings.disableComplexAnimations,
     reducedDuration: performanceSettings.reducedDuration,
-    
+
     // Helper functions
     getDuration,
     getVariants,
     getTransition,
-    
+
     // Preset animation configurations
     animations: {
       // Fade animations (always safe to use)
@@ -147,7 +134,7 @@ export const useMotionPreferences = () => {
         exit: { opacity: 0 },
         transition: { duration: getDuration(0.2, 0.1) }
       },
-      
+
       // Slide animations (simplified when reduced motion is preferred)
       slide: {
         initial: { opacity: 0, x: performanceSettings.disableComplexAnimations ? 0 : 20 },
@@ -155,7 +142,7 @@ export const useMotionPreferences = () => {
         exit: { opacity: 0, x: performanceSettings.disableComplexAnimations ? 0 : -20 },
         transition: { duration: getDuration(0.3, 0.15) }
       },
-      
+
       // Scale animations (disabled when reduced motion is preferred)
       scale: {
         initial: { opacity: 0, scale: performanceSettings.disableComplexAnimations ? 1 : 0.8 },
@@ -163,13 +150,13 @@ export const useMotionPreferences = () => {
         exit: { opacity: 0, scale: performanceSettings.disableComplexAnimations ? 1 : 0.8 },
         transition: { duration: getDuration(0.2, 0.1) }
       },
-      
+
       // Spring animations (converted to ease animations when reduced motion is preferred)
       spring: {
         initial: { opacity: 0, y: performanceSettings.disableComplexAnimations ? 0 : 10 },
         animate: { opacity: 1, y: 0 },
         exit: { opacity: 0, y: performanceSettings.disableComplexAnimations ? 0 : -10 },
-        transition: { 
+        transition: {
           type: performanceSettings.disableComplexAnimations ? 'tween' : 'spring',
           duration: getDuration(0.4, 0.2),
           ease: performanceSettings.disableComplexAnimations ? 'easeOut' : undefined
