@@ -11,6 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { insertActiveEntryChronologically } from '../utils/entryUtils';
 import { usePomodoro } from '../contexts/PomodoroContext';
 import { useUnifiedDisplay } from '../hooks/useUnifiedDisplay';
+import { useMotionPreferences } from '../hooks/useMotionPreferences';
 import {
   saveTimesheetData,
   loadTimesheetData,
@@ -27,6 +28,7 @@ import storageEventSystem from '../utils/storageEvents';
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
   const { isRunning: pomodoroIsRunning } = usePomodoro();
+  const { getTransition, animations } = useMotionPreferences();
 
   // Initialize favicon manager
   useEffect(() => {
@@ -1298,10 +1300,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                 {showBreaks && dailyBreakTotal !== '0s' && (
                   <motion.span
                     key="break-total"
-                    initial={{ opacity: 0, scale: 0, x: -50 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0, x: -50 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    initial={animations.scale.initial}
+                    animate={animations.scale.animate}
+                    exit={animations.scale.exit}
+                    transition={getTransition({ duration: 0.3, ease: "easeInOut" })}
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
                   >
                     <Coffee className="w-4 h-4 mr-2" />
@@ -1488,10 +1490,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   return (
                     <motion.div
                       key={`active-${item.data.id}`}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 0, y: 0 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      initial={animations.slide.initial}
+                      animate={animations.slide.animate}
+                      exit={animations.slide.exit}
+                      transition={getTransition({ duration: 0.3, ease: "easeOut" })}
                       layoutId={`entry-${item.data.id}`}
                     >
                       <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
@@ -1552,10 +1554,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                     <motion.div
                       key={item.breakKey}
                       layoutId={`break-${item.breakKey}`}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      initial={animations.scale.initial}
+                      animate={animations.scale.animate}
+                      exit={animations.scale.exit}
+                      transition={getTransition({ duration: 0.4, ease: "easeOut" })}
                       className="text-center py-2"
                     >
                       <div
@@ -1578,10 +1580,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
                   return (
                     <motion.div
                       key={entry.id}
-                      initial={{ opacity: 0, x: 0 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 0 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      initial={animations.fade.initial}
+                      animate={animations.fade.animate}
+                      exit={animations.fade.exit}
+                      transition={getTransition({ duration: 0.3, ease: "easeOut" })}
                       layoutId={`entry-${entry.id}`}
                     >
                       <div className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all">
