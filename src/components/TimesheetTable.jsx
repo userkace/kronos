@@ -287,10 +287,16 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     type="number"
                     value={dayData.breakHours || '0'}
                     onChange={(e) => handleInputChange(dayKey, 'breakHours', e.target.value)}
+                    onClick={() => handleCopyToClipboard(dayData.breakHours, `${dayKey}-breakHours`)}
                     min="0"
                     max="24"
                     step="0.5"
-                    className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      copiedField === `${dayKey}-breakHours` 
+                        ? 'bg-green-100 border-green-400' 
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                    title="Click to copy"
                   />
                 </td>
                 <td className="px-4 py-3 text-sm font-medium text-gray-900">
