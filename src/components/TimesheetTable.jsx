@@ -219,11 +219,17 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
               <h1 className="text-3xl font-bold text-gray-900">
                 <span className="sm:hidden">
                   {weekDays[0] && weekDays[6] ? 
+                    `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d')}` : 
+                    'Loading...'
+                  }
+                </span>
+                <span className="hidden sm:inline lg:hidden">
+                  {weekDays[0] && weekDays[6] ? 
                     `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}` : 
                     'Loading...'
                   }
                 </span>
-                <span className="hidden sm:inline">
+                <span className="hidden lg:inline">
                   {weekDays[0] && weekDays[6] ? 
                     `${format(weekDays[0], 'MMMM d, yyyy')} - ${format(weekDays[6], 'MMMM d, yyyy')}` : 
                     'Loading...'
@@ -235,7 +241,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
         </div>
         <div className="flex items-center space-x-3">
           <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${isCurrentWeek() ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
-            {isCurrentWeek() ? 'Current Week' : 'Week View'}
+            {isCurrentWeek() ? 'Current' : 'Overview'}
           </span>
           <button
             onClick={handlePreviousWeek}
