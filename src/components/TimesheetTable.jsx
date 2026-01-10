@@ -280,8 +280,8 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       </div>
 
       {/* Timesheet Table */}
-      <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+      <table className="min-w-full bg-white overflow-hidden">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
