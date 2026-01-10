@@ -360,7 +360,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     value={dayData.timeIn || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
-                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-timeIn` 
                         ? 'bg-green-100 border-green-400' 
                         : 'border-gray-300 hover:bg-gray-50'
@@ -374,7 +374,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     value={dayData.timeOut || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
-                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-timeOut` 
                         ? 'bg-green-100 border-green-400' 
                         : 'border-gray-300 hover:bg-gray-50'
