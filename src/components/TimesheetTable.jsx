@@ -3,15 +3,18 @@ import {
   format,
   startOfWeek,
   addDays,
+  addWeeks,
+  subWeeks,
   differenceInMinutes,
   parse,
   isValid
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
 
-const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChange }) => {
+const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChange, onWeekChange }) => {
   const [localData, setLocalData] = useState(timesheetData || {});
   const { weekStart: userWeekStart } = useUserPreferences();
   const [weekDays, setWeekDays] = useState([]);
@@ -39,6 +42,33 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     }
     // Use current date without timezone conversion
     return format(new Date(), 'yyyy-MM-dd');
+  };
+
+  // Check if selected week is the current week
+  const isCurrentWeek = () => {
+    const weekStartsOn = userWeekStart === 'sunday' ? 0 : 1;
+    const selectedWeekStart = startOfWeek(currentDate, { weekStartsOn });
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn });
+    return selectedWeekStart.getTime() === currentWeekStart.getTime();
+  };
+
+  // Week navigation functions
+  const handlePreviousWeek = () => {
+    if (onWeekChange) {
+      onWeekChange(subWeeks(currentDate, 1));
+    }
+  };
+
+  const handleNextWeek = () => {
+    if (onWeekChange) {
+      onWeekChange(addWeeks(currentDate, 1));
+    }
+  };
+
+  const handleCurrentWeek = () => {
+    if (onWeekChange) {
+      onWeekChange(new Date());
+    }
   };
 
   // Calculate total hours for a single day
@@ -180,7 +210,71 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
   }, []);
 
   return (
-    <div className="overflow-x-auto">
+    <div>
+      {/* Week Navigation Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex-1">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <h1 className="text-3xl font-bold text-gray-900">
+                <span className="sm:hidden">
+                  {weekDays[0] && weekDays[6] ? 
+                    `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}` : 
+                    'Loading...'
+                  }
+                </span>
+                <span className="hidden sm:inline">
+                  {weekDays[0] && weekDays[6] ? 
+                    `${format(weekDays[0], 'MMMM d, yyyy')} - ${format(weekDays[6], 'MMMM d, yyyy')}` : 
+                    'Loading...'
+                  }
+                </span>
+              </h1>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${isCurrentWeek() ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+            {isCurrentWeek() ? 'Current Week' : 'Week View'}
+          </span>
+          <button
+            onClick={handlePreviousWeek}
+            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            title="Previous Week"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={handleCurrentWeek}
+            className={`p-2 rounded-lg transition-colors ${
+              isCurrentWeek()
+                ? 'cursor-not-allowed'
+                : 'hover:bg-gray-200'
+            }`}
+            title={isCurrentWeek() ? "Current week" : "Back to Current Week"}
+            disabled={isCurrentWeek()}
+          >
+            <div className={`w-2 h-2 rounded-full ${isCurrentWeek() ? 'bg-gray-400' : 'bg-blue-600'}`}></div>
+          </button>
+
+          <button
+            onClick={handleNextWeek}
+            className={`p-2 rounded-lg transition-colors ${
+              isCurrentWeek()
+                ? 'cursor-not-allowed text-gray-400'
+                : 'hover:bg-gray-200'
+            }`}
+            title={isCurrentWeek() ? "Current week" : "Next Week"}
+            disabled={isCurrentWeek()}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Timesheet Table */}
+      <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
@@ -315,6 +409,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
           </tr>
         </tbody>
       </table>
+    </div>
     </div>
   );
 };

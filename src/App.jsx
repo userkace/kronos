@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import WeekNavigator from './components/WeekNavigator';
 import TimesheetTable from './components/TimesheetTable';
 import DailyTracker from './components/DailyTracker';
 import AppLayout from './components/AppLayout';
@@ -132,18 +131,12 @@ function AppContent() {
           ) : currentView === 'timesheet' ? (
             // Weekly Timesheet View
             <div className="p-6">
-              <WeekNavigator
+              <TimesheetTable
                 currentDate={currentDate}
-                onWeekChange={handleWeekChange}
+                timesheetData={timesheetData}
                 timezone={selectedTimezone}
+                onWeekChange={handleWeekChange}
               />
-              <div className="mt-6">
-                <TimesheetTable
-                  currentDate={currentDate}
-                  timesheetData={timesheetData}
-                  timezone={selectedTimezone}
-                />
-              </div>
             </div>
           ) : currentView === 'settings' ? (
             // Settings View
