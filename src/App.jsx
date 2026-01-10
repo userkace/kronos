@@ -42,7 +42,7 @@ function AppContent() {
     console.log('Loaded weekly data:', loadedData);
     console.log('Selected timezone:', selectedTimezone);
     console.log('Onboarding completed:', hasCompletedOnboarding);
-    
+
     setCurrentDate(loadedDate);
     setTimesheetData(loadedData || {});
     setShowOnboarding(!hasCompletedOnboarding);
@@ -130,7 +130,7 @@ function AppContent() {
             <PomodoroTimer />
           ) : currentView === 'timesheet' ? (
             // Weekly Timesheet View
-            <div className="p-6">
+            <div className="p-6 max-w-7xl mx-auto">
               <TimesheetTable
                 currentDate={currentDate}
                 timesheetData={timesheetData}
