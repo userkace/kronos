@@ -382,7 +382,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     title="Click to copy"
                   />
                 </td>
-                <td className="px-4 py-3 w-20 min-w-20">
+                <td className="px-4 py-3 w-22 min-w-22">
                   <input
                     type="number"
                     value={dayData.breakHours || '0'}
