@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { FileText, Download, Calendar, DollarSign, User, MapPin, Globe } from 'lucide-react';
 import { loadWeeklyTimesheet, saveInvoiceSettings, loadInvoiceSettings } from '../utils/storage';
 import storageEventSystem from '../utils/storageEvents';
@@ -13,6 +13,23 @@ import {
 } from '@react-pdf/renderer';
 import { format, parseISO, isWithinInterval, startOfWeek } from 'date-fns';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
+
+// Debounce hook
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 // Register fonts
 Font.register({
@@ -235,6 +252,7 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
 const InvoicePage = () => {
   const { weekStart: userWeekStart } = useUserPreferences();
   const [timesheetData, setTimesheetData] = useState({});
+  const [isAnyFieldFocused, setIsAnyFieldFocused] = useState(false);
   const [settings, setSettings] = useState(() => {
     // Load saved settings on initial render
     const savedSettings = loadInvoiceSettings();
@@ -291,6 +309,10 @@ const InvoicePage = () => {
     };
     return `${symbols[settings.currency]}${amount.toFixed(2)}`;
   };
+
+  // Helper functions to handle focus events
+  const handleFieldFocus = () => setIsAnyFieldFocused(true);
+  const handleFieldBlur = () => setIsAnyFieldFocused(false);
 
   // Use the exact same calculation as TimesheetTable's calculateDayTotal
   const calculateDayTotal = (timeIn, timeOut, breakHours) => {
@@ -375,11 +397,11 @@ const InvoicePage = () => {
     });
 
     return entries;
-  }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate]);
+  }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.currency]);
 
   const filteredEntries = filterEntries;
 
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     // Calculate exactly like TimesheetTable's calculateGrandTotal
     // Recalculate from raw data instead of using pre-formatted entry.hours
     let totalHours = 0;
@@ -410,7 +432,7 @@ const InvoicePage = () => {
       subtotal: formatCurrency(subtotal),
       total: formatCurrency(subtotal)
     };
-  };
+  }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.currency]);
 
   const generateFileName = () => {
     const businessName = settings.userName || 'Business';
@@ -419,7 +441,47 @@ const InvoicePage = () => {
     return `${cleanBusinessName}-${settings.invoiceNumber}.pdf`;
   };
 
-  const totals = useMemo(() => calculateTotals(), [filteredEntries, settings.hourlyRate]);
+  const totals = useMemo(() => calculateTotals(), [calculateTotals]);
+
+  // Debounce settings for PDF generation to prevent lag during typing
+  const debouncedSettings = useDebounce(settings, 500); // 500ms delay
+
+  // Memoize filtered entries for PDF to prevent unnecessary recalculations
+  const pdfEntries = useMemo(() => {
+    return filteredEntries;
+  }, [filteredEntries]);
+
+  // Memoize totals for PDF
+  const pdfTotals = useMemo(() => {
+    let totalHours = 0;
+    const start = parseISO(debouncedSettings.startDate);
+    const end = parseISO(debouncedSettings.endDate);
+
+    Object.entries(timesheetData).forEach(([dateKey, dayData]) => {
+      try {
+        const entryDate = parseISO(dateKey);
+        if (isWithinInterval(entryDate, { start, end })) {
+          const dayTotal = calculateDayTotal(
+            dayData.timeIn,
+            dayData.timeOut,
+            dayData.breakHours
+          );
+          if (dayTotal > 0) {
+            totalHours += dayTotal;
+          }
+        }
+      } catch (error) {
+        console.error('Error processing date:', dateKey, error);
+      }
+    });
+
+    const subtotal = totalHours * debouncedSettings.hourlyRate;
+    return {
+      totalHours: totalHours.toFixed(2),
+      subtotal: formatCurrency(subtotal),
+      total: formatCurrency(subtotal)
+    };
+  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.currency]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -453,6 +515,8 @@ const InvoicePage = () => {
                     type="text"
                     value={settings.userName}
                     onChange={(e) => setSettings(prev => ({ ...prev, userName: e.target.value }))}
+                    onFocus={handleFieldFocus}
+                    onBlur={handleFieldBlur}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Your Business or Legal Name"
                   />
@@ -465,6 +529,8 @@ const InvoicePage = () => {
                   <textarea
                     value={settings.userAddress}
                     onChange={(e) => setSettings(prev => ({ ...prev, userAddress: e.target.value }))}
+                    onFocus={handleFieldFocus}
+                    onBlur={handleFieldBlur}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows={2}
                     placeholder="123 Business Street, City, State 12345"
@@ -479,6 +545,8 @@ const InvoicePage = () => {
                     type="email"
                     value={settings.userEmail}
                     onChange={(e) => setSettings(prev => ({ ...prev, userEmail: e.target.value }))}
+                    onFocus={handleFieldFocus}
+                    onBlur={handleFieldBlur}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="contact@yourbusiness.com"
                   />
@@ -500,6 +568,8 @@ const InvoicePage = () => {
                   type="text"
                   value={settings.clientName}
                   onChange={(e) => setSettings(prev => ({ ...prev, clientName: e.target.value }))}
+                  onFocus={handleFieldFocus}
+                  onBlur={handleFieldBlur}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter client name"
                 />
@@ -512,6 +582,8 @@ const InvoicePage = () => {
                 <textarea
                   value={settings.clientAddress}
                   onChange={(e) => setSettings(prev => ({ ...prev, clientAddress: e.target.value }))}
+                  onFocus={handleFieldFocus}
+                  onBlur={handleFieldBlur}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={3}
                   placeholder="Enter client address"
@@ -534,6 +606,8 @@ const InvoicePage = () => {
                     type="text"
                     value={settings.invoiceNumber}
                     onChange={(e) => setSettings(prev => ({ ...prev, invoiceNumber: e.target.value }))}
+                    onFocus={handleFieldFocus}
+                    onBlur={handleFieldBlur}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="INV-001"
                   />
@@ -550,6 +624,8 @@ const InvoicePage = () => {
                         type="number"
                         value={settings.hourlyRate}
                         onChange={(e) => setSettings(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }))}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
                         className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         min="0"
                         step="0.01"
@@ -564,6 +640,8 @@ const InvoicePage = () => {
                     <select
                       value={settings.currency}
                       onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
+                      onFocus={handleFieldFocus}
+                      onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="USD">USD</option>
@@ -582,6 +660,8 @@ const InvoicePage = () => {
                       type="date"
                       value={settings.startDate}
                       onChange={(e) => setSettings(prev => ({ ...prev, startDate: e.target.value }))}
+                      onFocus={handleFieldFocus}
+                      onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -594,6 +674,8 @@ const InvoicePage = () => {
                       type="date"
                       value={settings.endDate}
                       onChange={(e) => setSettings(prev => ({ ...prev, endDate: e.target.value }))}
+                      onFocus={handleFieldFocus}
+                      onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -640,13 +722,13 @@ const InvoicePage = () => {
                 Invoice Preview
               </h2>
 
-              {filteredEntries.length > 0 && settings.clientName && (
+              {filteredEntries.length > 0 && settings.clientName && !isAnyFieldFocused && (
                 <PDFDownloadLink
                   document={
                     <InvoicePDF
-                      invoiceData={totals}
-                      settings={settings}
-                      entries={filteredEntries}
+                      invoiceData={pdfTotals}
+                      settings={debouncedSettings}
+                      entries={pdfEntries}
                     />
                   }
                   fileName={generateFileName()}
@@ -659,6 +741,13 @@ const InvoicePage = () => {
                     </>
                   )}
                 </PDFDownloadLink>
+              )}
+
+              {isAnyFieldFocused && (
+                <div className="inline-flex items-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed">
+                  <Download className="w-4 h-4 mr-2" />
+                  Finish editing to download
+                </div>
               )}
             </div>
 
