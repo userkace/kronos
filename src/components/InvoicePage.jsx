@@ -41,6 +41,38 @@ const formatCurrency = (amount, currency) => {
   return `${symbols[currency]}${amount.toFixed(2)}`;
 };
 
+// Utility function for calculating day total hours
+const calculateDayTotal = (timeIn, timeOut, breakHours) => {
+  if (!timeIn || !timeOut) return 0;
+
+  try {
+    // Split time strings to get hours and minutes (exactly like TimesheetTable)
+    const [inHours, inMinutes] = timeIn.split(':').map(Number);
+    const [outHours, outMinutes] = timeOut.split(':').map(Number);
+
+    // Convert to total minutes (exactly like TimesheetTable)
+    const inTotalMinutes = (inHours * 60) + inMinutes;
+    const outTotalMinutes = (outHours * 60) + outMinutes;
+
+    // Calculate difference
+    let totalMinutes = outTotalMinutes - inTotalMinutes;
+
+    // Handle overnight shifts
+    if (totalMinutes < 0) {
+      totalMinutes = totalMinutes + (24 * 60);
+    }
+
+    // Convert to hours and subtract break hours (exactly like TimesheetTable)
+    const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
+
+    // Don't allow negative hours (exactly like TimesheetTable)
+    return Math.max(0, totalHours);
+  } catch (error) {
+    console.error('Error calculating time:', error);
+    return 0;
+  }
+};
+
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -357,55 +389,6 @@ const InvoicePage = () => {
     }, 150); // 150ms delay to allow for field switching
   };
 
-  // Use the exact same calculation as TimesheetTable's calculateDayTotal
-  const calculateDayTotal = (timeIn, timeOut, breakHours) => {
-    if (!timeIn || !timeOut) return 0;
-
-    try {
-      // Debug logging to compare with TimesheetTable
-      console.log('=== Invoice Day Total Calculation Debug ===');
-      console.log('Time In:', timeIn);
-      console.log('Time Out:', timeOut);
-      console.log('Break Hours:', breakHours);
-
-      // Split time strings to get hours and minutes (exactly like TimesheetTable)
-      const [inHours, inMinutes] = timeIn.split(':').map(Number);
-      const [outHours, outMinutes] = timeOut.split(':').map(Number);
-
-      console.log('In Hours/Minutes:', inHours, inMinutes);
-      console.log('Out Hours/Minutes:', outHours, outMinutes);
-
-      // Convert to total minutes (exactly like TimesheetTable)
-      const inTotalMinutes = (inHours * 60) + inMinutes;
-      const outTotalMinutes = (outHours * 60) + outMinutes;
-
-      console.log('In Total Minutes:', inTotalMinutes);
-      console.log('Out Total Minutes:', outTotalMinutes);
-
-      // Calculate difference
-      let totalMinutes = outTotalMinutes - inTotalMinutes;
-
-      // Handle overnight shifts
-      if (totalMinutes < 0) {
-        totalMinutes = totalMinutes + (24 * 60);
-      }
-
-      console.log('Total Minutes:', totalMinutes);
-      console.log('Total Hours (raw):', totalMinutes / 60);
-
-      // Convert to hours and subtract break hours (exactly like TimesheetTable)
-      const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
-
-      console.log('Total Hours (after break):', totalHours);
-      console.log('Final Result:', Math.max(0, totalHours));
-
-      // Don't allow negative hours (exactly like TimesheetTable)
-      return Math.max(0, totalHours);
-    } catch (error) {
-      console.error('Error calculating time:', error);
-      return 0;
-    }
-  };
 
   const filterEntries = useMemo(() => {
     if (!settings.startDate || !settings.endDate) return [];
