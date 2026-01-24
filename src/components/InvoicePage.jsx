@@ -222,7 +222,13 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
         <View style={styles.clientInfo}>
           <Text style={styles.sectionTitle}>BILL TO:</Text>
           <Text style={styles.businessName}>{settings.clientName}</Text>
+          {settings.clientAddress ? (
           <Text style={styles.businessAddress}>{settings.clientAddress}</Text>
+          ) : (
+            <>
+              <Text style={styles.businessAddress}></Text>
+            </>
+          )}
         </View>
 
         <View style={styles.invoiceDetails}>
