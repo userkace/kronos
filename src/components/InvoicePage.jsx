@@ -31,6 +31,16 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
+// Pure function for currency formatting
+const formatCurrency = (amount, currency) => {
+  const symbols = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£'
+  };
+  return `${symbols[currency]}${amount.toFixed(2)}`;
+};
+
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -322,14 +332,6 @@ const InvoicePage = () => {
     };
   }, []);
 
-  const formatCurrency = (amount) => {
-    const symbols = {
-      USD: '$',
-      EUR: '€',
-      GBP: '£'
-    };
-    return `${symbols[settings.currency]}${amount.toFixed(2)}`;
-  };
 
   // Helper functions to handle focus events with delay
   const handleFieldFocus = () => {
@@ -421,7 +423,7 @@ const InvoicePage = () => {
             entries.push({
               date: format(entryDate, 'MMM dd, yyyy'),
               description: dayData.workDetails || dayData.tasks || 'Time Entry',
-              amount: formatCurrency(dayTotal * settings.hourlyRate),
+              amount: formatCurrency(dayTotal * settings.hourlyRate, settings.currency),
               hours: dayTotal.toFixed(2),
               duration: dayTotal * 3600 // Keep for compatibility
             });
@@ -471,12 +473,12 @@ const InvoicePage = () => {
     
     return {
       totalHours: totalHours.toFixed(2),
-      subtotal: formatCurrency(subtotal),
-      additionals: formatCurrency(totalAdditionals),
-      total: formatCurrency(total),
+      subtotal: formatCurrency(subtotal, settings.currency),
+      additionals: formatCurrency(totalAdditionals, settings.currency),
+      total: formatCurrency(total, settings.currency),
       additionalsList: (settings.additionalsList || []).map(additional => ({
         name: additional.name || 'Additionals',
-        amount: formatCurrency(additional.amount || 0)
+        amount: formatCurrency(additional.amount || 0, settings.currency)
       }))
     };
   }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.additionalsList, settings.currency]);
@@ -532,12 +534,12 @@ const InvoicePage = () => {
     
     return {
       totalHours: totalHours.toFixed(2),
-      subtotal: formatCurrency(subtotal),
-      additionals: formatCurrency(totalAdditionals),
-      total: formatCurrency(total),
+      subtotal: formatCurrency(subtotal, debouncedSettings.currency),
+      additionals: formatCurrency(totalAdditionals, debouncedSettings.currency),
+      total: formatCurrency(total, debouncedSettings.currency),
       additionalsList: (debouncedSettings.additionalsList || []).map(additional => ({
         name: additional.name || 'Additionals',
-        amount: formatCurrency(additional.amount || 0)
+        amount: formatCurrency(additional.amount || 0, debouncedSettings.currency)
       }))
     };
   }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.additionalsList, debouncedSettings.currency]);
@@ -936,7 +938,7 @@ const InvoicePage = () => {
                         <td className="py-3 px-4 text-sm text-gray-900">{entry.description}</td>
                         <td className="py-3 px-4 text-sm text-gray-900 text-right">{entry.hours}</td>
                         <td className="py-3 px-4 text-sm text-gray-900 text-right">
-                          {formatCurrency(parseFloat(entry.hours) * settings.hourlyRate)}
+                          {formatCurrency(parseFloat(entry.hours) * settings.hourlyRate, settings.currency)}
                         </td>
                       </tr>
                     ))}
