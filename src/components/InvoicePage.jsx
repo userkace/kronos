@@ -435,7 +435,6 @@ const InvoicePage = () => {
     return entries;
   }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.currency]);
 
-  const filteredEntries = filterEntries;
 
   const calculateTotals = useCallback(() => {
     // Calculate exactly like TimesheetTable's calculateGrandTotal
@@ -496,8 +495,8 @@ const InvoicePage = () => {
 
   // Memoize filtered entries for PDF to prevent unnecessary recalculations
   const pdfEntries = useMemo(() => {
-    return filteredEntries;
-  }, [filteredEntries]);
+    return filterEntries;
+  }, [filterEntries]);
 
   // Memoize totals for PDF
   const pdfTotals = useMemo(() => {
@@ -884,7 +883,7 @@ const InvoicePage = () => {
                 Invoice Preview
               </h2>
 
-              {filteredEntries.length > 0 && settings.clientName && !isAnyFieldFocused && (
+              {filterEntries.length > 0 && settings.clientName && !isAnyFieldFocused && (
                 <PDFDownloadLink
                   document={
                     <InvoicePDF
@@ -913,7 +912,7 @@ const InvoicePage = () => {
               )}
             </div>
 
-            {filteredEntries.length === 0 ? (
+            {filterEntries.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">No time entries found for the selected date range.</p>
@@ -931,7 +930,7 @@ const InvoicePage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEntries.map((entry, index) => (
+                    {filterEntries.map((entry, index) => (
                       <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4 text-sm text-gray-900">{entry.date}</td>
                         <td className="py-3 px-4 text-sm text-gray-900">{entry.description}</td>
