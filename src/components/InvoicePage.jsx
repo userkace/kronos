@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   totalContainer: {
-    width: '30%',
+    width: '50%',
     borderStyle: 'solid',
     borderWidth: 1,
     borderColor: '#e5e7eb',
@@ -246,7 +246,7 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
             <Text style={styles.totalValue}>{invoiceData.subtotal}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Additionals:</Text>
+            <Text style={styles.totalLabel}>{settings.additionalsName || 'Additionals'}:</Text>
             <Text style={styles.totalValue}>{invoiceData.additionals || formatCurrency(0)}</Text>
           </View>
           <View style={styles.grandTotal}>
@@ -726,22 +726,39 @@ const InvoicePage = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Additionals / Bonus
-                  </label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Additionals Amount
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="number"
+                        value={settings.additionals || 0}
+                        onChange={(e) => setSettings(prev => ({ ...prev, additionals: parseFloat(e.target.value) || 0 }))}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
+                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Additionals Name
+                    </label>
                     <input
-                      type="number"
-                      value={settings.additionals || 0}
-                      onChange={(e) => setSettings(prev => ({ ...prev, additionals: parseFloat(e.target.value) || 0 }))}
+                      type="text"
+                      value={settings.additionalsName || ''}
+                      onChange={(e) => setSettings(prev => ({ ...prev, additionalsName: e.target.value }))}
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Bonus, Additional Services"
+                      maxLength={30}
                     />
                   </div>
                 </div>
@@ -776,7 +793,7 @@ const InvoicePage = () => {
               {(settings.additionals || 0) > 0 && (
                 <div className="bg-green-50 rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-green-900">Additionals / Bonus</span>
+                    <span className="text-sm font-medium text-green-900">{settings.additionalsName || 'Additionals / Bonus'}</span>
                     <span className="text-lg font-bold text-green-900">{totals.additionals}</span>
                   </div>
                 </div>
@@ -878,7 +895,7 @@ const InvoicePage = () => {
                     {(settings.additionals || 0) > 0 && (
                       <tr className="bg-green-50">
                         <td colSpan={2} className="py-3 px-4 text-sm font-medium text-green-700">
-                          Additionals / Bonus
+                          {settings.additionalsName || 'Additionals / Bonus'}
                         </td>
                         <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
                           {totals.additionals}
