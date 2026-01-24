@@ -6,6 +6,7 @@ import DataImportExport from './components/DataImportExport';
 import Onboarding from './components/Onboarding';
 import Settings from './components/Settings';
 import PomodoroTimer from './components/PomodoroTimer';
+import InvoicePage from './components/InvoicePage';
 import {
   saveSelectedWeek,
   loadSelectedWeek,
@@ -138,6 +139,9 @@ function AppContent() {
                 onWeekChange={handleWeekChange}
               />
             </div>
+          ) : currentView === 'invoice' ? (
+            // Invoice Generator View
+            <InvoicePage />
           ) : currentView === 'settings' ? (
             // Settings View
             <Settings />
