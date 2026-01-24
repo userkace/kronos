@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
   CLOCK_FORMAT: 'kronos_clock_format',
   SIDEBAR_STATE: 'kronos_sidebar_state',
   SORT_ORDER: 'kronos_sort_order',
-  SHOW_BREAKS: 'kronos_show_breaks'
+  SHOW_BREAKS: 'kronos_show_breaks',
+  INVOICE_SETTINGS: 'kronos_invoice_settings'
 };
 
 // Save timesheet data to LocalStorage
@@ -226,5 +227,65 @@ export const loadShowBreaks = () => {
   } catch (error) {
     console.error('Error loading show breaks preference:', error);
     return true; // Default to showing breaks on error
+  }
+};
+
+// Save invoice settings to LocalStorage (only persistent settings, not invoice-specific data)
+export const saveInvoiceSettings = (settings) => {
+  try {
+    // Only save business info, client info, rate, and currency
+    // Exclude invoice number and dates as these change per invoice
+    const persistentSettings = {
+      userName: settings.userName,
+      userAddress: settings.userAddress,
+      userEmail: settings.userEmail,
+      clientName: settings.clientName,
+      clientAddress: settings.clientAddress,
+      hourlyRate: settings.hourlyRate,
+      currency: settings.currency
+    };
+    localStorage.setItem(STORAGE_KEYS.INVOICE_SETTINGS, JSON.stringify(persistentSettings));
+  } catch (error) {
+    console.error('Error saving invoice settings:', error);
+  }
+};
+
+// Load invoice settings from LocalStorage
+export const loadInvoiceSettings = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.INVOICE_SETTINGS);
+    const persistentSettings = stored ? JSON.parse(stored) : {};
+    
+    // Return persistent settings with defaults for invoice-specific fields
+    return {
+      // Persistent settings (loaded from storage)
+      userName: persistentSettings.userName || '',
+      userAddress: persistentSettings.userAddress || '',
+      userEmail: persistentSettings.userEmail || '',
+      clientName: persistentSettings.clientName || '',
+      clientAddress: persistentSettings.clientAddress || '',
+      hourlyRate: persistentSettings.hourlyRate || 50,
+      currency: persistentSettings.currency || 'USD',
+      // Invoice-specific fields (generated fresh each time)
+      invoiceNumber: '',
+      startDate: '',
+      endDate: ''
+    };
+  } catch (error) {
+    console.error('Error loading invoice settings:', error);
+    return {
+      // Persistent settings (defaults)
+      userName: '',
+      userAddress: '',
+      userEmail: '',
+      clientName: '',
+      clientAddress: '',
+      hourlyRate: 50,
+      currency: 'USD',
+      // Invoice-specific fields (defaults)
+      invoiceNumber: '',
+      startDate: '',
+      endDate: ''
+    };
   }
 };
