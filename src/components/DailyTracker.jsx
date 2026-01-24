@@ -625,10 +625,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       const sortedEntries = [...allData[storageKey]].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       setSelectedDateEntries(sortedEntries);
     }
-    // Only clear input if it was empty (using funny default)
-    if (!currentTask.trim()) {
-      setCurrentTask('');
-    }
+    // Clear input ready for the next task
+    setCurrentTask('');
   };
 
   // Stop active timer
