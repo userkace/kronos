@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer } from 'lucide-react';
+import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { loadSidebarState, saveSidebarState } from '../utils/storage';
@@ -89,6 +89,12 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
       label: 'Timesheet',
       icon: Calendar,
       description: 'View weekly summary'
+    },
+    {
+      id: 'invoice',
+      label: 'Invoice',
+      icon: FileText,
+      description: 'Generate PDF invoices'
     },
     {
       id: 'data',
@@ -205,6 +211,8 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                     <Timer className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'timesheet' ? (
                     <Calendar className="w-5 h-5 text-blue-600" />
+                  ) : currentView === 'invoice' ? (
+                    <FileText className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'settings' ? (
                     <Settings className="w-5 h-5 text-blue-600" />
                   ) : (
@@ -216,6 +224,7 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                     {currentView === 'tracker' ? 'Tracker' :
                      currentView === 'pomodoro' ? 'Pomodoro' :
                      currentView === 'timesheet' ? 'Timesheet' :
+                     currentView === 'invoice' ? 'Invoice' :
                      currentView === 'settings' ? 'Settings' :
                      'Data'}
                   </h2>
@@ -226,6 +235,8 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
                       ? 'Stay focused with time management'
                       : currentView === 'timesheet'
                       ? 'View your weekly time summary'
+                      : currentView === 'invoice'
+                      ? 'Generate professional PDF invoices'
                       : currentView === 'settings'
                       ? 'Manage your app preferences'
                       : 'Import and export your data'
