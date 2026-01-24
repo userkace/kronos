@@ -757,7 +757,7 @@ const InvoicePage = () => {
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., Bonus, Additional Services"
+                      placeholder="e.g. Bonus, Services, Task"
                       maxLength={30}
                     />
                   </div>
