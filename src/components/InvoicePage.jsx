@@ -234,8 +234,20 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
       <View style={styles.totalSection}>
         <View style={styles.totalContainer}>
           <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Hourly Rate:</Text>
+            <Text style={styles.totalValue}>{settings.hourlyRate} {settings.currency}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Hours Total:</Text>
+            <Text style={styles.totalValue}>{invoiceData.totalHours} {parseFloat(invoiceData.totalHours) < 1 ? 'MIN.' : 'HRS.'}</Text>
+          </View>
+          <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Subtotal:</Text>
             <Text style={styles.totalValue}>{invoiceData.subtotal}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Additionals:</Text>
+            <Text style={styles.totalValue}>{invoiceData.additionals || formatCurrency(0)}</Text>
           </View>
           <View style={styles.grandTotal}>
             <View style={styles.totalRow}>
@@ -452,12 +464,16 @@ const InvoicePage = () => {
     });
 
     const subtotal = totalHours * settings.hourlyRate;
+    const additionals = settings.additionals || 0;
+    const total = subtotal + additionals;
+    
     return {
       totalHours: totalHours.toFixed(2),
       subtotal: formatCurrency(subtotal),
-      total: formatCurrency(subtotal)
+      additionals: formatCurrency(additionals),
+      total: formatCurrency(total)
     };
-  }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.currency]);
+  }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.additionals, settings.currency]);
 
   const generateFileName = () => {
     const businessName = settings.userName || 'Business';
@@ -501,12 +517,16 @@ const InvoicePage = () => {
     });
 
     const subtotal = totalHours * debouncedSettings.hourlyRate;
+    const additionals = debouncedSettings.additionals || 0;
+    const total = subtotal + additionals;
+    
     return {
       totalHours: totalHours.toFixed(2),
       subtotal: formatCurrency(subtotal),
-      total: formatCurrency(subtotal)
+      additionals: formatCurrency(additionals),
+      total: formatCurrency(total)
     };
-  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.currency]);
+  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.additionals, debouncedSettings.currency]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -641,6 +661,36 @@ const InvoicePage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={settings.startDate}
+                      onChange={(e) => setSettings(prev => ({ ...prev, startDate: e.target.value }))}
+                      onFocus={handleFieldFocus}
+                      onBlur={handleFieldBlur}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={settings.endDate}
+                      onChange={(e) => setSettings(prev => ({ ...prev, endDate: e.target.value }))}
+                      onFocus={handleFieldFocus}
+                      onBlur={handleFieldBlur}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Hourly Rate
                     </label>
                     <div className="relative">
@@ -676,32 +726,22 @@ const InvoicePage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Date
-                    </label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Additionals / Bonus
+                  </label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
-                      type="date"
-                      value={settings.startDate}
-                      onChange={(e) => setSettings(prev => ({ ...prev, startDate: e.target.value }))}
+                      type="number"
+                      value={settings.additionals || 0}
+                      onChange={(e) => setSettings(prev => ({ ...prev, additionals: parseFloat(e.target.value) || 0 }))}
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={settings.endDate}
-                      onChange={(e) => setSettings(prev => ({ ...prev, endDate: e.target.value }))}
-                      onFocus={handleFieldFocus}
-                      onBlur={handleFieldBlur}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
                     />
                   </div>
                 </div>
@@ -724,6 +764,24 @@ const InvoicePage = () => {
                 </div>
               </div>
 
+              {(settings.additionals || 0) > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Subtotal</span>
+                    <span className="text-lg font-bold text-gray-900">{totals.subtotal}</span>
+                  </div>
+                </div>
+              )}
+
+              {(settings.additionals || 0) > 0 && (
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-green-900">Additionals / Bonus</span>
+                    <span className="text-lg font-bold text-green-900">{totals.additionals}</span>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-green-50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-green-900">Total Amount</span>
@@ -733,6 +791,7 @@ const InvoicePage = () => {
 
               <div className="text-xs text-gray-500 text-center">
                 Based on {settings.currency} {settings.hourlyRate}/hour
+                {(settings.additionals || 0) > 0 && ` + ${settings.currency} ${settings.additionals} additionals`}
               </div>
             </div>
           </div>
@@ -806,11 +865,31 @@ const InvoicePage = () => {
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-gray-50">
-                      <td colSpan={2} className="py-3 px-4 text-sm font-medium text-gray-700">
-                        Total ({totals.totalHours} hours)
+                    {(settings.additionals || 0) > 0 && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={2} className="py-3 px-4 text-sm font-medium text-gray-700">
+                          Subtotal ({totals.totalHours} hours)
+                        </td>
+                        <td colSpan={2} className="py-3 px-4 text-sm font-bold text-gray-900 text-right">
+                          {totals.subtotal}
+                        </td>
+                      </tr>
+                    )}
+                    {(settings.additionals || 0) > 0 && (
+                      <tr className="bg-green-50">
+                        <td colSpan={2} className="py-3 px-4 text-sm font-medium text-green-700">
+                          Additionals / Bonus
+                        </td>
+                        <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
+                          {totals.additionals}
+                        </td>
+                      </tr>
+                    )}
+                    <tr className="bg-green-100">
+                      <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900">
+                        Total Amount
                       </td>
-                      <td colSpan={2} className="py-3 px-4 text-sm font-bold text-gray-900 text-right">
+                      <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
                         {totals.total}
                       </td>
                     </tr>
