@@ -209,8 +209,13 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
       <View style={styles.header}>
         <View style={styles.businessInfo}>
           <Text style={styles.businessName}>{settings.userName || 'Your Business/Legal Name'}</Text>
-          <Text style={styles.businessAddress}>{settings.userAddress || '123 Business Street'}</Text>
-          <Text style={styles.businessAddress}>{settings.userAddress ? '' : 'City, State 12345'}</Text>
+          {settings.userAddress ? (
+          <Text style={styles.businessAddress}>{settings.userAddress}</Text>
+          ) : (
+            <>
+              <Text style={styles.businessAddress}></Text>
+            </>
+          )}
           <Text style={styles.businessAddress}>{settings.userEmail || 'contact@yourbusiness.com'}</Text>
         </View>
 
