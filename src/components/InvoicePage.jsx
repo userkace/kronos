@@ -234,24 +234,24 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
       <View style={styles.totalSection}>
         <View style={styles.totalContainer}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Hourly Rate:</Text>
+            <Text style={styles.totalLabel}>Hourly Rate</Text>
             <Text style={styles.totalValue}>{settings.hourlyRate} {settings.currency}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Hours Total:</Text>
+            <Text style={styles.totalLabel}>Hours Total</Text>
             <Text style={styles.totalValue}>{invoiceData.totalHours} {parseFloat(invoiceData.totalHours) < 1 ? 'MIN' : 'HRS'}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal:</Text>
+            <Text style={styles.totalLabel}>Subtotal</Text>
             <Text style={styles.totalValue}>{invoiceData.subtotal}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{settings.additionalsName || 'Additionals'}:</Text>
+            <Text style={styles.totalLabel}>{settings.additionalsName || 'Additionals'}</Text>
             <Text style={styles.totalValue}>{invoiceData.additionals || formatCurrency(0)}</Text>
           </View>
           <View style={styles.grandTotal}>
             <View style={styles.totalRow}>
-              <Text style={styles.grandTotalLabel}>TOTAL:</Text>
+              <Text style={styles.grandTotalLabel}>TOTAL</Text>
               <Text style={styles.grandTotalValue}>{invoiceData.total}</Text>
             </View>
           </View>
@@ -793,7 +793,7 @@ const InvoicePage = () => {
               {(settings.additionals || 0) > 0 && (
                 <div className="bg-green-50 rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-green-900">{settings.additionalsName || 'Additionals / Bonus'}</span>
+                    <span className="text-sm font-medium text-green-900">{settings.additionalsName || 'Additionals'}</span>
                     <span className="text-lg font-bold text-green-900">{totals.additionals}</span>
                   </div>
                 </div>
@@ -895,7 +895,7 @@ const InvoicePage = () => {
                     {(settings.additionals || 0) > 0 && (
                       <tr className="bg-green-50">
                         <td colSpan={2} className="py-3 px-4 text-sm font-medium text-green-700">
-                          {settings.additionalsName || 'Additionals / Bonus'}
+                          {settings.additionalsName || 'Additionals'}
                         </td>
                         <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
                           {totals.additionals}
