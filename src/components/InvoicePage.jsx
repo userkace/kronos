@@ -253,6 +253,7 @@ const InvoicePage = () => {
   const { weekStart: userWeekStart } = useUserPreferences();
   const [timesheetData, setTimesheetData] = useState({});
   const [isAnyFieldFocused, setIsAnyFieldFocused] = useState(false);
+  const focusTimeoutRef = useRef(null);
   const [settings, setSettings] = useState(() => {
     // Load saved settings on initial render
     const savedSettings = loadInvoiceSettings();
@@ -301,6 +302,15 @@ const InvoicePage = () => {
     return unsubscribe;
   }, []);
 
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const formatCurrency = (amount) => {
     const symbols = {
       USD: '$',
@@ -310,9 +320,24 @@ const InvoicePage = () => {
     return `${symbols[settings.currency]}${amount.toFixed(2)}`;
   };
 
-  // Helper functions to handle focus events
-  const handleFieldFocus = () => setIsAnyFieldFocused(true);
-  const handleFieldBlur = () => setIsAnyFieldFocused(false);
+  // Helper functions to handle focus events with delay
+  const handleFieldFocus = () => {
+    // Clear any existing timeout
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+    }
+    setIsAnyFieldFocused(true);
+  };
+  
+  const handleFieldBlur = () => {
+    // Clear any existing timeout and set a new one
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+    }
+    focusTimeoutRef.current = setTimeout(() => {
+      setIsAnyFieldFocused(false);
+    }, 150); // 150ms delay to allow for field switching
+  };
 
   // Use the exact same calculation as TimesheetTable's calculateDayTotal
   const calculateDayTotal = (timeIn, timeOut, breakHours) => {
@@ -744,9 +769,9 @@ const InvoicePage = () => {
               )}
 
               {isAnyFieldFocused && (
-                <div className="inline-flex items-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed">
+                <div className="inline-flex items-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed" title="Deselect any input field to continue">
                   <Download className="w-4 h-4 mr-2" />
-                  Finish editing to download
+                  Finish editing...
                 </div>
               )}
             </div>
