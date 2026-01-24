@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { FileText, Download, Calendar, DollarSign, User, MapPin, Globe } from 'lucide-react';
+import { FileText, Download, Calendar, DollarSign, User, Globe, Plus, X } from 'lucide-react';
 import { loadWeeklyTimesheet, saveInvoiceSettings, loadInvoiceSettings } from '../utils/storage';
 import storageEventSystem from '../utils/storageEvents';
 import {
@@ -245,10 +245,14 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
             <Text style={styles.totalLabel}>Subtotal</Text>
             <Text style={styles.totalValue}>{invoiceData.subtotal}</Text>
           </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{settings.additionalsName || 'Additionals'}</Text>
-            <Text style={styles.totalValue}>{invoiceData.additionals || formatCurrency(0)}</Text>
-          </View>
+          {invoiceData.additionalsList && invoiceData.additionalsList.map((additional, index) => (
+            parseFloat(additional.amount.replace(/[^0-9.-]/g, '')) > 0 && (
+              <View key={index} style={styles.totalRow}>
+                <Text style={styles.totalLabel}>{additional.name}</Text>
+                <Text style={styles.totalValue}>{additional.amount}</Text>
+              </View>
+            )
+          ))}
           <View style={styles.grandTotal}>
             <View style={styles.totalRow}>
               <Text style={styles.grandTotalLabel}>TOTAL</Text>
@@ -281,7 +285,8 @@ const InvoicePage = () => {
       ...savedSettings,
       startDate: savedSettings.startDate || format(weekStart, 'yyyy-MM-dd'),
       endDate: savedSettings.endDate || format(weekEnd, 'yyyy-MM-dd'),
-      invoiceNumber: savedSettings.invoiceNumber || `INV-${format(weekEnd, 'yyyy-MM-dd')}`
+      invoiceNumber: savedSettings.invoiceNumber || `INV-${format(weekEnd, 'yyyy-MM-dd')}`,
+      additionalsList: savedSettings.additionalsList || [{ name: '', amount: 0 }]
     };
   });
 
@@ -464,16 +469,24 @@ const InvoicePage = () => {
     });
 
     const subtotal = totalHours * settings.hourlyRate;
-    const additionals = settings.additionals || 0;
-    const total = subtotal + additionals;
+    
+    // Calculate total additionals from the list
+    const totalAdditionals = (settings.additionalsList || [])
+      .reduce((sum, additional) => sum + (additional.amount || 0), 0);
+    
+    const total = subtotal + totalAdditionals;
     
     return {
       totalHours: totalHours.toFixed(2),
       subtotal: formatCurrency(subtotal),
-      additionals: formatCurrency(additionals),
-      total: formatCurrency(total)
+      additionals: formatCurrency(totalAdditionals),
+      total: formatCurrency(total),
+      additionalsList: (settings.additionalsList || []).map(additional => ({
+        name: additional.name || 'Additionals',
+        amount: formatCurrency(additional.amount || 0)
+      }))
     };
-  }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.additionals, settings.currency]);
+  }, [timesheetData, settings.startDate, settings.endDate, settings.hourlyRate, settings.additionalsList, settings.currency]);
 
   const generateFileName = () => {
     const businessName = settings.userName || 'Business';
@@ -517,16 +530,24 @@ const InvoicePage = () => {
     });
 
     const subtotal = totalHours * debouncedSettings.hourlyRate;
-    const additionals = debouncedSettings.additionals || 0;
-    const total = subtotal + additionals;
+    
+    // Calculate total additionals from the list
+    const totalAdditionals = (debouncedSettings.additionalsList || [])
+      .reduce((sum, additional) => sum + (additional.amount || 0), 0);
+    
+    const total = subtotal + totalAdditionals;
     
     return {
       totalHours: totalHours.toFixed(2),
       subtotal: formatCurrency(subtotal),
-      additionals: formatCurrency(additionals),
-      total: formatCurrency(total)
+      additionals: formatCurrency(totalAdditionals),
+      total: formatCurrency(total),
+      additionalsList: (debouncedSettings.additionalsList || []).map(additional => ({
+        name: additional.name || 'Additionals',
+        amount: formatCurrency(additional.amount || 0)
+      }))
     };
-  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.additionals, debouncedSettings.currency]);
+  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.additionalsList, debouncedSettings.currency]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -726,41 +747,83 @@ const InvoicePage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Additionals Amount
-                    </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="number"
-                        value={settings.additionals || 0}
-                        onChange={(e) => setSettings(prev => ({ ...prev, additionals: parseFloat(e.target.value) || 0 }))}
-                        onFocus={handleFieldFocus}
-                        onBlur={handleFieldBlur}
-                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                      />
+                <div className="space-y-4">
+                  {settings.additionalsList && settings.additionalsList.map((additional, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-4">
+                      <div>
+                        {index === 0 && (
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Additionals Amount
+                          </label>
+                        )}
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="number"
+                            value={additional.amount || 0}
+                            onChange={(e) => {
+                              const newList = [...(settings.additionalsList || [])];
+                              newList[index] = { ...newList[index], amount: parseFloat(e.target.value) || 0 };
+                              setSettings(prev => ({ ...prev, additionalsList: newList }));
+                            }}
+                            onFocus={handleFieldFocus}
+                            onBlur={handleFieldBlur}
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          {index === 0 && (
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Additionals Name
+                            </label>
+                          )}
+                          <input
+                            type="text"
+                            value={additional.name || ''}
+                            onChange={(e) => {
+                              const newList = [...(settings.additionalsList || [])];
+                              newList[index] = { ...newList[index], name: e.target.value };
+                              setSettings(prev => ({ ...prev, additionalsList: newList }));
+                            }}
+                            onFocus={handleFieldFocus}
+                            onBlur={handleFieldBlur}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="e.g. Bonus, Services, Task"
+                            maxLength={30}
+                          />
+                        </div>
+                        {settings.additionalsList.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newList = settings.additionalsList.filter((_, i) => i !== index);
+                              setSettings(prev => ({ ...prev, additionalsList: newList }));
+                            }}
+                            className={`${index === 0 ? 'mt-6' : ''} px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors`}
+                            title="Remove additionals"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Additionals Name
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.additionalsName || ''}
-                      onChange={(e) => setSettings(prev => ({ ...prev, additionalsName: e.target.value }))}
-                      onFocus={handleFieldFocus}
-                      onBlur={handleFieldBlur}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g. Bonus, Services, Task"
-                      maxLength={30}
-                    />
-                  </div>
+                  ))}
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newList = [...(settings.additionalsList || []), { name: '', amount: 0 }];
+                      setSettings(prev => ({ ...prev, additionalsList: newList }));
+                    }}
+                    className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 hover:text-green-600 hover:border-green-400 hover:bg-green-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -781,7 +844,7 @@ const InvoicePage = () => {
                 </div>
               </div>
 
-              {(settings.additionals || 0) > 0 && (
+              {(settings.additionalsList && settings.additionalsList.some(a => a.amount > 0)) && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">Subtotal</span>
@@ -790,14 +853,16 @@ const InvoicePage = () => {
                 </div>
               )}
 
-              {(settings.additionals || 0) > 0 && (
-                <div className="bg-green-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-green-900">{settings.additionalsName || 'Additionals'}</span>
-                    <span className="text-lg font-bold text-green-900">{totals.additionals}</span>
+              {totals.additionalsList && totals.additionalsList.map((additional, index) => (
+                parseFloat(additional.amount.replace(/[^0-9.-]/g, '')) > 0 && (
+                  <div key={index} className="bg-green-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-green-900">{additional.name}</span>
+                      <span className="text-lg font-bold text-green-900">{additional.amount}</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              ))}
 
               <div className="bg-green-50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
@@ -808,7 +873,9 @@ const InvoicePage = () => {
 
               <div className="text-xs text-gray-500 text-center">
                 Based on {settings.currency} {settings.hourlyRate}/hour
-                {(settings.additionals || 0) > 0 && ` + ${settings.currency} ${settings.additionals} additionals`}
+                {settings.additionalsList && settings.additionalsList.some(a => a.amount > 0) && 
+                  ` + ${settings.currency} ${settings.additionalsList.reduce((sum, a) => sum + (a.amount || 0), 0).toFixed(2)} additionals`
+                }
               </div>
             </div>
           </div>
@@ -882,7 +949,7 @@ const InvoicePage = () => {
                     ))}
                   </tbody>
                   <tfoot>
-                    {(settings.additionals || 0) > 0 && (
+                    {(settings.additionalsList && settings.additionalsList.some(a => a.amount > 0)) && (
                       <tr className="bg-gray-50">
                         <td colSpan={2} className="py-3 px-4 text-sm font-medium text-gray-700">
                           Subtotal ({totals.totalHours} hours)
@@ -892,16 +959,18 @@ const InvoicePage = () => {
                         </td>
                       </tr>
                     )}
-                    {(settings.additionals || 0) > 0 && (
-                      <tr className="bg-green-50">
-                        <td colSpan={2} className="py-3 px-4 text-sm font-medium text-green-700">
-                          {settings.additionalsName || 'Additionals'}
-                        </td>
-                        <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
-                          {totals.additionals}
-                        </td>
-                      </tr>
-                    )}
+                    {totals.additionalsList && totals.additionalsList.map((additional, index) => (
+                      parseFloat(additional.amount.replace(/[^0-9.-]/g, '')) > 0 && (
+                        <tr key={index} className="bg-green-50">
+                          <td colSpan={2} className="py-3 px-4 text-sm font-medium text-green-700">
+                            {additional.name}
+                          </td>
+                          <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
+                            {additional.amount}
+                          </td>
+                        </tr>
+                      )
+                    ))}
                     <tr className="bg-green-100">
                       <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900">
                         Total Amount
