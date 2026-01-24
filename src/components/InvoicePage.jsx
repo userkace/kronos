@@ -292,34 +292,52 @@ const InvoicePage = () => {
     return `${symbols[settings.currency]}${amount.toFixed(2)}`;
   };
 
-  const calculateDuration = (dayData) => {
-    if (!dayData.timeIn || !dayData.timeOut) return 0;
+  // Use the exact same calculation as TimesheetTable's calculateDayTotal
+  const calculateDayTotal = (timeIn, timeOut, breakHours) => {
+    if (!timeIn || !timeOut) return 0;
 
     try {
-      // Parse time strings (HH:MM format)
-      const [inHours, inMinutes] = dayData.timeIn.split(':').map(Number);
-      const [outHours, outMinutes] = dayData.timeOut.split(':').map(Number);
+      // Debug logging to compare with TimesheetTable
+      console.log('=== Invoice Day Total Calculation Debug ===');
+      console.log('Time In:', timeIn);
+      console.log('Time Out:', timeOut);
+      console.log('Break Hours:', breakHours);
 
-      // Convert to total seconds
-      const inTotalSeconds = (inHours * 3600) + (inMinutes * 60);
-      const outTotalSeconds = (outHours * 3600) + (outMinutes * 60);
+      // Split time strings to get hours and minutes (exactly like TimesheetTable)
+      const [inHours, inMinutes] = timeIn.split(':').map(Number);
+      const [outHours, outMinutes] = timeOut.split(':').map(Number);
+
+      console.log('In Hours/Minutes:', inHours, inMinutes);
+      console.log('Out Hours/Minutes:', outHours, outMinutes);
+
+      // Convert to total minutes (exactly like TimesheetTable)
+      const inTotalMinutes = (inHours * 60) + inMinutes;
+      const outTotalMinutes = (outHours * 60) + outMinutes;
+
+      console.log('In Total Minutes:', inTotalMinutes);
+      console.log('Out Total Minutes:', outTotalMinutes);
 
       // Calculate difference
-      let durationSeconds = outTotalSeconds - inTotalSeconds;
+      let totalMinutes = outTotalMinutes - inTotalMinutes;
 
       // Handle overnight shifts
-      if (durationSeconds < 0) {
-        durationSeconds = durationSeconds + (24 * 3600);
+      if (totalMinutes < 0) {
+        totalMinutes = totalMinutes + (24 * 60);
       }
 
-      // Subtract break hours (convert to seconds)
-      const breakSeconds = (parseFloat(dayData.breakHours || '0') || 0) * 3600;
-      durationSeconds = durationSeconds - breakSeconds;
+      console.log('Total Minutes:', totalMinutes);
+      console.log('Total Hours (raw):', totalMinutes / 60);
 
-      // Don't allow negative duration
-      return Math.max(0, durationSeconds);
+      // Convert to hours and subtract break hours (exactly like TimesheetTable)
+      const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
+
+      console.log('Total Hours (after break):', totalHours);
+      console.log('Final Result:', Math.max(0, totalHours));
+
+      // Don't allow negative hours (exactly like TimesheetTable)
+      return Math.max(0, totalHours);
     } catch (error) {
-      console.error('Error calculating duration:', error);
+      console.error('Error calculating time:', error);
       return 0;
     }
   };
@@ -335,15 +353,19 @@ const InvoicePage = () => {
       try {
         const entryDate = parseISO(dateKey);
         if (isWithinInterval(entryDate, { start, end })) {
-          // Calculate duration from timeIn, timeOut, and breakHours
-          const duration = calculateDuration(dayData);
-          if (duration > 0) {
+          // Use the exact same calculation as TimesheetTable's calculateDayTotal
+          const dayTotal = calculateDayTotal(
+            dayData.timeIn,
+            dayData.timeOut,
+            dayData.breakHours
+          );
+          if (dayTotal > 0) {
             entries.push({
               date: format(entryDate, 'MMM dd, yyyy'),
               description: dayData.workDetails || dayData.tasks || 'Time Entry',
-              amount: formatCurrency((duration / 3600) * settings.hourlyRate),
-              hours: (duration / 3600).toFixed(2),
-              duration: duration
+              amount: formatCurrency(dayTotal * settings.hourlyRate),
+              hours: dayTotal.toFixed(2),
+              duration: dayTotal * 3600 // Keep for compatibility
             });
           }
         }
@@ -358,7 +380,30 @@ const InvoicePage = () => {
   const filteredEntries = filterEntries;
 
   const calculateTotals = () => {
-    const totalHours = filteredEntries.reduce((sum, entry) => sum + parseFloat(entry.hours), 0);
+    // Calculate exactly like TimesheetTable's calculateGrandTotal
+    // Recalculate from raw data instead of using pre-formatted entry.hours
+    let totalHours = 0;
+    const start = parseISO(settings.startDate);
+    const end = parseISO(settings.endDate);
+
+    Object.entries(timesheetData).forEach(([dateKey, dayData]) => {
+      try {
+        const entryDate = parseISO(dateKey);
+        if (isWithinInterval(entryDate, { start, end })) {
+          const dayTotal = calculateDayTotal(
+            dayData.timeIn,
+            dayData.timeOut,
+            dayData.breakHours
+          );
+          if (dayTotal > 0) {
+            totalHours += dayTotal; // Add raw dayTotal like TimesheetTable
+          }
+        }
+      } catch (error) {
+        console.error('Error processing date:', dateKey, error);
+      }
+    });
+
     const subtotal = totalHours * settings.hourlyRate;
     return {
       totalHours: totalHours.toFixed(2),
