@@ -31,12 +31,6 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-// Register fonts
-Font.register({
-  family: 'Helvetica',
-  src: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
-});
-
 const styles = StyleSheet.create({
   page: {
     padding: 40,
