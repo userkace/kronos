@@ -243,7 +243,12 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
           </View>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Hours Total</Text>
-            <Text style={styles.totalValue}>{invoiceData.totalHours} HRS</Text>
+            <Text style={styles.totalValue}>
+              {parseFloat(invoiceData.totalHours) < 1
+                ? parseFloat(invoiceData.totalHours) * 60
+                : invoiceData.totalHours}{' '}
+              {parseFloat(invoiceData.totalHours) < 1 ? 'MIN' : 'HRS'}
+            </Text>
           </View>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Subtotal</Text>
