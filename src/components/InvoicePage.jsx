@@ -234,7 +234,7 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
         <View style={styles.invoiceDetails}>
           <View>
             <Text style={styles.invoiceNumber}>INVOICE #{settings.invoiceNumber}</Text>
-            <Text style={styles.invoiceDate}>Date: {format(new Date(), 'MMM dd, yyyy')}</Text>
+            <Text style={styles.invoiceDate}>Date: {format(parseISO(settings.endDate), 'yyyy-MM-dd')}</Text>
           </View>
           <View>
             <Text style={styles.invoiceDate}>Period: {format(parseISO(settings.startDate), 'MMM dd, yyyy')} - {format(parseISO(settings.endDate), 'MMM dd, yyyy')}</Text>
@@ -337,7 +337,7 @@ const InvoicePage = () => {
       ...savedSettings,
       startDate: savedSettings.startDate || format(weekStart, 'yyyy-MM-dd'),
       endDate: savedSettings.endDate || format(weekEnd, 'yyyy-MM-dd'),
-      invoiceNumber: savedSettings.invoiceNumber || `INV-${format(weekEnd, 'yyyy-MM-dd')}`,
+      invoiceNumber: savedSettings.invoiceNumber || `INV-${format(parseISO(savedSettings.endDate || format(weekEnd, 'yyyy-MM-dd')), 'yyyy-MM-dd')}`,
       additionalsList: savedSettings.additionalsList || [{ name: '', amount: 0 }]
     };
   });
@@ -351,6 +351,19 @@ const InvoicePage = () => {
   useEffect(() => {
     saveInvoiceSettings(settings);
   }, [settings]);
+
+  // Auto-update invoice number when end date changes
+  useEffect(() => {
+    if (settings.endDate && !settings.invoiceNumber.startsWith('INV-')) {
+      // Only auto-update if user hasn't manually changed the invoice number
+      const newInvoiceNumber = `INV-${format(parseISO(settings.endDate), 'yyyy-MM-dd')}`;
+      setSettings(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
+    } else if (settings.endDate && settings.invoiceNumber.startsWith('INV-')) {
+      // Update invoice number if it follows the default INV- pattern
+      const newInvoiceNumber = `INV-${format(parseISO(settings.endDate), 'yyyy-MM-dd')}`;
+      setSettings(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
+    }
+  }, [settings.endDate]);
 
   // Listen for storage events from other tabs
   useEffect(() => {
