@@ -352,6 +352,37 @@ const InvoicePage = () => {
     saveInvoiceSettings(settings);
   }, [settings]);
 
+  // Date validation function for clamping
+  const validateAndClampDates = (newStartDate, newEndDate, changedField) => {
+    if (!newStartDate || !newEndDate) {
+      return { startDate: newStartDate, endDate: newEndDate };
+    }
+
+    const start = parseISO(newStartDate);
+    const end = parseISO(newEndDate);
+
+    let adjustedStart = newStartDate;
+    let adjustedEnd = newEndDate;
+
+    if (changedField === 'start') {
+      // If start date exceeds end date, set end date = start date + 1 day
+      if (start > end) {
+        const newEnd = new Date(start);
+        newEnd.setDate(newEnd.getDate() + 1);
+        adjustedEnd = format(newEnd, 'yyyy-MM-dd');
+      }
+    } else if (changedField === 'end') {
+      // If end date is before start date, set start date = end date - 1 day
+      if (end < start) {
+        const newStart = new Date(end);
+        newStart.setDate(newStart.getDate() - 1);
+        adjustedStart = format(newStart, 'yyyy-MM-dd');
+      }
+    }
+
+    return { startDate: adjustedStart, endDate: adjustedEnd };
+  };
+
   // Auto-update invoice number when end date changes
   useEffect(() => {
     if (settings.endDate && !settings.invoiceNumber.startsWith('INV-')) {
@@ -694,7 +725,11 @@ const InvoicePage = () => {
                     <input
                       type="date"
                       value={settings.startDate}
-                      onChange={(e) => setSettings(prev => ({ ...prev, startDate: e.target.value }))}
+                      onChange={(e) => {
+                        const newStartDate = e.target.value;
+                        const { startDate, endDate } = validateAndClampDates(newStartDate, settings.endDate, 'start');
+                        setSettings(prev => ({ ...prev, startDate, endDate }));
+                      }}
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -708,7 +743,11 @@ const InvoicePage = () => {
                     <input
                       type="date"
                       value={settings.endDate}
-                      onChange={(e) => setSettings(prev => ({ ...prev, endDate: e.target.value }))}
+                      onChange={(e) => {
+                        const newEndDate = e.target.value;
+                        const { startDate, endDate } = validateAndClampDates(settings.startDate, newEndDate, 'end');
+                        setSettings(prev => ({ ...prev, startDate, endDate }));
+                      }}
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
