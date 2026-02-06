@@ -234,7 +234,7 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
         <View style={styles.invoiceDetails}>
           <View>
             <Text style={styles.invoiceNumber}>INVOICE #{settings.invoiceNumber}</Text>
-            <Text style={styles.invoiceDate}>Date: {format(parseISO(settings.endDate), 'yyyy-MM-dd')}</Text>
+            <Text style={styles.invoiceDate}>Date: {format(parseISO(settings.endDate), 'MMM dd, yyyy')}</Text>
           </View>
           <View>
             <Text style={styles.invoiceDate}>Period: {format(parseISO(settings.startDate), 'MMM dd, yyyy')} - {format(parseISO(settings.endDate), 'MMM dd, yyyy')}</Text>
