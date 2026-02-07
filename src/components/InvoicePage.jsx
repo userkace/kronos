@@ -385,14 +385,13 @@ const InvoicePage = () => {
 
   // Auto-update invoice number when end date changes
   useEffect(() => {
-    if (settings.endDate && !settings.invoiceNumber.startsWith('INV-')) {
-      // Only auto-update if user hasn't manually changed the invoice number
+    if (settings.endDate) {
       const newInvoiceNumber = `INV-${format(parseISO(settings.endDate), 'yyyy-MM-dd')}`;
-      setSettings(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
-    } else if (settings.endDate && settings.invoiceNumber.startsWith('INV-')) {
-      // Update invoice number if it follows the default INV- pattern
-      const newInvoiceNumber = `INV-${format(parseISO(settings.endDate), 'yyyy-MM-dd')}`;
-      setSettings(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
+      
+      // Only update if the invoice number follows the default pattern AND is different
+      if (settings.invoiceNumber.startsWith('INV-') && settings.invoiceNumber !== newInvoiceNumber) {
+        setSettings(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
+      }
     }
   }, [settings.endDate]);
 
