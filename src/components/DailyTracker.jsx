@@ -718,6 +718,16 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     if (selectedDateKey === storageKey && !shouldCreateNewTask) {
       setSelectedDateEntries(updatedEntries);
     }
+
+    // Auto-save to weekly timesheet for the relevant dates
+    const targetDates = shouldCreateNewTask 
+      ? [timerStartDate, currentDateInTimezone] // Save for both days when rollover occurred
+      : [timerStartDate]; // Save for the timer's date only
+
+    // Use setTimeout to ensure state updates complete before weekly timesheet save
+    setTimeout(() => {
+      stopToWeeklyTimesheet(targetDates);
+    }, 100);
   };
 
   // Continue a previous task (only works on current date)
@@ -1161,6 +1171,111 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     success(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
+  };
+
+  // Save completed timer entries to weekly timesheet (called from handleStop)
+  const stopToWeeklyTimesheet = (targetDates) => {
+    if (!targetDates || !Array.isArray(targetDates) || targetDates.length === 0) {
+      return;
+    }
+
+    targetDates.forEach(dateString => {
+      try {
+        // Load all entries for the target date
+        const storageKey = getStorageDateKey(dateString);
+        const allData = loadTimesheetData() || {};
+        const entriesForDate = allData[storageKey] || [];
+
+        if (entriesForDate.length === 0) {
+          return; // No entries for this date
+        }
+
+        // Get only completed entries for this date
+        const completedEntries = entriesForDate.filter(entry => !entry.isActive && entry.endTime);
+
+        if (completedEntries.length === 0) {
+          return; // No completed entries for this date
+        }
+
+        // Find earliest start time and latest end time in selected timezone
+        const startTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.startTime), timezone));
+        const endTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.endTime), timezone));
+
+        // Find the earliest and latest times while preserving timezone
+        const earliestStart = startTimes.reduce((earliest, current) =>
+          current < earliest ? current : earliest, startTimes[0]);
+        const latestEnd = endTimes.reduce((latest, current) =>
+          current > latest ? current : latest, endTimes[0]);
+
+        // Normalize to minute precision for consistency
+        earliestStart.setSeconds(0, 0);
+        latestEnd.setSeconds(0, 0);
+
+        // Calculate total work hours using merged overlapping periods
+        const mergedPeriods = mergeOverlappingPeriods(completedEntries);
+
+        const totalWorkMinutes = mergedPeriods.reduce((total, period) => {
+          return total + differenceInMinutes(period.end, period.start);
+        }, 0);
+
+        const totalWorkHours = totalWorkMinutes / 60;
+        const timeSpanMinutes = differenceInMinutes(latestEnd, earliestStart);
+        const breakHoursDecimal = Math.max(0, (timeSpanMinutes - totalWorkMinutes) / 60);
+
+        // Create work details from unique task descriptions separated by semicolons
+        const uniqueDescriptions = [...new Set(
+          completedEntries
+            .map(entry => entry.description)
+            .filter(desc => desc.trim())
+        )];
+        const workDetails = uniqueDescriptions.join('; ');
+
+        // Get current weekly timesheet data
+        const weeklyData = loadWeeklyTimesheet() || {};
+        const dayKey = dateString;
+
+        // Update the day's data
+        if (!weeklyData[dayKey]) {
+          weeklyData[dayKey] = {
+            tasks: '',
+            workDetails: '',
+            timeIn: '',
+            timeOut: '',
+            breakHours: '0'
+          };
+        }
+
+        weeklyData[dayKey] = {
+          ...weeklyData[dayKey],
+          tasks: completedEntries.length > 0 ? `${completedEntries.length} task(s)` : '',
+          workDetails: workDetails,
+          timeIn: format(earliestStart, 'HH:mm'),
+          timeOut: format(latestEnd, 'HH:mm'),
+          breakHours: breakHoursDecimal.toFixed(2)
+        };
+
+        // Save the updated weekly timesheet
+        saveWeeklyTimesheet(weeklyData);
+
+        // Show success message for this date
+        const dateObj = parse(dateString, 'yyyy-MM-dd', new Date());
+        success(`Auto-saved ${completedEntries.length} task(s) to weekly timesheet for ${formatInTimezone(dateObj, 'MMM d, yyyy')}`);
+
+      } catch (error) {
+        console.error('Error in stopToWeeklyTimesheet for date:', dateString, error);
+        const dateObj = parse(dateString, 'yyyy-MM-dd', new Date());
+        warning(`Failed to save to weekly timesheet for ${formatInTimezone(dateObj, 'MMM d, yyyy')}`);
+      }
+    });
+
+    // Trigger refresh of weekly timesheet data once after all dates processed
+    try {
+      if (onWeeklyTimesheetSave) {
+        onWeeklyTimesheetSave();
+      }
+    } catch (error) {
+      console.error('Error triggering weekly timesheet refresh:', error);
+    }
   };
 
   // Validate unified display items and collect errors
