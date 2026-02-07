@@ -1071,10 +1071,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
   // Save daily tasks to weekly timesheet
   const saveToWeeklyTimesheet = () => {
-    if (activeEntry) {
-      warning('Please stop the active task before saving to weekly timesheet');
-      return;
-    }
+    // if (activeEntry) {
+    //   warning('Please stop the active task before saving to weekly timesheet');
+    //   return;
+    // }
 
     if (selectedDateEntries.length === 0) {
       warning('No tasks to save for today');
