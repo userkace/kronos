@@ -708,7 +708,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         setSelectedDateEntries(sortedNewEntries);
       }
 
-      success(`Task time recorded for both ${timerStartDate} and ${currentDateInTimezone}`);
+      success(`Task time recorded for both ${formatInTimezone(parse(timerStartDate, 'yyyy-MM-dd', new Date()), 'MMM. d')} and ${formatInTimezone(parse(currentDateInTimezone, 'yyyy-MM-dd', new Date()), 'MMM. d')}`);
     }
 
     setActiveEntry(null);
@@ -1179,6 +1179,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       return;
     }
 
+    const savedResults = []; // Track successful saves with totals
+
     targetDates.forEach(dateString => {
       try {
         // Load all entries for the target date
@@ -1257,16 +1259,35 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         // Save the updated weekly timesheet
         saveWeeklyTimesheet(weeklyData);
 
-        // Show success message for this date
-        const dateObj = parse(dateString, 'yyyy-MM-dd', new Date());
-        success(`Auto-saved ${completedEntries.length} task(s) to weekly timesheet for ${formatInTimezone(dateObj, 'MMM d, yyyy')}`);
+        // Store result for combined toast
+        savedResults.push({
+          dateString,
+          completedCount: completedEntries.length,
+          dateObj: parse(dateString, 'yyyy-MM-dd', new Date())
+        });
 
       } catch (error) {
         console.error('Error in stopToWeeklyTimesheet for date:', dateString, error);
         const dateObj = parse(dateString, 'yyyy-MM-dd', new Date());
-        warning(`Failed to save to weekly timesheet for ${formatInTimezone(dateObj, 'MMM d, yyyy')}`);
+        warning(`Failed to save to weekly timesheet for ${formatInTimezone(dateObj, 'MMM. d, yyyy')}`);
       }
     });
+
+    // Show one combined success toast if we saved anything
+    if (savedResults.length > 0) {
+      if (savedResults.length === 1) {
+        // Single date - use original format
+        const result = savedResults[0];
+        success(`Auto-saved to weekly timesheet: ${result.completedCount} task(s) for ${formatInTimezone(result.dateObj, 'MMM. d, yyyy')}`);
+      } else {
+        // Multiple dates - show each date with full details
+        const messageParts = savedResults.map(result =>
+          `${result.completedCount} task(s) for ${formatInTimezone(result.dateObj, 'MMM. d')}`
+        );
+        const combinedMessage = `Auto-saved to weekly timesheet: ${messageParts.join(' & ')}`;
+        success(combinedMessage);
+      }
+    }
 
     // Trigger refresh of weekly timesheet data once after all dates processed
     try {
