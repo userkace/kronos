@@ -387,13 +387,13 @@ const InvoicePage = () => {
   useEffect(() => {
     if (settings.endDate) {
       const newInvoiceNumber = `INV-${format(parseISO(settings.endDate), 'yyyy-MM-dd')}`;
-      
+
       // Only update if the invoice number follows the default pattern AND is different
       if (settings.invoiceNumber.startsWith('INV-') && settings.invoiceNumber !== newInvoiceNumber) {
         setSettings(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
       }
     }
-  }, [settings.endDate]);
+  }, [settings.endDate, settings.invoiceNumber]);
 
   // Listen for storage events from other tabs
   useEffect(() => {
