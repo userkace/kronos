@@ -38,7 +38,9 @@ const formatCurrency = (amount, currency) => {
     EUR: '€',
     GBP: '£'
   };
-  return `${symbols[currency]}${amount.toFixed(2)}`;
+  // Use Math.round to ensure proper rounding before toFixed to avoid floating-point precision issues
+  const roundedAmount = Math.round((amount + Number.EPSILON) * 100) / 100;
+  return `${symbols[currency]}${roundedAmount.toFixed(2)}`;
 };
 
 // Utility function for calculating day total hours
@@ -505,7 +507,8 @@ const InvoicePage = () => {
       }
     });
 
-    const subtotal = totalHours * settings.hourlyRate;
+    const totalHoursRounded = Math.round((totalHours + Number.EPSILON) * 100) / 100;
+    const subtotal = totalHoursRounded * settings.hourlyRate;
     
     // Calculate total additionals from the list
     const totalAdditionals = (settings.additionalsList || [])
@@ -514,7 +517,7 @@ const InvoicePage = () => {
     const total = subtotal + totalAdditionals;
     
     return {
-      totalHours: totalHours.toFixed(2),
+      totalHours: totalHoursRounded.toFixed(2),
       subtotal: formatCurrency(subtotal, settings.currency),
       additionals: formatCurrency(totalAdditionals, settings.currency),
       total: formatCurrency(total, settings.currency),
@@ -566,7 +569,8 @@ const InvoicePage = () => {
       }
     });
 
-    const subtotal = totalHours * debouncedSettings.hourlyRate;
+    const totalHoursRounded = Math.round((totalHours + Number.EPSILON) * 100) / 100;
+    const subtotal = totalHoursRounded * debouncedSettings.hourlyRate;
     
     // Calculate total additionals from the list
     const totalAdditionals = (debouncedSettings.additionalsList || [])
@@ -575,7 +579,7 @@ const InvoicePage = () => {
     const total = subtotal + totalAdditionals;
     
     return {
-      totalHours: totalHours.toFixed(2),
+      totalHours: totalHoursRounded.toFixed(2),
       subtotal: formatCurrency(subtotal, debouncedSettings.currency),
       additionals: formatCurrency(totalAdditionals, debouncedSettings.currency),
       total: formatCurrency(total, debouncedSettings.currency),
