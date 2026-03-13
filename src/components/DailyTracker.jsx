@@ -1425,10 +1425,31 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="flex items-baseline space-x-2 text-gray-600">
-                <Clock className="w-5 h-5 self-center mt-1" />
-                <span className="text-2xl font-semibold text-gray-900">
-                  {calculateDailyTotal()}
-                </span>
+                {activeEntry && isToday() ? (
+                <motion.div
+                  className="flex items-baseline space-x-2"
+                  animate={{
+                    color: ["#16a34a", "#000000", "#16a34a"] // green-600 to black to green-600
+                  }}
+                  transition={{
+                    duration: 10,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <Clock className="w-5 h-5 self-center mt-1" />
+                  <span className="text-2xl font-semibold">
+                    {calculateDailyTotal()}
+                  </span>
+                </motion.div>
+              ) : (
+                <div className="flex items-baseline space-x-2 text-gray-600">
+                  <Clock className="w-5 h-5 self-center mt-1" />
+                  <span className="text-2xl font-semibold text-gray-900">
+                    {calculateDailyTotal()}
+                  </span>
+                </div>
+              )}
               </div>
               <AnimatePresence>
                 {showBreaks && dailyBreakTotal !== '0s' && (
