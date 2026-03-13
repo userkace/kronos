@@ -566,8 +566,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       }
     });
 
-    // Add active entry time
-    if (activeEntry) {
+    // Add active entry time only if viewing today
+    if (activeEntry && isToday()) {
       const startTimeInTimezone = toZonedTime(parseISO(activeEntry.startTime), timezone);
       const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone); // Use the ref for consistent time
       totalSeconds += differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
