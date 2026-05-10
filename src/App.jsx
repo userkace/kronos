@@ -14,18 +14,20 @@ import {
   saveOnboardingCompleted,
   loadOnboardingCompleted,
   saveWeekStart,
-  saveTimezone
+  saveTimezone,
+  getCorruptionBackups
 } from './utils/storage';
 import storageEventSystem from './utils/storageEvents';
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
-import { ToastProvider } from './contexts/ToastContext';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 import { PomodoroProvider } from './contexts/PomodoroContext';
 import './App.css';
 
 function AppContent() {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { changeWeekStart } = useUserPreferences();
+  const { warning } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
   const [currentView, setCurrentView] = useState('tracker'); // 'tracker', 'timesheet', or 'data'
@@ -48,6 +50,20 @@ function AppContent() {
     setTimesheetData(loadedData || {});
     setShowOnboarding(!hasCompletedOnboarding);
     setIsInitialized(true);
+
+    // Surface any storage corruption that was quarantined during this session's
+    // load functions. The raw blob is preserved under "__kronos_corrupt_*" keys
+    // so the user can recover it from devtools rather than discovering silent
+    // data loss only when totals look wrong.
+    const backups = getCorruptionBackups();
+    if (backups.length > 0) {
+      warning(
+        `Some saved data was unreadable and replaced with defaults. ` +
+        `A backup is preserved in localStorage under: ${backups.join(', ')}`,
+        15000
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refresh weekly timesheet data when trigger changes
