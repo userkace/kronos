@@ -17,7 +17,22 @@ export const usePomodoro = () => {
 
 export const PomodoroProvider = ({ children }) => {
   // Get toast notifications
-  const { success } = useToast();
+  const { success, warning } = useToast();
+
+  // Snapshot of the persisted timer state at component creation. Captured here
+  // (synchronously) so it isn't clobbered by other effects that re-persist
+  // timer fields on first render.
+  const mountSnapshotRef = useRef({
+    isRunning: JSON.parse(localStorage.getItem('kronos_pomodoro_is_running') || 'false'),
+    isPaused: JSON.parse(localStorage.getItem('kronos_pomodoro_is_paused') || 'false'),
+    timeLeftAt: parseInt(localStorage.getItem('kronos_pomodoro_time_left_at') || '0', 10),
+  });
+
+  // If the page reloads while a timer is actively running, account for the
+  // elapsed wall-clock time. Anything beyond this threshold is treated as
+  // "tab abandoned" and triggers a reset (see mount effect below) rather than
+  // silently inventing minutes/hours of work.
+  const STALE_TIMER_THRESHOLD_SECONDS = 5 * 60;
   
   // Get timezone from context or use default
   const [selectedTimezone, setSelectedTimezone] = useState(() => {
@@ -99,7 +114,20 @@ export const PomodoroProvider = ({ children }) => {
   
   const [timeLeft, setTimeLeft] = useState(() => {
     const saved = localStorage.getItem('kronos_pomodoro_time_left');
-    return saved ? parseInt(saved) : 25 * 60;
+    const baseValue = saved ? parseInt(saved) : 25 * 60;
+
+    // If a timer was actively running when the tab last closed, decrement by
+    // the wall-clock time spent away. The mount effect below will hard-reset
+    // if that elapsed time is past the stale threshold, so for the brief case
+    // we just apply the catch-up here.
+    const snap = mountSnapshotRef.current;
+    if (!snap.isRunning || snap.isPaused || !snap.timeLeftAt) return baseValue;
+
+    const elapsedSeconds = Math.floor((Date.now() - snap.timeLeftAt) / 1000);
+    if (elapsedSeconds <= 1 || elapsedSeconds > STALE_TIMER_THRESHOLD_SECONDS) {
+      return baseValue;
+    }
+    return Math.max(0, baseValue - elapsedSeconds);
   });
   
   const [currentSet, setCurrentSet] = useState(() => {
@@ -170,6 +198,9 @@ export const PomodoroProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem('kronos_pomodoro_time_left', timeLeft.toString());
+    // Record when this value was written so a subsequent reload can detect
+    // how long the tab was inactive and decide whether to catch up or reset.
+    localStorage.setItem('kronos_pomodoro_time_left_at', Date.now().toString());
   }, [timeLeft]);
 
   useEffect(() => {
@@ -242,6 +273,38 @@ export const PomodoroProvider = ({ children }) => {
         intervalRef.current = null;
       }
     };
+  }, []);
+
+  // If a running timer was persisted but the tab has been closed long enough
+  // that the recorded session is no longer trustworthy, hard-reset rather than
+  // resume — otherwise we'd silently invent hours of "work" on the next phase
+  // completion (taskStartTime would still point at when the user originally
+  // started, but endTime would be now).
+  useEffect(() => {
+    const snap = mountSnapshotRef.current;
+    if (!snap.isRunning || snap.isPaused || !snap.timeLeftAt) return;
+
+    const elapsedSeconds = Math.floor((Date.now() - snap.timeLeftAt) / 1000);
+    if (elapsedSeconds <= STALE_TIMER_THRESHOLD_SECONDS) return;
+
+    setIsRunning(false);
+    setIsPaused(false);
+    setIsTrackingTask(false);
+    setTaskStartTime(null);
+
+    let phaseDuration;
+    switch (currentPhase) {
+      case 'work': phaseDuration = workDuration * 60; break;
+      case 'shortBreak': phaseDuration = shortBreakDuration * 60; break;
+      case 'longBreak': phaseDuration = longBreakDuration * 60; break;
+      default: phaseDuration = workDuration * 60;
+    }
+    setTimeLeft(phaseDuration);
+
+    const minutes = Math.round(elapsedSeconds / 60);
+    warning(`Pomodoro reset — tab was inactive for ${minutes} minute${minutes === 1 ? '' : 's'}`);
+    // Mount-only: deps intentionally empty so this never re-runs as state evolves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle timer completion
