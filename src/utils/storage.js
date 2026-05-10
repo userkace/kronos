@@ -14,6 +14,37 @@ const STORAGE_KEYS = {
   INVOICE_SETTINGS: 'kronos_invoice_settings'
 };
 
+const CORRUPT_BACKUP_PREFIX = '__kronos_corrupt_';
+
+// When a load function encounters unparseable JSON, copy the raw bytes to a
+// timestamped backup key before falling through to the default. Without this,
+// the next save would silently overwrite real user data with empty defaults.
+const quarantineCorruption = (key, rawValue) => {
+  if (rawValue == null) return;
+  try {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    localStorage.setItem(`${CORRUPT_BACKUP_PREFIX}${key}_${ts}`, rawValue);
+  } catch (e) {
+    console.error('Failed to quarantine corrupt data for', key, e);
+  }
+};
+
+// Enumerate any quarantined corruption blobs so the UI can warn the user.
+export const getCorruptionBackups = () => {
+  const backups = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(CORRUPT_BACKUP_PREFIX)) {
+        backups.push(key);
+      }
+    }
+  } catch (e) {
+    console.error('Error enumerating corruption backups:', e);
+  }
+  return backups;
+};
+
 // Save timesheet data to LocalStorage
 export const saveTimesheetData = (data) => {
   try {
@@ -25,11 +56,13 @@ export const saveTimesheetData = (data) => {
 
 // Load timesheet data from LocalStorage
 export const loadTimesheetData = () => {
+  const stored = localStorage.getItem(STORAGE_KEYS.TIMESHEET_DATA);
+  if (!stored) return {};
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.TIMESHEET_DATA);
-    return stored ? JSON.parse(stored) : {};
+    return JSON.parse(stored);
   } catch (error) {
     console.error('Error loading timesheet data:', error);
+    quarantineCorruption(STORAGE_KEYS.TIMESHEET_DATA, stored);
     return {};
   }
 };
@@ -96,11 +129,13 @@ export const saveWeeklyTimesheet = (data) => {
 
 // Load weekly timesheet data from LocalStorage
 export const loadWeeklyTimesheet = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.WEEKLY_TIMESHEET);
+  if (!data) return {};
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.WEEKLY_TIMESHEET);
-    return data ? JSON.parse(data) : {};
+    return JSON.parse(data);
   } catch (error) {
     console.error('Error loading weekly timesheet data:', error);
+    quarantineCorruption(STORAGE_KEYS.WEEKLY_TIMESHEET, data);
     return {};
   }
 };
@@ -252,11 +287,17 @@ export const saveInvoiceSettings = (settings) => {
 
 // Load invoice settings from LocalStorage
 export const loadInvoiceSettings = () => {
+  const stored = localStorage.getItem(STORAGE_KEYS.INVOICE_SETTINGS);
+  let persistentSettings = {};
+  if (stored) {
+    try {
+      persistentSettings = JSON.parse(stored);
+    } catch (error) {
+      console.error('Error loading invoice settings:', error);
+      quarantineCorruption(STORAGE_KEYS.INVOICE_SETTINGS, stored);
+    }
+  }
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.INVOICE_SETTINGS);
-    const persistentSettings = stored ? JSON.parse(stored) : {};
-    
-    // Return persistent settings with defaults for invoice-specific fields
     return {
       // Persistent settings (loaded from storage)
       userName: persistentSettings.userName || '',
