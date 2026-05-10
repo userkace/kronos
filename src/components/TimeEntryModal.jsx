@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format, addMinutes, differenceInMinutes, parse, isValid, parseISO } from 'date-fns';
+import { format, addMinutes, differenceInMinutes, differenceInCalendarDays, parse, isValid, parseISO } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { 
   Menu, 
@@ -37,6 +37,12 @@ const TimeEntryModal = ({
   const [timezoneMode, setTimezoneMode] = useState('selected'); // 'selected' or 'custom'
   const [entryTimezone, setEntryTimezone] = useState(timezone || 'UTC');
 
+  // Explicit overnight flag. Previously the modal silently flipped end-before-
+  // start to a 24-hour wrap, which turned typos into 23-hour entries. Now the
+  // user has to opt in. The flag is auto-detected from existing entries on
+  // edit so historical overnight shifts still display correctly.
+  const [isOvernight, setIsOvernight] = useState(false);
+
   // Common timezones for dropdown
   const commonTimezones = [
     'UTC',
@@ -62,14 +68,7 @@ const TimeEntryModal = ({
       // Convert UTC storage times to selected timezone for display (HH:mm:ss format)
       const startTimeInTimezone = initialData.startTime ? format(toZonedTime(parseISO(initialData.startTime), timezone), 'HH:mm:ss') : '';
       const endTimeInTimezone = initialData.endTime ? format(toZonedTime(parseISO(initialData.endTime), timezone), 'HH:mm:ss') : '';
-      
-      // Determine the entry date - use stored date if available, otherwise derive from startTime
-      let entryDate = initialData.date;
-      if (!entryDate && initialData.startTime) {
-        // For timer entries without a date field, derive date from startTime in selected timezone
-        entryDate = format(toZonedTime(parseISO(initialData.startTime), timezone), 'yyyy-MM-dd');
-      }
-      
+
       setFormData({
         description: initialData.description || '',
         task: initialData.task || '',
@@ -79,6 +78,17 @@ const TimeEntryModal = ({
         endTime: endTimeInTimezone,
         duration: initialData.duration || ''
       });
+
+      // Detect overnight by comparing the calendar dates (in the display
+      // timezone) of the stored UTC instants. If endTime falls on a later day
+      // than startTime, this entry is overnight.
+      if (initialData.startTime && initialData.endTime) {
+        const startZoned = toZonedTime(parseISO(initialData.startTime), timezone);
+        const endZoned = toZonedTime(parseISO(initialData.endTime), timezone);
+        setIsOvernight(differenceInCalendarDays(endZoned, startZoned) > 0);
+      } else {
+        setIsOvernight(false);
+      }
     } else if (mode === 'add') {
       // Reset form for new entry
       setFormData({
@@ -90,8 +100,9 @@ const TimeEntryModal = ({
         endTime: '',
         duration: ''
       });
+      setIsOvernight(false);
     }
-  }, [initialData, mode]);
+  }, [initialData, mode, timezone]);
 
   // Parse duration string to minutes
   const parseDuration = (durationStr) => {
@@ -118,63 +129,93 @@ const TimeEntryModal = ({
     return `${hours} h ${mins} min`;
   };
 
-  // Calculate duration from start and end times
-  const calculateDuration = (startTime, endTime) => {
+  // Calculate duration from start and end times. Returns '' when end < start
+  // unless the user has explicitly enabled the overnight toggle, so a typo
+  // doesn't silently produce a 23-hour entry.
+  const calculateDuration = (startTime, endTime, overnight) => {
     if (!startTime || !endTime) return '';
-    
+
     try {
       const start = parse(startTime, 'HH:mm:ss', new Date());
       const end = parse(endTime, 'HH:mm:ss', new Date());
-      
+
       if (!isValid(start) || !isValid(end)) return '';
-      
+
       let diffMinutes = differenceInMinutes(end, start);
-      
-      // Handle overnight shifts
+
       if (diffMinutes < 0) {
-        diffMinutes = differenceInMinutes(end, start) + (24 * 60);
+        if (!overnight) return '';
+        diffMinutes += 24 * 60;
       }
-      
+
       return formatDuration(diffMinutes);
     } catch (error) {
       return '';
     }
   };
 
-  // Calculate end time from start time and duration
+  // Calculate end time from start time and duration. When the user types a
+  // duration that wraps past midnight, end time wraps and the overnight flag
+  // is set automatically.
   const calculateEndTime = (startTime, durationStr) => {
-    if (!startTime || !durationStr) return '';
-    
+    if (!startTime || !durationStr) return { endTime: '', overnight: false };
+
     try {
       const start = parse(startTime, 'HH:mm:ss', new Date());
       const durationMinutes = parseDuration(durationStr);
-      
-      if (!isValid(start) || durationMinutes < 0) return '';
-      
+
+      if (!isValid(start) || durationMinutes < 0) return { endTime: '', overnight: false };
+
       const end = addMinutes(start, durationMinutes);
-      return format(end, 'HH:mm:ss');
+      const wraps = differenceInMinutes(end, start) !== durationMinutes;
+      return { endTime: format(end, 'HH:mm:ss'), overnight: wraps };
     } catch (error) {
-      return '';
+      return { endTime: '', overnight: false };
     }
   };
 
   // Handle input changes
   const handleInputChange = (field, value) => {
     const newFormData = { ...formData, [field]: value };
-    
-    // Auto-calculation logic
+    let nextOvernight = isOvernight;
+
     if (field === 'startTime' || field === 'endTime') {
-      const duration = calculateDuration(
-        field === 'startTime' ? value : formData.startTime,
-        field === 'endTime' ? value : formData.endTime
-      );
-      newFormData.duration = duration;
+      const nextStart = field === 'startTime' ? value : formData.startTime;
+      const nextEnd = field === 'endTime' ? value : formData.endTime;
+
+      // Auto-clear the overnight flag when the user re-enters times that no
+      // longer require it. They can still re-toggle for a same-day shift
+      // they explicitly want overnight (rare but allowed).
+      if (nextStart && nextEnd) {
+        try {
+          const s = parse(nextStart, 'HH:mm:ss', new Date());
+          const e = parse(nextEnd, 'HH:mm:ss', new Date());
+          if (isValid(s) && isValid(e) && differenceInMinutes(e, s) >= 0) {
+            nextOvernight = false;
+          }
+        } catch {
+          // ignore: leave nextOvernight unchanged
+        }
+      }
+
+      newFormData.duration = calculateDuration(nextStart, nextEnd, nextOvernight);
     } else if (field === 'duration') {
-      const endTime = calculateEndTime(formData.startTime, value);
+      const { endTime, overnight } = calculateEndTime(formData.startTime, value);
       newFormData.endTime = endTime;
+      if (overnight) nextOvernight = true;
     }
-    
+
+    if (nextOvernight !== isOvernight) setIsOvernight(nextOvernight);
     setFormData(newFormData);
+  };
+
+  // Toggle overnight from the UI checkbox; recompute duration with the new flag.
+  const handleOvernightChange = (next) => {
+    setIsOvernight(next);
+    setFormData(prev => ({
+      ...prev,
+      duration: calculateDuration(prev.startTime, prev.endTime, next),
+    }));
   };
 
   // Handle save
@@ -190,27 +231,39 @@ const TimeEntryModal = ({
       return;
     }
     
-    // Validate time format
+    // Validate time format and end-before-start ordering.
     try {
       const start = parse(formData.startTime, 'HH:mm:ss', new Date());
       const end = parse(formData.endTime, 'HH:mm:ss', new Date());
-      
+
       if (!isValid(start) || !isValid(end)) {
         error('Invalid time format. Please use HH:MM:SS format');
+        return;
+      }
+
+      const diffMinutes = differenceInMinutes(end, start);
+      if (diffMinutes === 0) {
+        error('End time cannot equal start time');
+        return;
+      }
+      if (diffMinutes < 0 && !isOvernight) {
+        error('End time is before start time. Enable "Overnight shift" if this entry crosses midnight.');
         return;
       }
     } catch (err) {
       error('Invalid time format. Please use HH:MM:SS format');
       return;
     }
-    
-    // Pass timezone mode information to parent
+
+    // Pass timezone mode and overnight info to the parent so it can build the
+    // correct UTC start/end (with end on the next day when overnight is set).
     const entryData = {
       ...formData,
       timezoneMode,
-      entryTimezone: timezoneMode === 'custom' ? entryTimezone : timezone
+      entryTimezone: timezoneMode === 'custom' ? entryTimezone : timezone,
+      isOvernight,
     };
-    
+
     onSave(entryData);
   };
 
@@ -463,7 +516,19 @@ const TimeEntryModal = ({
               </div>
             </div>
 
-                      </div>
+            {/* Overnight toggle — required for entries that cross midnight.
+                Without this, end-before-start is rejected on save. */}
+            <label className="flex items-center text-sm text-gray-700 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isOvernight}
+                onChange={(e) => handleOvernightChange(e.target.checked)}
+                className="mr-2"
+              />
+              Overnight shift (end time is on the next day)
+            </label>
+
+          </div>
         </div>
 
         {/* Footer */}
