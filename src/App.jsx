@@ -10,7 +10,6 @@ import InvoicePage from './components/InvoicePage';
 import {
   saveSelectedWeek,
   loadSelectedWeek,
-  saveWeeklyTimesheet,
   loadWeeklyTimesheet,
   saveOnboardingCompleted,
   loadOnboardingCompleted,
@@ -70,12 +69,11 @@ function AppContent() {
     return unsubscribe;
   }, [isInitialized]);
 
-  // Save timesheet data to LocalStorage whenever it changes
-  useEffect(() => {
-    if (Object.keys(timesheetData).length > 0) {
-      saveWeeklyTimesheet(timesheetData);
-    }
-  }, [timesheetData]);
+  // No save-on-state-change effect: weekly data is written directly through
+  // saveWeeklyTimesheet (in writeWeeklyTimesheetForDates and DailyTracker
+  // edit handlers). App.jsx state is a read-only mirror of storage, kept in
+  // sync via the storage event subscription above. A save-on-change effect
+  // here would clobber storage with an empty object on any load failure.
 
   // Save selected week to LocalStorage whenever it changes (but not on initial load)
   useEffect(() => {
