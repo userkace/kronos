@@ -206,41 +206,59 @@ export const PomodoroProvider = ({ children }) => {
     }
   }, [taskStartTime]);
 
-  // Timer countdown logic with tab persistence
+  // Timer countdown. The deps are `[isRunning, isPaused]` only — NOT `timeLeft`
+  // — so the interval is created once per running session instead of being
+  // torn down and recreated every second. The interval callback computes
+  // elapsed seconds from a wall-clock anchor each tick, so throttled-tab
+  // delays (where the browser fires once-per-minute instead of per-second)
+  // catch up correctly: a 60-second-late fire decrements timeLeft by 60.
   useEffect(() => {
-    if (isRunning && !isPaused && timeLeft > 0) {
-      // Calculate elapsed time since last update (handles tab switching)
-      const now = Date.now();
-      const elapsedSinceLastUpdate = Math.floor((now - lastUpdateTimeRef.current) / 1000);
-      lastUpdateTimeRef.current = now;
-
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          const newTime = prev - 1;
-          if (newTime <= 0) {
-            return 0;
-          }
-          return newTime;
-        });
-      }, 1000);
-
-      // Account for time elapsed while tab was inactive
-      if (elapsedSinceLastUpdate > 1) {
-        setTimeLeft(prev => Math.max(0, prev - elapsedSinceLastUpdate));
-      }
-    } else {
+    if (!isRunning || isPaused) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
       lastUpdateTimeRef.current = Date.now();
+      return;
     }
+
+    lastUpdateTimeRef.current = Date.now();
+
+    intervalRef.current = setInterval(() => {
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - lastUpdateTimeRef.current) / 1000);
+      if (elapsedSeconds <= 0) return;
+      lastUpdateTimeRef.current += elapsedSeconds * 1000;
+      setTimeLeft(prev => Math.max(0, prev - elapsedSeconds));
+    }, 1000);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [isRunning, isPaused, timeLeft]);
+  }, [isRunning, isPaused]);
+
+  // When the tab becomes visible again, catch up immediately rather than
+  // waiting for the next (possibly-throttled) interval fire. Same anchor
+  // arithmetic as the interval body — exactly one decrement covers the
+  // hidden-tab gap.
+  useEffect(() => {
+    if (!isRunning || isPaused) return;
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - lastUpdateTimeRef.current) / 1000);
+      if (elapsedSeconds <= 0) return;
+      lastUpdateTimeRef.current += elapsedSeconds * 1000;
+      setTimeLeft(prev => Math.max(0, prev - elapsedSeconds));
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [isRunning, isPaused]);
 
   // Cleanup timer intervals on unmount
   useEffect(() => {
