@@ -15,25 +15,31 @@ import {
   loadOnboardingCompleted,
   saveWeekStart,
   saveTimezone,
-  getCorruptionBackups
+  getCorruptPendingKeys
 } from './utils/storage';
 import storageEventSystem from './utils/storageEvents';
+import { AlertTriangle } from 'lucide-react';
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
-import { ToastProvider, useToast } from './contexts/ToastContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { PomodoroProvider } from './contexts/PomodoroContext';
 import './App.css';
 
 function AppContent() {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { changeWeekStart } = useUserPreferences();
-  const { warning } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
   const [currentView, setCurrentView] = useState('tracker'); // 'tracker', 'timesheet', or 'data'
   const [isInitialized, setIsInitialized] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for refreshing weekly data
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Tracks keys with unresolved corruption. Saves to those keys are refused
+  // by the storage layer; the banner here surfaces it persistently and the
+  // Data Recovery section in Settings resolves it.
+  const [corruptPendingKeys, setCorruptPendingKeys] = useState(() => getCorruptPendingKeys());
+  const recheckCorruption = () => setCorruptPendingKeys(getCorruptPendingKeys());
 
   // Load data from LocalStorage on component mount
   useEffect(() => {
@@ -51,18 +57,9 @@ function AppContent() {
     setShowOnboarding(!hasCompletedOnboarding);
     setIsInitialized(true);
 
-    // Surface any storage corruption that was quarantined during this session's
-    // load functions. The raw blob is preserved under "__kronos_corrupt_*" keys
-    // so the user can recover it from devtools rather than discovering silent
-    // data loss only when totals look wrong.
-    const backups = getCorruptionBackups();
-    if (backups.length > 0) {
-      warning(
-        `Some saved data was unreadable and replaced with defaults. ` +
-        `A backup is preserved in localStorage under: ${backups.join(', ')}`,
-        15000
-      );
-    }
+    // The loadWeeklyTimesheet call above can quarantine new corruption, so
+    // re-read the pending list now that all mount loads have run.
+    setCorruptPendingKeys(getCorruptPendingKeys());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -133,51 +130,70 @@ function AppContent() {
     setShowOnboarding(false);
   };
 
+  const corruptionBanner = corruptPendingKeys.length > 0 ? (
+    <button
+      type="button"
+      onClick={() => setCurrentView('settings')}
+      className="sticky top-0 z-40 w-full flex items-center gap-3 px-4 py-3 bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors text-left"
+    >
+      <AlertTriangle className="w-5 h-5 shrink-0" />
+      <span className="flex-1">
+        {corruptPendingKeys.length === 1
+          ? `Corrupt data detected on load. Saves to "${corruptPendingKeys[0]}" are paused until you resolve it.`
+          : `Corrupt data detected on load. Saves to ${corruptPendingKeys.length} storage keys are paused until you resolve them.`}
+      </span>
+      <span className="underline whitespace-nowrap">Open Data Recovery →</span>
+    </button>
+  ) : null;
+
   return (
     <>
       {showOnboarding ? (
-        <Onboarding 
+        <Onboarding
           onComplete={handleOnboardingComplete}
           initialTimezone={selectedTimezone}
         />
       ) : (
-        <AppLayout
-          currentView={currentView}
-          onViewChange={setCurrentView}
-        >
-          {currentView === 'tracker' ? (
-            // Daily Tracker View
-            <DailyTracker
-              timezone={selectedTimezone}
-              onTimezoneChange={changeTimezone}
-              onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
-            />
-          ) : currentView === 'pomodoro' ? (
-            // Pomodoro Timer View
-            <PomodoroTimer />
-          ) : currentView === 'timesheet' ? (
-            // Weekly Timesheet View
-            <div className="p-6 max-w-7xl mx-auto">
-              <TimesheetTable
-                currentDate={currentDate}
-                timesheetData={timesheetData}
+        <>
+          {corruptionBanner}
+          <AppLayout
+            currentView={currentView}
+            onViewChange={setCurrentView}
+          >
+            {currentView === 'tracker' ? (
+              // Daily Tracker View
+              <DailyTracker
                 timezone={selectedTimezone}
-                onWeekChange={handleWeekChange}
+                onTimezoneChange={changeTimezone}
+                onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
               />
-            </div>
-          ) : currentView === 'invoice' ? (
-            // Invoice Generator View
-            <InvoicePage />
-          ) : currentView === 'settings' ? (
-            // Settings View
-            <Settings />
-          ) : (
-            // Data Management View
-            <div className="p-6">
-              <DataImportExport onImportSuccess={handleImportSuccess} />
-            </div>
-          )}
-        </AppLayout>
+            ) : currentView === 'pomodoro' ? (
+              // Pomodoro Timer View
+              <PomodoroTimer />
+            ) : currentView === 'timesheet' ? (
+              // Weekly Timesheet View
+              <div className="p-6 max-w-7xl mx-auto">
+                <TimesheetTable
+                  currentDate={currentDate}
+                  timesheetData={timesheetData}
+                  timezone={selectedTimezone}
+                  onWeekChange={handleWeekChange}
+                />
+              </div>
+            ) : currentView === 'invoice' ? (
+              // Invoice Generator View
+              <InvoicePage />
+            ) : currentView === 'settings' ? (
+              // Settings View
+              <Settings onCorruptionResolved={recheckCorruption} />
+            ) : (
+              // Data Management View
+              <div className="p-6">
+                <DataImportExport onImportSuccess={handleImportSuccess} />
+              </div>
+            )}
+          </AppLayout>
+        </>
       )}
     </>
   );

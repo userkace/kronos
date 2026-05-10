@@ -15,42 +15,164 @@ const STORAGE_KEYS = {
 };
 
 const CORRUPT_BACKUP_PREFIX = '__kronos_corrupt_';
+const CORRUPT_PENDING_KEY = '__kronos_corrupt_pending';
+
+// Read the set of original-keys that have unresolved corruption. Saves to any
+// key in this set are refused so we don't overwrite the user's quarantined
+// blob with whatever default the app would otherwise produce.
+const readPendingSet = () => {
+  try {
+    const raw = localStorage.getItem(CORRUPT_PENDING_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const writePendingSet = (set) => {
+  try {
+    if (set.size === 0) {
+      localStorage.removeItem(CORRUPT_PENDING_KEY);
+    } else {
+      localStorage.setItem(CORRUPT_PENDING_KEY, JSON.stringify([...set]));
+    }
+  } catch (e) {
+    console.error('Failed to update corruption pending set:', e);
+  }
+};
+
+const isKeyCorruptPending = (key) => readPendingSet().has(key);
 
 // When a load function encounters unparseable JSON, copy the raw bytes to a
-// timestamped backup key before falling through to the default. Without this,
-// the next save would silently overwrite real user data with empty defaults.
+// timestamped backup key and mark the original key as pending so subsequent
+// saves can't clobber what's left.
 const quarantineCorruption = (key, rawValue) => {
   if (rawValue == null) return;
   try {
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
     localStorage.setItem(`${CORRUPT_BACKUP_PREFIX}${key}_${ts}`, rawValue);
+    const pending = readPendingSet();
+    pending.add(key);
+    writePendingSet(pending);
   } catch (e) {
     console.error('Failed to quarantine corrupt data for', key, e);
   }
 };
 
-// Enumerate any quarantined corruption blobs so the UI can warn the user.
-export const getCorruptionBackups = () => {
+// Enumerate the keys that need user resolution before saves can resume.
+export const getCorruptPendingKeys = () => [...readPendingSet()];
+
+// Enumerate every quarantine backup with metadata for the recovery UI.
+// A single original key may have multiple backups if corruption recurs.
+export const getCorruptionBackupsDetailed = () => {
   const backups = [];
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith(CORRUPT_BACKUP_PREFIX)) {
-        backups.push(key);
-      }
+      if (!key || !key.startsWith(CORRUPT_BACKUP_PREFIX)) continue;
+
+      const rest = key.slice(CORRUPT_BACKUP_PREFIX.length);
+      // Backup keys look like: __kronos_corrupt_<originalKey>_<isoTimestamp>.
+      // Split on the LAST underscore-block that looks like a timestamp.
+      const tsMatch = rest.match(/_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d+Z)$/);
+      const originalKey = tsMatch ? rest.slice(0, -tsMatch[0].length) : rest;
+      const timestamp = tsMatch ? tsMatch[1].replace(/-/g, ':').replace('T', ' ').slice(0, 19) : null;
+      const raw = localStorage.getItem(key) || '';
+
+      backups.push({
+        backupKey: key,
+        originalKey,
+        timestamp,
+        sizeBytes: raw.length,
+      });
     }
   } catch (e) {
     console.error('Error enumerating corruption backups:', e);
   }
-  return backups;
+  return backups.sort((a, b) => a.backupKey.localeCompare(b.backupKey));
+};
+
+// Read the raw stored bytes for a quarantine backup so callers can download
+// them as a blob.
+export const getQuarantineRaw = (backupKey) => {
+  try {
+    return localStorage.getItem(backupKey);
+  } catch (e) {
+    console.error('Failed to read quarantine raw bytes:', e);
+    return null;
+  }
+};
+
+// Replace the original key's value with the contents of a quarantine backup.
+// Validates that the backup parses as JSON before overwriting, otherwise the
+// recovery would re-corrupt the original. Returns true on success.
+export const restoreFromQuarantine = (backupKey) => {
+  try {
+    const raw = localStorage.getItem(backupKey);
+    if (raw == null) return false;
+    JSON.parse(raw); // throws if still unparseable
+
+    const rest = backupKey.slice(CORRUPT_BACKUP_PREFIX.length);
+    const tsMatch = rest.match(/_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d+Z)$/);
+    const originalKey = tsMatch ? rest.slice(0, -tsMatch[0].length) : rest;
+
+    localStorage.setItem(originalKey, raw);
+    localStorage.removeItem(backupKey);
+
+    const pending = readPendingSet();
+    pending.delete(originalKey);
+    writePendingSet(pending);
+    return true;
+  } catch (e) {
+    console.error('Restore from quarantine failed:', e);
+    return false;
+  }
+};
+
+// Drop a quarantine backup AND clear the pending flag for its original key.
+// Used when the user has decided to start fresh and abandon the corrupt blob.
+export const discardQuarantine = (backupKey) => {
+  try {
+    const rest = backupKey.slice(CORRUPT_BACKUP_PREFIX.length);
+    const tsMatch = rest.match(/_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d+Z)$/);
+    const originalKey = tsMatch ? rest.slice(0, -tsMatch[0].length) : rest;
+
+    localStorage.removeItem(backupKey);
+
+    // Only clear pending if no other backup for this key remains; recurrent
+    // corruption shouldn't be silently un-flagged.
+    const stillHasBackup = getCorruptionBackupsDetailed().some(
+      b => b.originalKey === originalKey
+    );
+    if (!stillHasBackup) {
+      const pending = readPendingSet();
+      pending.delete(originalKey);
+      writePendingSet(pending);
+    }
+    return true;
+  } catch (e) {
+    console.error('Discard quarantine failed:', e);
+    return false;
+  }
 };
 
 // Save timesheet data to LocalStorage
 export const saveTimesheetData = (data) => {
+  if (isKeyCorruptPending(STORAGE_KEYS.TIMESHEET_DATA)) {
+    console.warn(
+      'Refused saveTimesheetData: corruption pending for ' +
+      STORAGE_KEYS.TIMESHEET_DATA + '. Resolve in Settings → Data Recovery.'
+    );
+    return false;
+  }
   try {
     localStorage.setItem(STORAGE_KEYS.TIMESHEET_DATA, JSON.stringify(data));
+    return true;
   } catch (error) {
     console.error('Error saving timesheet data:', error);
+    return false;
   }
 };
 
@@ -120,10 +242,19 @@ export const clearAllData = () => {
 
 // Save weekly timesheet data to LocalStorage
 export const saveWeeklyTimesheet = (data) => {
+  if (isKeyCorruptPending(STORAGE_KEYS.WEEKLY_TIMESHEET)) {
+    console.warn(
+      'Refused saveWeeklyTimesheet: corruption pending for ' +
+      STORAGE_KEYS.WEEKLY_TIMESHEET + '. Resolve in Settings → Data Recovery.'
+    );
+    return false;
+  }
   try {
     localStorage.setItem(STORAGE_KEYS.WEEKLY_TIMESHEET, JSON.stringify(data));
+    return true;
   } catch (error) {
     console.error('Error saving weekly timesheet data:', error);
+    return false;
   }
 };
 
@@ -267,6 +398,13 @@ export const loadShowBreaks = () => {
 
 // Save invoice settings to LocalStorage (only persistent settings, not invoice-specific data)
 export const saveInvoiceSettings = (settings) => {
+  if (isKeyCorruptPending(STORAGE_KEYS.INVOICE_SETTINGS)) {
+    console.warn(
+      'Refused saveInvoiceSettings: corruption pending for ' +
+      STORAGE_KEYS.INVOICE_SETTINGS + '. Resolve in Settings → Data Recovery.'
+    );
+    return false;
+  }
   try {
     // Only save business info, client info, rate, and currency
     // Exclude invoice number and dates as these change per invoice
@@ -280,8 +418,10 @@ export const saveInvoiceSettings = (settings) => {
       currency: settings.currency
     };
     localStorage.setItem(STORAGE_KEYS.INVOICE_SETTINGS, JSON.stringify(persistentSettings));
+    return true;
   } catch (error) {
     console.error('Error saving invoice settings:', error);
+    return false;
   }
 };
 

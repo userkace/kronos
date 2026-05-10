@@ -4,15 +4,79 @@ import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
 import {
-  saveOnboardingCompleted,
-  clearAllData
+  clearAllData,
+  getCorruptionBackupsDetailed,
+  getQuarantineRaw,
+  restoreFromQuarantine,
+  discardQuarantine,
 } from '../utils/storage';
-import { Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon } from 'lucide-react';
+import {
+  Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
+  AlertTriangle, Download, RefreshCcw, X
+} from 'lucide-react';
 
-const Settings = () => {
+const formatBytes = (n) => {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const Settings = ({ onCorruptionResolved }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { weekStart, changeWeekStart, clockFormat, changeClockFormat } = useUserPreferences();
   const { success, error, warning } = useToast();
+  const [backups, setBackups] = useState(() => getCorruptionBackupsDetailed());
+
+  const refreshBackups = () => {
+    setBackups(getCorruptionBackupsDetailed());
+    if (onCorruptionResolved) onCorruptionResolved();
+  };
+
+  const handleDownloadBackup = (backup) => {
+    const raw = getQuarantineRaw(backup.backupKey);
+    if (raw == null) {
+      error('Backup contents could not be read');
+      return;
+    }
+    const blob = new Blob([raw], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${backup.backupKey}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    success('Backup downloaded');
+  };
+
+  const handleRestoreBackup = (backup) => {
+    if (!window.confirm(
+      `Restore "${backup.originalKey}" from this backup?\n\n` +
+      `The current value (defaulted after the failed load) will be replaced ` +
+      `with the quarantined contents. The backup will then be removed.`
+    )) return;
+    const ok = restoreFromQuarantine(backup.backupKey);
+    if (ok) {
+      success(`Restored ${backup.originalKey} — reloading…`);
+      // A reload is the cleanest way to ensure all in-memory state reflects
+      // the freshly-restored value rather than the previously-defaulted one.
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      error('Restore failed: backup is still unparseable. Try Download to inspect manually.');
+    }
+  };
+
+  const handleDiscardBackup = (backup) => {
+    if (!window.confirm(
+      `Discard the backup for "${backup.originalKey}"?\n\n` +
+      `The quarantined data will be permanently deleted and the app will ` +
+      `continue with empty defaults for this key. This cannot be undone.`
+    )) return;
+    discardQuarantine(backup.backupKey);
+    refreshBackups();
+    warning('Backup discarded');
+  };
 
   const [timezone, setTimezone] = useState(selectedTimezone);
   const [weekStartValue, setWeekStartValue] = useState(weekStart);
@@ -92,6 +156,68 @@ const Settings = () => {
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Settings</h3>
 
       <div className="space-y-6">
+        {/* Data Recovery — only rendered when there are quarantined backups. */}
+        {backups.length > 0 && (
+          <div className="border-2 border-amber-300 rounded-lg p-4 bg-amber-50">
+            <div className="flex items-center space-x-3 mb-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <h4 className="font-semibold text-amber-900">Data Recovery</h4>
+            </div>
+            <p className="text-sm text-amber-800 mb-4">
+              The data below could not be parsed on the last load. Saves to these
+              keys are paused until you decide what to do. Choose Restore to
+              re-import the backup, Download to inspect it manually, or Discard
+              to permanently delete it and start fresh.
+            </p>
+
+            <div className="space-y-3">
+              {backups.map(backup => (
+                <div
+                  key={backup.backupKey}
+                  className="bg-white border border-amber-200 rounded-lg p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-mono text-sm text-gray-900 break-all">
+                        {backup.originalKey}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {backup.timestamp
+                          ? `Quarantined ${backup.timestamp} UTC · `
+                          : ''}
+                        {formatBytes(backup.sizeBytes)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <button
+                      onClick={() => handleDownloadBackup(backup)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </button>
+                    <button
+                      onClick={() => handleRestoreBackup(backup)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                    >
+                      <RefreshCcw className="w-4 h-4" />
+                      Restore
+                    </button>
+                    <button
+                      onClick={() => handleDiscardBackup(backup)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-md transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Timezone Settings */}
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center space-x-3 mb-4">
