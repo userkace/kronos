@@ -306,10 +306,10 @@ export const PomodoroProvider = ({ children }) => {
   // doesn't have to depend on its identity. Without this, listing it in deps
   // would re-fire the effect every render (its useCallback deps churn), and
   // omitting it leaves an ESLint warning + risk of calling a stale closure.
+  // The ref is sync'd in a useEffect declared AFTER handlePhaseComplete (a
+  // const declaration further down) — placing it here would hit the temporal
+  // dead zone for the deps array.
   const handlePhaseCompleteRef = useRef(null);
-  useEffect(() => {
-    handlePhaseCompleteRef.current = handlePhaseComplete;
-  }, [handlePhaseComplete]);
 
   // Single-fire guard. Even though the natural state flow only writes 0 to
   // timeLeft once per phase, React StrictMode double-invokes effects in dev
@@ -437,6 +437,13 @@ export const PomodoroProvider = ({ children }) => {
       setIsPaused(false);
     }
   }, [currentPhase, currentSet, totalSets, completedSets, isTrackingTask, currentTask, taskStartTime, selectedTimezone, autoStartBreaks, autoStartWork, workDuration, shortBreakDuration, longBreakDuration, success]);
+
+  // Sync the ref to the latest handlePhaseComplete. Declared here (after
+  // the useCallback above) to avoid a temporal-dead-zone error on the deps
+  // array if it were placed earlier.
+  useEffect(() => {
+    handlePhaseCompleteRef.current = handlePhaseComplete;
+  }, [handlePhaseComplete]);
 
   // Update total time when phase or settings change
   useEffect(() => {
