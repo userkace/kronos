@@ -252,8 +252,146 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
         </div>
       </div>
 
-      {/* Timesheet Table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+      {/* Mobile: stacked card-per-day. The wide table below is squeezed to
+          unreadability on phones, so under sm: we render the same fields
+          one day at a time. Both layouts share the same handlers and state. */}
+      <div className="sm:hidden space-y-3">
+        {weekDays.map((day, index) => {
+          const dayKey = getStorageDateKey(day);
+          const dayData = localData[dayKey] || {};
+          const dayTotal = calculateDayTotal(
+            dayData.timeIn,
+            dayData.timeOut,
+            dayData.breakHours
+          );
+          const dayNames = userWeekStart === 'sunday'
+            ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+            : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          const isWeekend = index >= 5;
+
+          return (
+            <div
+              key={dayKey}
+              className={`rounded-lg border border-gray-200 shadow-sm ${
+                isWeekend ? 'bg-gray-50' : 'bg-white'
+              }`}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                <div className="text-sm font-semibold text-gray-900">
+                  {dayNames[index]}, {format(day, 'MMM d')}
+                </div>
+                <div className="text-sm font-mono text-gray-700 tabular-nums">
+                  {dayTotal.toFixed(2)} h
+                </div>
+              </div>
+
+              <div className="p-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    Tasks
+                  </label>
+                  <input
+                    type="text"
+                    value={dayData.tasks || ''}
+                    onChange={(e) => handleInputChange(dayKey, 'tasks', e.target.value)}
+                    placeholder="Enter tasks..."
+                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    Work Details
+                  </label>
+                  <input
+                    type="text"
+                    value={dayData.workDetails || ''}
+                    onChange={(e) => handleInputChange(dayKey, 'workDetails', e.target.value)}
+                    onClick={() => handleCopyToClipboard(dayData.workDetails, `${dayKey}-workDetails`)}
+                    placeholder="Describe work done..."
+                    className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      copiedField === `${dayKey}-workDetails`
+                        ? 'bg-green-100 border-green-400'
+                        : 'border-gray-300'
+                    }`}
+                    title="Click to copy"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                      Time In
+                    </label>
+                    <input
+                      type="time"
+                      step="1"
+                      value={dayData.timeIn || ''}
+                      onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
+                      onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
+                      className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                        copiedField === `${dayKey}-timeIn`
+                          ? 'bg-green-100 border-green-400'
+                          : 'border-gray-300'
+                      }`}
+                      title="Click to copy"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                      Time Out
+                    </label>
+                    <input
+                      type="time"
+                      step="1"
+                      value={dayData.timeOut || ''}
+                      onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
+                      onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
+                      className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                        copiedField === `${dayKey}-timeOut`
+                          ? 'bg-green-100 border-green-400'
+                          : 'border-gray-300'
+                      }`}
+                      title="Click to copy"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    Break Hours
+                  </label>
+                  <input
+                    type="number"
+                    value={dayData.breakHours || '0'}
+                    onChange={(e) => handleInputChange(dayKey, 'breakHours', e.target.value)}
+                    onClick={() => handleCopyToClipboard(dayData.breakHours, `${dayKey}-breakHours`)}
+                    min="0"
+                    max="24"
+                    step="0.5"
+                    className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      copiedField === `${dayKey}-breakHours`
+                        ? 'bg-green-100 border-green-400'
+                        : 'border-gray-300'
+                    }`}
+                    title="Click to copy"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="rounded-lg border border-gray-200 shadow-sm bg-gray-100 px-4 py-3 flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-900">Grand Total</span>
+          <span className="text-sm font-mono font-semibold text-gray-900 tabular-nums">
+            {calculateGrandTotal().toFixed(2)} h
+          </span>
+        </div>
+      </div>
+
+      {/* Desktop / tablet: original wide table */}
+      <div className="hidden sm:block overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
       <table className="min-w-full bg-white overflow-hidden">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
