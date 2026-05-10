@@ -1,5 +1,20 @@
 import { Sparkles, X } from 'lucide-react';
+import { format, parse, isValid } from 'date-fns';
 import { CHANGE_TYPES } from '../data/changelog';
+
+// Format a yyyy-MM-dd string as "Month Day, Year" without crossing a timezone
+// boundary (parseISO would treat the value as UTC midnight, which can shift
+// the displayed day in west-of-UTC zones). On unparseable input we fall back
+// to the raw string so the modal never blanks out.
+const formatChangelogDate = (raw) => {
+  if (!raw) return '';
+  try {
+    const d = parse(raw, 'yyyy-MM-dd', new Date());
+    return isValid(d) ? format(d, 'MMMM d, yyyy') : raw;
+  } catch {
+    return raw;
+  }
+};
 
 const TONE_CLASSES = {
   green: 'bg-green-100 text-green-800',
@@ -49,7 +64,7 @@ const ChangelogModal = ({ entries, onDismiss }) => {
                 <h3 className="text-base font-semibold text-gray-900">
                   {entry.title}
                 </h3>
-                <span className="text-xs text-gray-500">{entry.date}</span>
+                <span className="text-xs text-gray-500">{formatChangelogDate(entry.date)}</span>
               </header>
               <ul className="space-y-2">
                 {entry.changes.map((change, idx) => (

@@ -80,16 +80,20 @@ function AppContent() {
     // re-read the pending list now that all mount loads have run.
     setCorruptPendingKeys(getCorruptPendingKeys());
 
-    // Decide whether to surface "What's new".
+    // Decide whether to surface "What's new". Versions are now arbitrary
+    // strings; comparison is plain equality, so any mismatch with the
+    // current `latestVersion` counts as "there's something new".
     //
     //   - Fresh install (lastSeen == null && !onboarded): onboarding handles
     //     the welcome experience. Seed silently to the latest version so the
     //     modal doesn't pop on top of the onboarding flow.
     //   - Existing user, pre-changelog upgrade (lastSeen == null && onboarded):
-    //     they've been using the app but never had the changelog feature.
-    //     Show them every entry — getChangesSince(0) returns the full log.
-    //   - Existing user, new release (0 < lastSeen < latest && onboarded):
-    //     show only entries newer than what they've seen.
+    //     they've been using the app but never had the changelog feature —
+    //     getChangesSince(null) returns the full log.
+    //   - Existing user, new release (lastSeen !== latestVersion && onboarded):
+    //     show only entries newer than what they've seen. If the stored value
+    //     is unrecognized (e.g. a legacy numeric '2'), getChangesSince also
+    //     returns the full log.
     //   - Onboarding incomplete for any other reason: suppress until the
     //     next reload after onboarding completes.
     //
@@ -98,7 +102,7 @@ function AppContent() {
     const latestVersion = getLatestChangelogVersion();
     if (lastSeen == null && !hasCompletedOnboarding) {
       saveChangelogLastSeenVersion(latestVersion);
-    } else if (hasCompletedOnboarding && (lastSeen ?? 0) < latestVersion) {
+    } else if (hasCompletedOnboarding && latestVersion != null && lastSeen !== latestVersion) {
       setChangelogEntries(getChangesSince(lastSeen));
       setHasUnseenChangelog(true);
     }

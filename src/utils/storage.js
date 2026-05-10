@@ -540,14 +540,14 @@ export const loadInvoiceSettings = () => {
 // Persistence for the "What's new" modal trigger.
 //
 // Returns null when nothing has been recorded — callers MUST distinguish that
-// from "version 0", because we use `null` as the signal that this is a fresh
-// install that should be seeded silently rather than greeted with the modal.
+// from "any other value", because we use `null` as the signal that this is a
+// fresh install that should be seeded silently rather than greeted with the
+// modal. The value is now a free-form version string (e.g. '0.21.1') chosen
+// by whoever maintains src/data/changelog.js — comparison is string equality.
 export const loadChangelogLastSeenVersion = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.CHANGELOG_LAST_SEEN);
-    if (raw == null) return null;
-    const n = parseInt(raw, 10);
-    return Number.isNaN(n) ? null : n;
+    return raw == null ? null : String(raw);
   } catch (e) {
     console.error('Error loading changelog last-seen version:', e);
     return null;
@@ -556,6 +556,7 @@ export const loadChangelogLastSeenVersion = () => {
 
 export const saveChangelogLastSeenVersion = (version) => {
   try {
+    if (version == null) return;
     localStorage.setItem(STORAGE_KEYS.CHANGELOG_LAST_SEEN, String(version));
   } catch (e) {
     console.error('Error saving changelog last-seen version:', e);

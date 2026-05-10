@@ -1,14 +1,17 @@
 // Single source of truth for the "What's new" modal.
 //
 // HOW TO ADD A RELEASE:
-//   1. Insert a NEW entry at the TOP of CHANGELOG.
-//   2. Set `version` to the previous max + 1 (monotonic — never reuse).
+//   1. Insert a NEW entry at the TOP of CHANGELOG (newest first — the array
+//      order is what determines "newer than lastSeen").
+//   2. Set `version` to a unique STRING. Format is up to you (semver, dates,
+//      whatever); the modal logic only checks string equality with the
+//      user's stored last-seen value.
 //   3. Set `date` (yyyy-MM-dd) and a short `title`.
 //   4. List `changes` with one of: 'added' | 'fixed' | 'changed' | 'removed'.
 //
-// The modal pops when localStorage's lastSeenVersion < the highest version here.
-// Brand-new installs are seeded at the highest version so the first user
-// experience is the onboarding flow, not a wall of changelog.
+// The modal pops when localStorage's lastSeenVersion !== the latest version
+// here (string equality). Brand-new installs are seeded at the latest version
+// so the first user experience is the onboarding flow, not a wall of changelog.
 
 export const CHANGE_TYPES = {
   added: { label: 'New', tone: 'green' },
@@ -20,7 +23,7 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
-    version: 2,
+    version: '0.2.0',
     date: '2026-05-11',
     title: 'Inline editing, Undo system, Reports view & Mobile timesheet redesign',
     changes: [
@@ -34,10 +37,11 @@ export const CHANGELOG = [
       { type: 'fixed', description: 'Edit modal time validation now compares seconds, not minutes — sub-minute differences (e.g. 09:00:30 → 09:00:45) no longer falsely trigger the "end equals start" toast.' },
       { type: 'changed', description: 'Weekly Timesheet now uses a stacked card-per-day layout on phone-sized screens. The wide table still appears on tablet and up.' },
       { type: 'changed', description: 'Merging duplicates no longer requires a confirm prompt — Undo replaces it.' },
+      { type: 'changed', description: 'Release dates in the "What\'s new" modal now render as "Month Day, Year" (e.g. "May 11, 2026") instead of the raw yyyy-MM-dd source string.' },
     ],
   },
   {
-    version: 1,
+    version: '0.1.0',
     date: '2026-05-11',
     title: 'Data integrity, accuracy & stability foundation',
     changes: [
@@ -78,12 +82,22 @@ export const CHANGELOG = [
   },
 ];
 
-// Highest version present. Returns 0 when the changelog is empty.
+// Latest version string. By convention the first entry in CHANGELOG, since
+// the file is newest-first. Returns null when the changelog is empty.
 export const getLatestChangelogVersion = () =>
-  CHANGELOG.reduce((max, entry) => Math.max(max, entry.version), 0);
+  CHANGELOG.length > 0 ? CHANGELOG[0].version : null;
 
-// All entries with a version strictly greater than the given one, newest first.
-export const getChangesSince = (lastSeenVersion) =>
-  CHANGELOG
-    .filter(entry => entry.version > (lastSeenVersion ?? 0))
-    .sort((a, b) => b.version - a.version);
+// All entries newer than `lastSeen`. We walk CHANGELOG (newest-first) and
+// stop the first time we hit an entry whose version equals `lastSeen` —
+// every entry before that point is "new". When `lastSeen` is null/missing
+// or doesn't match any entry (e.g. legacy numeric values), we return the
+// full log so the user catches up.
+export const getChangesSince = (lastSeen) => {
+  if (lastSeen == null) return [...CHANGELOG];
+  const entries = [];
+  for (const entry of CHANGELOG) {
+    if (entry.version === lastSeen) break;
+    entries.push(entry);
+  }
+  return entries;
+};
