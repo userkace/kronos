@@ -9,7 +9,9 @@ import {
   loadShowBreaks,
   saveShowBreaks,
   loadDailyHourGoal,
-  saveDailyHourGoal
+  saveDailyHourGoal,
+  loadWeekendDays,
+  saveWeekendDays
 } from '../utils/storage';
 
 const UserPreferencesContext = createContext();
@@ -28,6 +30,7 @@ export const UserPreferencesProvider = ({ children }) => {
   const [sortOrder, setSortOrder] = useState('desc');
   const [showBreaks, setShowBreaks] = useState(true);
   const [dailyHourGoal, setDailyHourGoal] = useState(8);
+  const [weekendDays, setWeekendDays] = useState([0, 6]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load preferences from localStorage on mount
@@ -37,6 +40,7 @@ export const UserPreferencesProvider = ({ children }) => {
     setSortOrder(loadSortOrder());
     setShowBreaks(loadShowBreaks());
     setDailyHourGoal(loadDailyHourGoal());
+    setWeekendDays(loadWeekendDays());
     setIsInitialized(true);
   }, []);
 
@@ -65,6 +69,11 @@ export const UserPreferencesProvider = ({ children }) => {
     if (isInitialized) saveDailyHourGoal(dailyHourGoal);
   }, [dailyHourGoal, isInitialized]);
 
+  // Save weekend days to localStorage whenever they change (but not on initial load)
+  useEffect(() => {
+    if (isInitialized) saveWeekendDays(weekendDays);
+  }, [weekendDays, isInitialized]);
+
   const changeWeekStart = (newWeekStart) => setWeekStart(newWeekStart);
   const changeClockFormat = (newClockFormat) => setClockFormat(newClockFormat);
   const changeSortOrder = (newSortOrder) => setSortOrder(newSortOrder);
@@ -72,6 +81,15 @@ export const UserPreferencesProvider = ({ children }) => {
   const changeDailyHourGoal = (hours) => {
     const n = Number(hours);
     if (Number.isFinite(n) && n > 0) setDailyHourGoal(n);
+  };
+  const changeWeekendDays = (days) => {
+    if (!Array.isArray(days)) return;
+    const cleaned = Array.from(new Set(
+      days
+        .map(Number)
+        .filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
+    )).sort((a, b) => a - b);
+    setWeekendDays(cleaned);
   };
 
   const value = {
@@ -85,6 +103,8 @@ export const UserPreferencesProvider = ({ children }) => {
     toggleShowBreaks,
     dailyHourGoal,
     changeDailyHourGoal,
+    weekendDays,
+    changeWeekendDays,
   };
 
   return (
