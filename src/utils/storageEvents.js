@@ -91,16 +91,23 @@ class StorageEventSystem {
     this.detectChanges(key, oldValue, newValue);
   }
 
-  // Detect and emit changes for a specific key
+  // Detect and emit changes for a specific key.
+  //
+  // The notification is deferred to a microtask so listeners can't run
+  // synchronously inside the same `localStorage.setItem` call that triggered
+  // them. Without this, a listener that writes back to its subscribed key
+  // would recurse on the caller's stack (potentially infinitely), and any
+  // synchronous listener side-effect would interleave with the caller's
+  // post-write code in surprising ways. Microtask ordering still preserves
+  // the original event sequence — emits fire in the order they were queued.
   detectChanges(key, oldValue, newValue) {
-    // Only emit if the value actually changed
     if (oldValue === newValue) return;
 
-    // Update last known data
     this.lastKnownData.set(key, newValue);
 
-    // Emit custom event for this key
-    this.emit(key, { key, oldValue, newValue });
+    queueMicrotask(() => {
+      this.emit(key, { key, oldValue, newValue });
+    });
   }
 
   // Subscribe to storage changes for a specific key
