@@ -684,9 +684,21 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       isActive: false
     };
 
-    allData[storageKey] = allData[storageKey].map(entry =>
-      entry.id === activeEntry.id ? updatedEntry : entry
+    // The active entry can disappear from storage between the time we loaded it
+    // into local state and now (deleted in another tab, dropped during import,
+    // etc.). If we just .map over the array, no replacement happens and the
+    // tracked time silently vanishes. Recover by pushing the entry instead.
+    const entryExistsInStorage = allData[storageKey].some(
+      entry => entry.id === activeEntry.id
     );
+    if (entryExistsInStorage) {
+      allData[storageKey] = allData[storageKey].map(entry =>
+        entry.id === activeEntry.id ? updatedEntry : entry
+      );
+    } else {
+      allData[storageKey].push(updatedEntry);
+      warning('Active timer was missing from storage; restoring your tracked time');
+    }
 
     // For every day after the start day, emit a segment.
     // Intermediate days span the full day; the last day ends at "now".
