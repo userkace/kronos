@@ -15,10 +15,14 @@ import {
   loadOnboardingCompleted,
   saveWeekStart,
   saveTimezone,
-  getCorruptPendingKeys
+  getCorruptPendingKeys,
+  loadChangelogLastSeenVersion,
+  saveChangelogLastSeenVersion
 } from './utils/storage';
 import storageEventSystem from './utils/storageEvents';
 import { AlertTriangle } from 'lucide-react';
+import ChangelogModal from './components/ChangelogModal';
+import { getLatestChangelogVersion, getChangesSince } from './data/changelog';
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -41,6 +45,15 @@ function AppContent() {
   const [corruptPendingKeys, setCorruptPendingKeys] = useState(() => getCorruptPendingKeys());
   const recheckCorruption = () => setCorruptPendingKeys(getCorruptPendingKeys());
 
+  // "What's new" modal state. Populated on mount with the entries the user
+  // hasn't seen yet; null/empty means nothing to show.
+  const [changelogEntries, setChangelogEntries] = useState([]);
+
+  const dismissChangelog = () => {
+    saveChangelogLastSeenVersion(getLatestChangelogVersion());
+    setChangelogEntries([]);
+  };
+
   // Load data from LocalStorage on component mount
   useEffect(() => {
     const loadedDate = loadSelectedWeek();
@@ -55,6 +68,28 @@ function AppContent() {
     // The loadWeeklyTimesheet call above can quarantine new corruption, so
     // re-read the pending list now that all mount loads have run.
     setCorruptPendingKeys(getCorruptPendingKeys());
+
+    // Decide whether to surface "What's new".
+    //
+    //   - Fresh install (lastSeen == null && !onboarded): onboarding handles
+    //     the welcome experience. Seed silently to the latest version so the
+    //     modal doesn't pop on top of the onboarding flow.
+    //   - Existing user, pre-changelog upgrade (lastSeen == null && onboarded):
+    //     they've been using the app but never had the changelog feature.
+    //     Show them every entry — getChangesSince(0) returns the full log.
+    //   - Existing user, new release (0 < lastSeen < latest && onboarded):
+    //     show only entries newer than what they've seen.
+    //   - Onboarding incomplete for any other reason: suppress until the
+    //     next reload after onboarding completes.
+    //
+    // The JSX render also gates on !showOnboarding as defense-in-depth.
+    const lastSeen = loadChangelogLastSeenVersion();
+    const latestVersion = getLatestChangelogVersion();
+    if (lastSeen == null && !hasCompletedOnboarding) {
+      saveChangelogLastSeenVersion(latestVersion);
+    } else if (hasCompletedOnboarding && (lastSeen ?? 0) < latestVersion) {
+      setChangelogEntries(getChangesSince(lastSeen));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -139,6 +174,16 @@ function AppContent() {
       ) : (
         <>
           {corruptionBanner}
+          {/* Render guard: this branch only runs when !showOnboarding, so the
+              modal cannot appear while the onboarding flow is active. The
+              entries.length check keeps it suppressed when there's nothing
+              new to show. */}
+          {changelogEntries.length > 0 && (
+            <ChangelogModal
+              entries={changelogEntries}
+              onDismiss={dismissChangelog}
+            />
+          )}
           <AppLayout
             currentView={currentView}
             onViewChange={setCurrentView}

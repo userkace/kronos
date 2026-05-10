@@ -11,7 +11,8 @@ const STORAGE_KEYS = {
   SIDEBAR_STATE: 'kronos_sidebar_state',
   SORT_ORDER: 'kronos_sort_order',
   SHOW_BREAKS: 'kronos_show_breaks',
-  INVOICE_SETTINGS: 'kronos_invoice_settings'
+  INVOICE_SETTINGS: 'kronos_invoice_settings',
+  CHANGELOG_LAST_SEEN: 'kronos_changelog_last_seen_version'
 };
 
 const CORRUPT_BACKUP_PREFIX = '__kronos_corrupt_';
@@ -468,5 +469,30 @@ export const loadInvoiceSettings = () => {
       startDate: '',
       endDate: ''
     };
+  }
+};
+
+// Persistence for the "What's new" modal trigger.
+//
+// Returns null when nothing has been recorded — callers MUST distinguish that
+// from "version 0", because we use `null` as the signal that this is a fresh
+// install that should be seeded silently rather than greeted with the modal.
+export const loadChangelogLastSeenVersion = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CHANGELOG_LAST_SEEN);
+    if (raw == null) return null;
+    const n = parseInt(raw, 10);
+    return Number.isNaN(n) ? null : n;
+  } catch (e) {
+    console.error('Error loading changelog last-seen version:', e);
+    return null;
+  }
+};
+
+export const saveChangelogLastSeenVersion = (version) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CHANGELOG_LAST_SEEN, String(version));
+  } catch (e) {
+    console.error('Error saving changelog last-seen version:', e);
   }
 };
