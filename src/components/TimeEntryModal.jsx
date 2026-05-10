@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format, addMinutes, differenceInMinutes, differenceInCalendarDays, parse, isValid, parseISO } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { 
@@ -43,6 +43,13 @@ const TimeEntryModal = ({
   // edit so historical overnight shifts still display correctly.
   const [isOvernight, setIsOvernight] = useState(false);
 
+  // Snapshot of the form's initial state so the close-time dirty check can
+  // compare against the exact same shape and value formats. Previously the
+  // comparison used initialData directly, but initialData.startTime is a UTC
+  // ISO string while formData.startTime is HH:mm:ss — they never matched, so
+  // the "unsaved changes" prompt fired on every modal close.
+  const initialFormSnapshotRef = useRef(null);
+
   // Common timezones for dropdown
   const commonTimezones = [
     'UTC',
@@ -69,7 +76,7 @@ const TimeEntryModal = ({
       const startTimeInTimezone = initialData.startTime ? format(toZonedTime(parseISO(initialData.startTime), timezone), 'HH:mm:ss') : '';
       const endTimeInTimezone = initialData.endTime ? format(toZonedTime(parseISO(initialData.endTime), timezone), 'HH:mm:ss') : '';
 
-      setFormData({
+      const initialState = {
         description: initialData.description || '',
         task: initialData.task || '',
         project: initialData.project || '',
@@ -77,7 +84,9 @@ const TimeEntryModal = ({
         startTime: startTimeInTimezone,
         endTime: endTimeInTimezone,
         duration: initialData.duration || ''
-      });
+      };
+      setFormData(initialState);
+      initialFormSnapshotRef.current = initialState;
 
       // Detect overnight by comparing the calendar dates (in the display
       // timezone) of the stored UTC instants. If endTime falls on a later day
@@ -91,7 +100,7 @@ const TimeEntryModal = ({
       }
     } else if (mode === 'add') {
       // Reset form for new entry
-      setFormData({
+      const blankState = {
         description: '',
         task: '',
         project: '',
@@ -99,7 +108,9 @@ const TimeEntryModal = ({
         startTime: '',
         endTime: '',
         duration: ''
-      });
+      };
+      setFormData(blankState);
+      initialFormSnapshotRef.current = blankState;
       setIsOvernight(false);
     }
   }, [initialData, mode, timezone]);
@@ -274,19 +285,16 @@ const TimeEntryModal = ({
     }
   };
 
-  // Handle close
+  // Handle close. Compare against the snapshot captured when the modal was
+  // initialized — same shape, same value formats — so the prompt only fires
+  // for genuine edits.
   const handleClose = () => {
-    if (mode === 'edit' && 
-        JSON.stringify(formData) !== JSON.stringify({
-          description: initialData?.description || '',
-          task: initialData?.task || '',
-          project: initialData?.project || '',
-          tags: initialData?.tags || '',
-          startTime: initialData?.startTime || '',
-          endTime: initialData?.endTime || '',
-          duration: initialData?.duration || '',
-          date: initialData?.date || format(new Date(), 'yyyy-MM-dd')
-        })) {
+    const snapshot = initialFormSnapshotRef.current;
+    const isDirty = mode === 'edit'
+      && snapshot
+      && JSON.stringify(formData) !== JSON.stringify(snapshot);
+
+    if (isDirty) {
       if (window.confirm('You have unsaved changes. Are you sure you want to close?')) {
         onClose();
       }
