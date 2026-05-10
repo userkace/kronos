@@ -12,8 +12,11 @@ const STORAGE_KEYS = {
   SORT_ORDER: 'kronos_sort_order',
   SHOW_BREAKS: 'kronos_show_breaks',
   INVOICE_SETTINGS: 'kronos_invoice_settings',
-  CHANGELOG_LAST_SEEN: 'kronos_changelog_last_seen_version'
+  CHANGELOG_LAST_SEEN: 'kronos_changelog_last_seen_version',
+  DAILY_HOUR_GOAL: 'kronos_daily_hour_goal'
 };
+
+const DEFAULT_DAILY_HOUR_GOAL = 8;
 
 const CORRUPT_BACKUP_PREFIX = '__kronos_corrupt_';
 const CORRUPT_PENDING_KEY = '__kronos_corrupt_pending';
@@ -374,6 +377,32 @@ export const loadSortOrder = () => {
   } catch (error) {
     console.error('Error loading sort order:', error);
     return 'desc'; // Default to descending on error
+  }
+};
+
+// Save daily hour goal (whole-number hours) to LocalStorage
+export const saveDailyHourGoal = (hours) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DAILY_HOUR_GOAL, JSON.stringify(hours));
+  } catch (error) {
+    console.error('Error saving daily hour goal:', error);
+  }
+};
+
+// Load daily hour goal. Falls back to 8h on missing/corrupt values rather
+// than quarantining — a bad number here is harmless and a fresh default is
+// the best UX for a settings field.
+export const loadDailyHourGoal = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.DAILY_HOUR_GOAL);
+    if (stored == null) return DEFAULT_DAILY_HOUR_GOAL;
+    const parsed = JSON.parse(stored);
+    return typeof parsed === 'number' && Number.isFinite(parsed) && parsed > 0
+      ? parsed
+      : DEFAULT_DAILY_HOUR_GOAL;
+  } catch (error) {
+    console.error('Error loading daily hour goal:', error);
+    return DEFAULT_DAILY_HOUR_GOAL;
   }
 };
 

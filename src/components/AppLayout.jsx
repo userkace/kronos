@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText, Bell } from 'lucide-react';
+import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText, Bell, BarChart3 } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { loadSidebarState, saveSidebarState } from '../utils/storage';
@@ -89,6 +89,12 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
       label: 'Timesheet',
       icon: Calendar,
       description: 'View weekly summary'
+    },
+    {
+      id: 'reports',
+      label: 'Reports',
+      icon: BarChart3,
+      description: 'Trends, streaks & goals'
     },
     {
       id: 'invoice',
@@ -211,6 +217,8 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
                     <Timer className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'timesheet' ? (
                     <Calendar className="w-5 h-5 text-blue-600" />
+                  ) : currentView === 'reports' ? (
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'invoice' ? (
                     <FileText className="w-5 h-5 text-blue-600" />
                   ) : currentView === 'settings' ? (
@@ -224,6 +232,7 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
                     {currentView === 'tracker' ? 'Tracker' :
                      currentView === 'pomodoro' ? 'Pomodoro' :
                      currentView === 'timesheet' ? 'Timesheet' :
+                     currentView === 'reports' ? 'Reports' :
                      currentView === 'invoice' ? 'Invoice' :
                      currentView === 'settings' ? 'Settings' :
                      'Data'}
@@ -235,6 +244,8 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
                       ? 'Stay focused with time management'
                       : currentView === 'timesheet'
                       ? 'View your weekly time summary'
+                      : currentView === 'reports'
+                      ? 'Trends, streaks, and daily goals'
                       : currentView === 'invoice'
                       ? 'Generate professional PDF invoices'
                       : currentView === 'settings'

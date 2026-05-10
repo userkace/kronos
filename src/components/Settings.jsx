@@ -12,7 +12,7 @@ import {
 } from '../utils/storage';
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
-  AlertTriangle, Download, RefreshCcw, X
+  AlertTriangle, Download, RefreshCcw, X, Target
 } from 'lucide-react';
 
 const formatBytes = (n) => {
@@ -23,7 +23,11 @@ const formatBytes = (n) => {
 
 const Settings = ({ onCorruptionResolved }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
-  const { weekStart, changeWeekStart, clockFormat, changeClockFormat } = useUserPreferences();
+  const {
+    weekStart, changeWeekStart,
+    clockFormat, changeClockFormat,
+    dailyHourGoal, changeDailyHourGoal
+  } = useUserPreferences();
   const { success, error, warning } = useToast();
   const [backups, setBackups] = useState(() => getCorruptionBackupsDetailed());
 
@@ -81,8 +85,15 @@ const Settings = ({ onCorruptionResolved }) => {
   const [timezone, setTimezone] = useState(selectedTimezone);
   const [weekStartValue, setWeekStartValue] = useState(weekStart);
   const [clockFormatValue, setClockFormatValue] = useState(clockFormat);
+  const [dailyHourGoalValue, setDailyHourGoalValue] = useState(String(dailyHourGoal));
   const [isResetting, setIsResetting] = useState(false);
   const reloadTimeoutRef = useRef(null);
+
+  // Pull updates from context (e.g. when an outside save changes the goal)
+  // so the local input doesn't go stale.
+  useEffect(() => {
+    setDailyHourGoalValue(String(dailyHourGoal));
+  }, [dailyHourGoal]);
 
   const handleTimezoneChange = (newTimezone) => {
     setTimezone(newTimezone);
@@ -96,11 +107,21 @@ const Settings = ({ onCorruptionResolved }) => {
     setClockFormatValue(newClockFormat);
   };
 
+  const handleDailyHourGoalChange = (raw) => {
+    setDailyHourGoalValue(raw);
+  };
+
   const handleSaveSettings = () => {
     try {
       changeTimezone(timezone);
       changeWeekStart(weekStartValue);
       changeClockFormat(clockFormatValue);
+      const parsedGoal = Number(dailyHourGoalValue);
+      if (!Number.isFinite(parsedGoal) || parsedGoal <= 0 || parsedGoal > 24) {
+        error('Daily hour goal must be between 0 and 24');
+        return;
+      }
+      changeDailyHourGoal(parsedGoal);
       success('Settings saved successfully!');
     } catch (err) {
       error('Failed to save settings');
@@ -264,6 +285,35 @@ const Settings = ({ onCorruptionResolved }) => {
               </select>
               <p className="mt-1 text-sm text-gray-500">
                 Choose which day your week starts on
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Daily Hour Goal */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <Target className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Daily Hour Goal</h4>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="dailyHourGoal" className="block text-sm font-medium text-gray-700 mb-2">
+                Hours per day
+              </label>
+              <input
+                id="dailyHourGoal"
+                type="number"
+                min="0.5"
+                max="24"
+                step="0.5"
+                value={dailyHourGoalValue}
+                onChange={(e) => handleDailyHourGoalChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Target tracked hours per day. Drives the goal ring on the Reports view.
               </p>
             </div>
           </div>

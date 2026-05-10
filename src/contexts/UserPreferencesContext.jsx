@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  loadWeekStart, 
-  saveWeekStart, 
-  loadClockFormat, 
-  saveClockFormat, 
-  loadSortOrder, 
+import {
+  loadWeekStart,
+  saveWeekStart,
+  loadClockFormat,
+  saveClockFormat,
+  loadSortOrder,
   saveSortOrder,
   loadShowBreaks,
-  saveShowBreaks 
+  saveShowBreaks,
+  loadDailyHourGoal,
+  saveDailyHourGoal
 } from '../utils/storage';
 
 const UserPreferencesContext = createContext();
@@ -25,6 +27,7 @@ export const UserPreferencesProvider = ({ children }) => {
   const [clockFormat, setClockFormat] = useState('12hour');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showBreaks, setShowBreaks] = useState(true);
+  const [dailyHourGoal, setDailyHourGoal] = useState(8);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load preferences from localStorage on mount
@@ -33,6 +36,7 @@ export const UserPreferencesProvider = ({ children }) => {
     setClockFormat(loadClockFormat());
     setSortOrder(loadSortOrder());
     setShowBreaks(loadShowBreaks());
+    setDailyHourGoal(loadDailyHourGoal());
     setIsInitialized(true);
   }, []);
 
@@ -56,10 +60,19 @@ export const UserPreferencesProvider = ({ children }) => {
     if (isInitialized) saveShowBreaks(showBreaks);
   }, [showBreaks, isInitialized]);
 
+  // Save daily hour goal to localStorage whenever it changes (but not on initial load)
+  useEffect(() => {
+    if (isInitialized) saveDailyHourGoal(dailyHourGoal);
+  }, [dailyHourGoal, isInitialized]);
+
   const changeWeekStart = (newWeekStart) => setWeekStart(newWeekStart);
   const changeClockFormat = (newClockFormat) => setClockFormat(newClockFormat);
   const changeSortOrder = (newSortOrder) => setSortOrder(newSortOrder);
   const toggleShowBreaks = () => setShowBreaks(prev => !prev);
+  const changeDailyHourGoal = (hours) => {
+    const n = Number(hours);
+    if (Number.isFinite(n) && n > 0) setDailyHourGoal(n);
+  };
 
   const value = {
     weekStart,
@@ -70,6 +83,8 @@ export const UserPreferencesProvider = ({ children }) => {
     changeSortOrder,
     showBreaks,
     toggleShowBreaks,
+    dailyHourGoal,
+    changeDailyHourGoal,
   };
 
   return (
