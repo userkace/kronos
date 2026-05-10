@@ -46,6 +46,7 @@ export const TimezoneProvider = ({ children }) => {
   const value = {
     selectedTimezone,
     changeTimezone,
+    isInitialized,
   };
 
   console.log('TimezoneContext current value:', value);

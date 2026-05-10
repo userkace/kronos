@@ -26,7 +26,7 @@ import faviconManager from '../utils/faviconManager';
 import storageEventSystem from '../utils/storageEvents';
 import { writeWeeklyTimesheetForDates } from '../utils/weeklyTimesheet';
 
-const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
+const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
   const { isRunning: pomodoroIsRunning } = usePomodoro();
   const { getTransition, animations } = useMotionPreferences();
@@ -55,8 +55,10 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     initialData: null
   });
 
-  // Check if timezone is properly initialized
-  const isTimezoneInitialized = timezone && timezone !== 'UTC';
+  // Check if timezone is properly initialized. Use the explicit flag from
+  // TimezoneContext rather than a value-based sentinel — comparing against
+  // 'UTC' would lock out users who legitimately picked UTC as their zone.
+  const isTimezoneInitialized = timezoneInitialized && Boolean(timezone);
 
   // State for calendar view
   const [currentMonth, setCurrentMonth] = useState(new Date());
