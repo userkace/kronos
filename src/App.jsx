@@ -17,6 +17,7 @@ import {
   saveWeekStart,
   saveTimezone
 } from './utils/storage';
+import storageEventSystem from './utils/storageEvents';
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -57,6 +58,17 @@ function AppContent() {
       setTimesheetData(loadedData || {});
     }
   }, [refreshTrigger, isInitialized]);
+
+  // Pick up weekly timesheet writes that don't go through the
+  // onWeeklyTimesheetSave callback (e.g. Pomodoro session auto-save).
+  useEffect(() => {
+    if (!isInitialized) return;
+    const unsubscribe = storageEventSystem.subscribe('kronos_weekly_timesheet', () => {
+      const loadedData = loadWeeklyTimesheet();
+      setTimesheetData(loadedData || {});
+    });
+    return unsubscribe;
+  }, [isInitialized]);
 
   // Save timesheet data to LocalStorage whenever it changes
   useEffect(() => {
