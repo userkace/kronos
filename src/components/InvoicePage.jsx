@@ -44,31 +44,23 @@ const formatCurrency = (amount, currency) => {
   return `${symbols[currency]}${roundedAmount.toFixed(2)}`;
 };
 
-// Utility function for calculating day total hours
+// Utility function for calculating day total hours. Mirrors TimesheetTable's
+// calculation including HH:mm vs HH:mm:ss tolerance — seconds default to 0
+// when absent so legacy entries keep working.
 const calculateDayTotal = (timeIn, timeOut, breakHours) => {
   if (!timeIn || !timeOut) return 0;
 
   try {
-    // Split time strings to get hours and minutes (exactly like TimesheetTable)
-    const [inHours, inMinutes] = timeIn.split(':').map(Number);
-    const [outHours, outMinutes] = timeOut.split(':').map(Number);
+    const [inH = 0, inM = 0, inS = 0] = timeIn.split(':').map(Number);
+    const [outH = 0, outM = 0, outS = 0] = timeOut.split(':').map(Number);
 
-    // Convert to total minutes (exactly like TimesheetTable)
-    const inTotalMinutes = (inHours * 60) + inMinutes;
-    const outTotalMinutes = (outHours * 60) + outMinutes;
+    const inSeconds = (inH * 3600) + (inM * 60) + inS;
+    const outSeconds = (outH * 3600) + (outM * 60) + outS;
 
-    // Calculate difference
-    let totalMinutes = outTotalMinutes - inTotalMinutes;
+    let totalSeconds = outSeconds - inSeconds;
+    if (totalSeconds < 0) totalSeconds += 24 * 3600;
 
-    // Handle overnight shifts
-    if (totalMinutes < 0) {
-      totalMinutes = totalMinutes + (24 * 60);
-    }
-
-    // Convert to hours and subtract break hours (exactly like TimesheetTable)
-    const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
-
-    // Don't allow negative hours (exactly like TimesheetTable)
+    const totalHours = (totalSeconds / 3600) - (parseFloat(breakHours) || 0);
     return Math.max(0, totalHours);
   } catch (error) {
     console.error('Error calculating time:', error);

@@ -129,8 +129,8 @@ export const writeWeeklyTimesheetForDates = (targetDates, timezone) => {
         ...existing,
         tasks: `${completedEntries.length} task(s)`,
         workDetails,
-        timeIn: format(earliestStart, 'HH:mm'),
-        timeOut: format(latestEnd, 'HH:mm'),
+        timeIn: format(earliestStart, 'HH:mm:ss'),
+        timeOut: format(latestEnd, 'HH:mm:ss'),
         breakHours: breakHoursDecimal.toFixed(2)
       };
       weeklyDirty = true;
