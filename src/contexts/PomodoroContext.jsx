@@ -284,10 +284,30 @@ export const PomodoroProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Hold the latest handlePhaseComplete in a ref so the completion effect
+  // doesn't have to depend on its identity. Without this, listing it in deps
+  // would re-fire the effect every render (its useCallback deps churn), and
+  // omitting it leaves an ESLint warning + risk of calling a stale closure.
+  const handlePhaseCompleteRef = useRef(null);
+  useEffect(() => {
+    handlePhaseCompleteRef.current = handlePhaseComplete;
+  }, [handlePhaseComplete]);
+
+  // Single-fire guard. Even though the natural state flow only writes 0 to
+  // timeLeft once per phase, React StrictMode double-invokes effects in dev
+  // and a future code path could write 0 again before the new duration
+  // propagates. Either case would record a duplicate entry without this.
+  const completionHandledRef = useRef(false);
+
   // Handle timer completion
   useEffect(() => {
-    if (timeLeft === 0 && isRunning) {
-      handlePhaseComplete();
+    if (timeLeft === 0 && isRunning && !completionHandledRef.current) {
+      completionHandledRef.current = true;
+      handlePhaseCompleteRef.current?.();
+    } else if (timeLeft > 0) {
+      // Reset the guard once we've left the zero state — a future tick that
+      // hits zero again is a legitimate new completion.
+      completionHandledRef.current = false;
     }
   }, [timeLeft, isRunning]);
 
