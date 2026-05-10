@@ -3,7 +3,7 @@
 // manual add/edit, delete, merge, pomodoro completion) so all of them
 // keep the weekly view in sync.
 
-import { format, parseISO, parse, differenceInMinutes } from 'date-fns';
+import { format, parseISO, parse, differenceInSeconds } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import {
   loadTimesheetData,
@@ -14,31 +14,26 @@ import {
 const mergeOverlappingPeriods = (entries, timezone) => {
   if (entries.length === 0) return [];
 
-  const periods = entries.map(entry => {
-    const start = toZonedTime(parseISO(entry.startTime), timezone);
-    const end = toZonedTime(parseISO(entry.endTime), timezone);
-
-    const normalizedStart = new Date(start);
-    normalizedStart.setSeconds(0, 0);
-
-    const normalizedEnd = new Date(end);
-    normalizedEnd.setSeconds(0, 0);
-
-    return { start: normalizedStart, end: normalizedEnd };
-  });
+  // Use full-precision timestamps. Previously this floored each entry to the
+  // minute via setSeconds(0, 0), which on a many-entry day drifted the total
+  // by minutes due to accumulated truncation.
+  const periods = entries.map(entry => ({
+    start: toZonedTime(parseISO(entry.startTime), timezone),
+    end: toZonedTime(parseISO(entry.endTime), timezone),
+  }));
 
   periods.sort((a, b) => a.start - b.start);
 
   const merged = [];
-  let current = periods[0];
+  let current = { ...periods[0] };
 
   for (let i = 1; i < periods.length; i++) {
     const next = periods[i];
     if (next.start <= current.end) {
-      current.end = new Date(Math.max(current.end, next.end));
+      current.end = new Date(Math.max(current.end.getTime(), next.end.getTime()));
     } else {
       merged.push(current);
-      current = next;
+      current = { ...next };
     }
   }
   merged.push(current);
@@ -99,18 +94,18 @@ export const writeWeeklyTimesheetForDates = (targetDates, timezone) => {
         endTimes[0]
       );
 
-      earliestStart.setSeconds(0, 0);
-      latestEnd.setSeconds(0, 0);
-
+      // Compute in seconds, format to HH:mm only at the display boundary.
+      // The previous setSeconds(0, 0) + differenceInMinutes pipeline floored
+      // every entry to whole minutes, drifting daily totals on many-entry days.
       const mergedPeriods = mergeOverlappingPeriods(completedEntries, timezone);
-      const totalWorkMinutes = mergedPeriods.reduce(
-        (total, period) => total + differenceInMinutes(period.end, period.start),
+      const totalWorkSeconds = mergedPeriods.reduce(
+        (total, period) => total + differenceInSeconds(period.end, period.start),
         0
       );
-      const timeSpanMinutes = differenceInMinutes(latestEnd, earliestStart);
+      const timeSpanSeconds = differenceInSeconds(latestEnd, earliestStart);
       const breakHoursDecimal = Math.max(
         0,
-        (timeSpanMinutes - totalWorkMinutes) / 60
+        (timeSpanSeconds - totalWorkSeconds) / 3600
       );
 
       const uniqueDescriptions = [
