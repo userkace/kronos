@@ -1,5 +1,77 @@
 // Export/Import utilities for timesheet data
 
+// Validation helpers — applied before any import write so a malformed backup
+// can't seed the app with data that crashes downstream parseISO calls (which
+// would have appeared as silent zeros in totals rather than visible errors).
+
+const isYyyyMmDd = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+const isParseableISOInstant = (s) => {
+  if (typeof s !== 'string' || s.length === 0) return false;
+  const d = new Date(s);
+  return !Number.isNaN(d.getTime());
+};
+
+const validateDailyData = (dailyData) => {
+  if (!dailyData || typeof dailyData !== 'object' || Array.isArray(dailyData)) {
+    return 'dailyData is missing or not a plain object';
+  }
+  for (const [dateKey, entries] of Object.entries(dailyData)) {
+    if (!isYyyyMmDd(dateKey)) {
+      return `Bad date key in dailyData: "${dateKey}" (expected yyyy-MM-dd)`;
+    }
+    if (!Array.isArray(entries)) {
+      return `dailyData["${dateKey}"] is not an array`;
+    }
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (!entry || typeof entry !== 'object') {
+        return `dailyData["${dateKey}"][${i}] is not an object`;
+      }
+      if (entry.id == null) {
+        return `dailyData["${dateKey}"][${i}] is missing id`;
+      }
+      if (!isParseableISOInstant(entry.startTime)) {
+        return `dailyData["${dateKey}"][${i}].startTime is not a valid ISO string`;
+      }
+      // endTime is optional only for active timer entries.
+      if (!entry.isActive && !isParseableISOInstant(entry.endTime)) {
+        return `dailyData["${dateKey}"][${i}].endTime is not a valid ISO string`;
+      }
+    }
+  }
+  return null;
+};
+
+const validateWeeklyData = (weeklyData) => {
+  if (!weeklyData || typeof weeklyData !== 'object' || Array.isArray(weeklyData)) {
+    return 'weeklyData is missing or not a plain object';
+  }
+  for (const [dateKey, dayData] of Object.entries(weeklyData)) {
+    if (!isYyyyMmDd(dateKey)) {
+      return `Bad date key in weeklyData: "${dateKey}" (expected yyyy-MM-dd)`;
+    }
+    if (!dayData || typeof dayData !== 'object' || Array.isArray(dayData)) {
+      return `weeklyData["${dateKey}"] is not a plain object`;
+    }
+  }
+  return null;
+};
+
+const validateImportShape = (importData) => {
+  if (!importData || typeof importData !== 'object') {
+    return 'Backup is not an object';
+  }
+  if (!importData.version) {
+    return 'Backup is missing the version field';
+  }
+  const dailyError = validateDailyData(importData.dailyData);
+  if (dailyError) return dailyError;
+  const weeklyError = validateWeeklyData(importData.weeklyData);
+  if (weeklyError) return weeklyError;
+  return null;
+};
+
 export const exportTimesheetData = () => {
   try {
     // Get all data from localStorage using correct keys
@@ -43,9 +115,11 @@ export const importTimesheetDataSelective = (file, importMode) => {
       try {
         const importData = JSON.parse(e.target.result);
         
-        // Validate data structure
-        if (!importData.version || !importData.dailyData || !importData.weeklyData) {
-          throw new Error('Invalid backup file format');
+        // Deep-validate the backup shape so malformed entries can't slip
+        // through and produce silent zeros via Invalid Date downstream.
+        const shapeError = validateImportShape(importData);
+        if (shapeError) {
+          throw new Error('Invalid backup: ' + shapeError);
         }
         
         // Backup current data before import
@@ -103,9 +177,11 @@ export const importTimesheetData = (file) => {
       try {
         const importData = JSON.parse(e.target.result);
         
-        // Validate data structure
-        if (!importData.version || !importData.dailyData || !importData.weeklyData) {
-          throw new Error('Invalid backup file format');
+        // Deep-validate the backup shape so malformed entries can't slip
+        // through and produce silent zeros via Invalid Date downstream.
+        const shapeError = validateImportShape(importData);
+        if (shapeError) {
+          throw new Error('Invalid backup: ' + shapeError);
         }
         
         // Backup current data before import
