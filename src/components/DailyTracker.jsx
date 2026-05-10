@@ -978,7 +978,9 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
       // When using selected timezone, create the date object directly in that timezone
       // This means the times are already in the selected timezone
       const localStartDateTime = parse(entryData.startTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      let localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      // For overnight shifts, the end time is on the next calendar day.
+      if (entryData.isOvernight) localEndDateTime = addDays(localEndDateTime, 1);
 
       // Convert from selected timezone to UTC
       startDateTime = fromZonedTime(localStartDateTime, timezone);
@@ -986,7 +988,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     } else {
       // When using custom timezone, create date object and convert from that timezone
       const localStartDateTime = parse(entryData.startTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
-      const localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      let localEndDateTime = parse(entryData.endTime, 'HH:mm:ss', parse(entryDate, 'yyyy-MM-dd', new Date()));
+      if (entryData.isOvernight) localEndDateTime = addDays(localEndDateTime, 1);
 
       // Convert from custom timezone to UTC
       startDateTime = toZonedTime(localStartDateTime, timezoneToUse);
@@ -994,7 +997,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     }
 
     const newEntry = {
-      id: modalState.mode === 'edit' ? modalState.initialData.id : Date.now(),
+      id: modalState.mode === 'edit' ? modalState.initialData.id : generateEntryId(),
       ...entryData,
       isActive: false,
       startTime: startDateTime.toISOString(),
@@ -1003,6 +1006,9 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
     // Remove date field from entry to match timer format
     delete newEntry.date;
+    // isOvernight is a UI-layer concern — the persisted entry already encodes
+    // the next-day end via its ISO endTime, so don't pollute storage with it.
+    delete newEntry.isOvernight;
 
     // Get the storage key for the selected date
     const entryStorageKey = getStorageDateKey(entryDate);
