@@ -26,7 +26,7 @@ import { PomodoroProvider } from './contexts/PomodoroContext';
 import './App.css';
 
 function AppContent() {
-  const { selectedTimezone, changeTimezone } = useTimezone();
+  const { selectedTimezone, changeTimezone, isInitialized: timezoneInitialized } = useTimezone();
   const { changeWeekStart } = useUserPreferences();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
@@ -164,6 +164,7 @@ function AppContent() {
               // Daily Tracker View
               <DailyTracker
                 timezone={selectedTimezone}
+                timezoneInitialized={timezoneInitialized}
                 onTimezoneChange={changeTimezone}
                 onWeeklyTimesheetSave={() => setRefreshTrigger(prev => prev + 1)}
               />
