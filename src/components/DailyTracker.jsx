@@ -634,34 +634,49 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   const handleStop = () => {
     if (!activeEntry) return;
 
-    // Get current time in selected timezone and convert to UTC for storage
-    const now = new Date(); // Current UTC time
-    const currentTimeInTimezone = toZonedTime(now, timezone); // Show in selected timezone
-    const utcTime = now; // Already UTC
+    const now = new Date();
+    const utcTime = now;
+    const currentTimeInTimezone = toZonedTime(now, timezone);
 
-    // Use the timer's start time to determine the correct storage date key
-    // This prevents issues when timezone rolls over to a new day
     const timerStartDate = format(toZonedTime(parseISO(activeEntry.startTime), timezone), 'yyyy-MM-dd');
     const currentDateInTimezone = format(currentTimeInTimezone, 'yyyy-MM-dd');
     const storageKey = getStorageDateKey(timerStartDate);
 
+    // Build the ordered list of yyyy-MM-dd keys spanned by this timer, inclusive.
+    const datesInRange = [];
+    let cursor = parse(timerStartDate, 'yyyy-MM-dd', new Date());
+    const endCursor = parse(currentDateInTimezone, 'yyyy-MM-dd', new Date());
+    while (cursor <= endCursor) {
+      datesInRange.push(format(cursor, 'yyyy-MM-dd'));
+      cursor = addDays(cursor, 1);
+    }
+
+    // A timer running for many days is almost always a forgot-to-stop mistake.
+    // Recording it would invent full days of work, so confirm before proceeding.
+    const MAX_ROLLOVER_DAYS = 7;
+    if (datesInRange.length > MAX_ROLLOVER_DAYS) {
+      const proceed = window.confirm(
+        `This timer has been running for ${datesInRange.length} days. ` +
+        `Recording it will create a full-day entry for each intermediate day. Continue?`
+      );
+      if (!proceed) return;
+    }
+
+    // Convert a wall-clock boundary on a given day into a UTC instant.
+    const buildBoundaryUTC = (dateString, timeString) => {
+      const baseDate = parse(dateString, 'yyyy-MM-dd', new Date());
+      const wallTime = parse(timeString, 'HH:mm:ss', baseDate);
+      return fromZonedTime(wallTime, timezone);
+    };
+
+    const isMultiDay = datesInRange.length > 1;
     const allData = loadTimesheetData() || {};
-    if (!allData[storageKey]) {
-      allData[storageKey] = [];
-    }
+    if (!allData[storageKey]) allData[storageKey] = [];
 
-    // Stop the current day's task at midnight if timezone rolled over
-    let stopTime = utcTime;
-    let shouldCreateNewTask = false;
-
-    if (timerStartDate !== currentDateInTimezone) {
-      // Timezone rolled over - stop the task at 23:59:59 of the previous day
-      const timerStartBaseDate = parse(timerStartDate, 'yyyy-MM-dd', new Date());
-      const endOfPreviousDayInTimezone = parse('23:59:59', 'HH:mm:ss', timerStartBaseDate);
-      const endOfPreviousDayUTC = fromZonedTime(endOfPreviousDayInTimezone, timezone);
-      stopTime = endOfPreviousDayUTC;
-      shouldCreateNewTask = true;
-    }
+    // Close the original entry: end at now if same day, else end at 23:59:59 of its start day.
+    const stopTime = isMultiDay
+      ? buildBoundaryUTC(timerStartDate, '23:59:59')
+      : utcTime;
 
     const updatedEntry = {
       ...activeEntry,
@@ -669,65 +684,62 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       isActive: false
     };
 
-    const updatedEntries = allData[storageKey].map(entry =>
+    allData[storageKey] = allData[storageKey].map(entry =>
       entry.id === activeEntry.id ? updatedEntry : entry
     );
 
-    allData[storageKey] = updatedEntries;
+    // For every day after the start day, emit a segment.
+    // Intermediate days span the full day; the last day ends at "now".
+    if (isMultiDay) {
+      for (let i = 1; i < datesInRange.length; i++) {
+        const dateString = datesInRange[i];
+        const isLastDay = i === datesInRange.length - 1;
+        const segStart = buildBoundaryUTC(dateString, '00:00:00');
+        const segEnd = isLastDay ? utcTime : buildBoundaryUTC(dateString, '23:59:59');
+
+        const segmentEntry = {
+          id: `${Date.now()}-${i}`,
+          description: activeEntry.description,
+          project: activeEntry.project,
+          task: activeEntry.task,
+          tags: activeEntry.tags,
+          startTime: segStart.toISOString(),
+          endTime: segEnd.toISOString(),
+          isActive: false
+        };
+
+        const segKey = getStorageDateKey(dateString);
+        if (!allData[segKey]) allData[segKey] = [];
+        allData[segKey].push(segmentEntry);
+      }
+    }
+
     saveTimesheetData(allData);
 
-    // Create completed task for the new day if timezone rolled over
-    if (shouldCreateNewTask) {
-      // Calculate midnight of the current day in timezone
-      const currentDateBase = parse(currentDateInTimezone, 'yyyy-MM-dd', new Date());
-      const midnightInTimezone = parse('00:00:00', 'HH:mm:ss', currentDateBase);
-      const midnightUTC = fromZonedTime(midnightInTimezone, timezone);
-
-      // Create the today/present segment (midnight to current time)
-      const todayEntry = {
-        id: Date.now(),
-        description: activeEntry.description,
-        project: activeEntry.project,
-        task: activeEntry.task,
-        tags: activeEntry.tags,
-        startTime: midnightUTC.toISOString(), // Start from midnight
-        endTime: utcTime.toISOString(), // End at current time
-        isActive: false // Not active - completed in one operation
-      };
-
-      const newStorageKey = getStorageDateKey(currentDateInTimezone);
-      if (!allData[newStorageKey]) {
-        allData[newStorageKey] = [];
-      }
-      allData[newStorageKey].push(todayEntry);
-      saveTimesheetData(allData);
-
-      // Update display to show the current day's entries if we're viewing today
-      if (isToday()) {
-        const newDateEntries = allData[newStorageKey] || [];
-        const sortedNewEntries = newDateEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-        setSelectedDateEntries(sortedNewEntries);
-      }
-
-      success(`Task time recorded for both ${formatInTimezone(parse(timerStartDate, 'yyyy-MM-dd', new Date()), 'MMM. d')} and ${formatInTimezone(parse(currentDateInTimezone, 'yyyy-MM-dd', new Date()), 'MMM. d')}`);
+    // Refresh the displayed day if it was touched.
+    const selectedDateKey = getStorageDateKey(selectedDate);
+    if (allData[selectedDateKey]) {
+      const sorted = [...allData[selectedDateKey]].sort(
+        (a, b) => new Date(a.startTime) - new Date(b.startTime)
+      );
+      setSelectedDateEntries(sorted);
     }
 
     setActiveEntry(null);
 
-    // Update display if we're viewing the timer's original date
-    const selectedDateKey = getStorageDateKey(selectedDate);
-    if (selectedDateKey === storageKey && !shouldCreateNewTask) {
-      setSelectedDateEntries(updatedEntries);
+    if (isMultiDay) {
+      const firstFmt = formatInTimezone(parse(timerStartDate, 'yyyy-MM-dd', new Date()), 'MMM. d');
+      const lastFmt = formatInTimezone(parse(currentDateInTimezone, 'yyyy-MM-dd', new Date()), 'MMM. d');
+      success(
+        datesInRange.length === 2
+          ? `Task time recorded for ${firstFmt} and ${lastFmt}`
+          : `Task time recorded across ${datesInRange.length} days (${firstFmt} – ${lastFmt})`
+      );
     }
 
-    // Auto-save to weekly timesheet for the relevant dates
-    const targetDates = shouldCreateNewTask 
-      ? [timerStartDate, currentDateInTimezone] // Save for both days when rollover occurred
-      : [timerStartDate]; // Save for the timer's date only
-
-    // Use setTimeout to ensure state updates complete before weekly timesheet save
+    // Auto-save weekly rows for every affected date, not just two.
     setTimeout(() => {
-      autoSaveToWeeklyTimesheet(targetDates);
+      autoSaveToWeeklyTimesheet(datesInRange);
     }, 100);
   };
 
