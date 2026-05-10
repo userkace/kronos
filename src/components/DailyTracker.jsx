@@ -62,7 +62,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     sortOrder,
     changeSortOrder,
     showBreaks,
-    toggleShowBreaks
+    toggleShowBreaks,
+    dailyHourGoal
   } = useUserPreferences();
   const [activeEntry, setActiveEntry] = useState(null);
   const [selectedDateEntries, setSelectedDateEntries] = useState([]); // Renamed from todayEntries
@@ -587,29 +588,31 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m ${remainingSeconds}s` : `${hours}h ${remainingSeconds}s`;
   };
 
-  // Calculate total daily time
-  const calculateDailyTotal = () => {
+  // Total daily time as a raw number of seconds. Split out from
+  // calculateDailyTotal so callers that need the numeric value (e.g. the
+  // goal-met check that drives the gold-pulse animation) don't have to
+  // re-parse the formatted string.
+  const calculateDailyTotalSeconds = () => {
     let totalSeconds = 0;
 
-    // Add completed entries
     selectedDateEntries.forEach(entry => {
       if (!entry.isActive && entry.endTime) {
-        // Convert both times to the selected timezone for accurate calculation
         const startTimeInTimezone = toZonedTime(parseISO(entry.startTime), timezone);
         const endTimeInTimezone = toZonedTime(parseISO(entry.endTime), timezone);
         totalSeconds += differenceInSeconds(endTimeInTimezone, startTimeInTimezone);
       }
     });
 
-    // Add active entry time only if viewing today
     if (activeEntry && isToday()) {
       const startTimeInTimezone = toZonedTime(parseISO(activeEntry.startTime), timezone);
-      const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone); // Use the ref for consistent time
+      const currentTimeInTimezone = toZonedTime(currentTimeRef.current, timezone);
       totalSeconds += differenceInSeconds(currentTimeInTimezone, startTimeInTimezone);
     }
 
-    return formatDisplayDuration(totalSeconds);
+    return totalSeconds;
   };
+
+  const calculateDailyTotal = () => formatDisplayDuration(calculateDailyTotalSeconds());
 
   // Start new timer (only works on current date)
   const handleStart = () => {
@@ -1566,10 +1569,42 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
             </div>
           </div>
 
+          {(() => {
+            const dailyTotalSeconds = calculateDailyTotalSeconds();
+            const goalSeconds = (Number.isFinite(dailyHourGoal) && dailyHourGoal > 0)
+              ? dailyHourGoal * 3600
+              : 0;
+            const goalMet = goalSeconds > 0 && dailyTotalSeconds >= goalSeconds;
+            return (
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="flex items-baseline space-x-2 text-gray-600">
-                {activeEntry && isToday() ? (
+                {goalMet ? (
+                <motion.div
+                  className="flex items-baseline space-x-2"
+                  animate={{
+                    // amber-600 ↔ amber-300 — same pulse cadence as the active
+                    // green shine, swapped to a gold palette for goal-hit.
+                    color: ["#d97706", "#fcd34d", "#d97706"],
+                    textShadow: [
+                      "0 0 0px rgba(251, 191, 36, 0)",
+                      "0 0 12px rgba(251, 191, 36, 0.55)",
+                      "0 0 0px rgba(251, 191, 36, 0)"
+                    ]
+                  }}
+                  transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  title={`Daily goal of ${dailyHourGoal}h reached`}
+                >
+                  <Clock className="w-5 h-5 self-center mt-1" />
+                  <span className="text-2xl font-semibold">
+                    {calculateDailyTotal()}
+                  </span>
+                </motion.div>
+              ) : activeEntry && isToday() ? (
                 <motion.div
                   className="flex items-baseline space-x-2"
                   animate={{
@@ -1653,6 +1688,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               />
             </div>
           </div>
+            );
+          })()}
         </div>
 
         {/* Input Bar - Only show on current date */}
