@@ -32,7 +32,7 @@ import './App.css';
 
 function AppContent() {
   const { selectedTimezone, changeTimezone, isInitialized: timezoneInitialized } = useTimezone();
-  const { changeWeekStart } = useUserPreferences();
+  const { changeWeekStart, changeWeekendDays } = useUserPreferences();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
   const [currentView, setCurrentView] = useState('tracker'); // 'tracker', 'timesheet', or 'data'
@@ -154,6 +154,9 @@ function AppContent() {
   const handleOnboardingComplete = (preferences) => {
     changeTimezone(preferences.timezone);
     changeWeekStart(preferences.weekStart);
+    if (Array.isArray(preferences.weekendDays)) {
+      changeWeekendDays(preferences.weekendDays);
+    }
     saveOnboardingCompleted();
     // Also save timezone directly to ensure it's persisted before the next render.
     saveTimezone(preferences.timezone);

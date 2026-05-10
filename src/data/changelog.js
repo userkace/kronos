@@ -31,6 +31,7 @@ export const CHANGELOG = [
       { type: 'added', description: 'Header bell icon opens the "What\'s new" changelog at any time, with a red dot when there are unread updates.' },
       { type: 'fixed', description: 'Edit modal time validation now compares seconds, not minutes — sub-minute differences (e.g. 09:00:30 → 09:00:45) no longer falsely trigger the "end equals start" toast.' },
       { type: 'changed', description: 'Weekly Timesheet now uses a stacked card-per-day layout on phone-sized screens. The wide table still appears on tablet and up.' },
+      { type: 'added', description: 'Non-work days setting (defaults to Sat + Sun, multi-select any subset). Days marked as non-work no longer break your Reports streak when you don\'t track time on them. Configurable in onboarding and Settings → Non-Work Days.' },
       { type: 'changed', description: 'Merging duplicates no longer requires a confirm prompt — Undo replaces it.' },
     ],
   },

@@ -53,7 +53,7 @@ const heatmapClass = (hours, goal, inRange) => {
 
 const Reports = () => {
   const { selectedTimezone: timezone, isInitialized: timezoneInitialized } = useTimezone();
-  const { dailyHourGoal, weekStart } = useUserPreferences();
+  const { dailyHourGoal, weekStart, weekendDays } = useUserPreferences();
   const [range, setRange] = useState('week');
   const [timesheet, setTimesheet] = useState(() => loadTimesheetData());
   const [now, setNow] = useState(() => new Date());
@@ -140,14 +140,18 @@ const Reports = () => {
 
   // Walk back from today counting consecutive days with tracked time. Today is
   // allowed to be 0 (in-progress) so a streak from yesterday isn't reset just
-  // because the user hasn't started yet today.
+  // because the user hasn't started yet today. Days marked as non-work in
+  // user preferences are skipped without counting or breaking — taking
+  // weekends off shouldn't reset a streak.
   const streak = useMemo(() => {
     if (!todayKey) return 0;
+    const weekendSet = new Set(weekendDays);
     let count = 0;
     let cursor = now;
     let allowZeroToday = true;
     for (let i = 0; i < 366; i++) {
       const key = dayKey(cursor, timezone);
+      const dow = dowFromKey(key);
       const entries = timesheet[key] || [];
       const seconds = entries.reduce((s, e) => s + entrySeconds(e, now), 0);
       if (seconds > 0) {
@@ -157,12 +161,15 @@ const Reports = () => {
       } else if (i === 0 && allowZeroToday) {
         cursor = subDays(cursor, 1);
         allowZeroToday = false;
+      } else if (weekendSet.has(dow)) {
+        // Non-work day with no tracked time — skip without counting or breaking.
+        cursor = subDays(cursor, 1);
       } else {
         break;
       }
     }
     return count;
-  }, [timesheet, now, timezone, todayKey]);
+  }, [timesheet, now, timezone, todayKey, weekendDays]);
 
   // Time-by-task breakdown over the full range.
   const taskBreakdown = useMemo(() => {
@@ -236,7 +243,10 @@ const Reports = () => {
                 {' '}{streak === 1 ? 'day' : 'days'}
               </span>
             </div>
-            <div className="text-xs text-gray-500">Consecutive days with tracked time</div>
+            <div className="text-xs text-gray-500">
+              Consecutive days with tracked time
+              {weekendDays.length > 0 ? ' (non-work days don\'t count against you)' : ''}
+            </div>
           </div>
         </div>
 

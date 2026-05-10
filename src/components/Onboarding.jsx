@@ -2,16 +2,28 @@ import React, { useState } from 'react';
 import TimezoneSelect from './TimezoneSelect';
 import { Clock, Calendar, Globe, ArrowRight, CheckCircle, Settings as SettingsIcon } from 'lucide-react';
 
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
   const [selectedTimezone, setSelectedTimezone] = useState(initialTimezone);
   const [weekStart, setWeekStart] = useState('sunday');
+  const [weekendDays, setWeekendDays] = useState([0, 6]);
   const [currentStep, setCurrentStep] = useState(0);
+
+  const toggleWeekendDay = (idx) => {
+    setWeekendDays(prev =>
+      prev.includes(idx)
+        ? prev.filter(d => d !== idx)
+        : [...prev, idx].sort((a, b) => a - b)
+    );
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onComplete({
       timezone: selectedTimezone,
-      weekStart: weekStart
+      weekStart: weekStart,
+      weekendDays: weekendDays,
     });
   };
 
@@ -211,6 +223,38 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   </select>
                   <p className="text-sm text-gray-600">
                     Select the day that your week begins. This affects how your weekly timesheets are organized.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Non-Work Days</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {DAY_LABELS.map((label, idx) => {
+                      const isSelected = weekendDays.includes(idx);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => toggleWeekendDay(idx)}
+                          aria-pressed={isSelected}
+                          className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                            isSelected
+                              ? 'bg-purple-600 text-white border-purple-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Days you don't normally work. Skipping these won't break your tracking streak. You can change this later in Settings.
                   </p>
                 </div>
               </div>

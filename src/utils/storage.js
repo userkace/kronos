@@ -13,10 +13,19 @@ const STORAGE_KEYS = {
   SHOW_BREAKS: 'kronos_show_breaks',
   INVOICE_SETTINGS: 'kronos_invoice_settings',
   CHANGELOG_LAST_SEEN: 'kronos_changelog_last_seen_version',
-  DAILY_HOUR_GOAL: 'kronos_daily_hour_goal'
+  DAILY_HOUR_GOAL: 'kronos_daily_hour_goal',
+  WEEKEND_DAYS: 'kronos_weekend_days'
 };
 
 const DEFAULT_DAILY_HOUR_GOAL = 8;
+// Day-of-week numbers (0=Sun..6=Sat) that don't break the streak when zero.
+const DEFAULT_WEEKEND_DAYS = [0, 6];
+
+const sanitizeWeekendDays = (days) => Array.from(new Set(
+  (Array.isArray(days) ? days : [])
+    .map(Number)
+    .filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
+)).sort((a, b) => a - b);
 
 const CORRUPT_BACKUP_PREFIX = '__kronos_corrupt_';
 const CORRUPT_PENDING_KEY = '__kronos_corrupt_pending';
@@ -403,6 +412,33 @@ export const loadDailyHourGoal = () => {
   } catch (error) {
     console.error('Error loading daily hour goal:', error);
     return DEFAULT_DAILY_HOUR_GOAL;
+  }
+};
+
+// Save weekend / non-work days (array of 0..6 where 0=Sun) to LocalStorage.
+// An empty array is valid — it means "no day is a weekend, every gap breaks
+// the streak." Invalid entries are silently dropped via sanitizeWeekendDays.
+export const saveWeekendDays = (days) => {
+  try {
+    const cleaned = sanitizeWeekendDays(days);
+    localStorage.setItem(STORAGE_KEYS.WEEKEND_DAYS, JSON.stringify(cleaned));
+  } catch (error) {
+    console.error('Error saving weekend days:', error);
+  }
+};
+
+// Load weekend days. Falls back to [Sun, Sat] on missing/corrupt — a bad
+// value here is harmless and the default is the most-common preference.
+export const loadWeekendDays = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.WEEKEND_DAYS);
+    if (stored == null) return [...DEFAULT_WEEKEND_DAYS];
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [...DEFAULT_WEEKEND_DAYS];
+    return sanitizeWeekendDays(parsed);
+  } catch (error) {
+    console.error('Error loading weekend days:', error);
+    return [...DEFAULT_WEEKEND_DAYS];
   }
 };
 

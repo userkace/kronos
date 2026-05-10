@@ -26,7 +26,8 @@ const Settings = ({ onCorruptionResolved }) => {
   const {
     weekStart, changeWeekStart,
     clockFormat, changeClockFormat,
-    dailyHourGoal, changeDailyHourGoal
+    dailyHourGoal, changeDailyHourGoal,
+    weekendDays, changeWeekendDays
   } = useUserPreferences();
   const { success, error, warning } = useToast();
   const [backups, setBackups] = useState(() => getCorruptionBackupsDetailed());
@@ -86,6 +87,7 @@ const Settings = ({ onCorruptionResolved }) => {
   const [weekStartValue, setWeekStartValue] = useState(weekStart);
   const [clockFormatValue, setClockFormatValue] = useState(clockFormat);
   const [dailyHourGoalValue, setDailyHourGoalValue] = useState(String(dailyHourGoal));
+  const [weekendDaysValue, setWeekendDaysValue] = useState(weekendDays);
   const [isResetting, setIsResetting] = useState(false);
   const reloadTimeoutRef = useRef(null);
 
@@ -94,6 +96,18 @@ const Settings = ({ onCorruptionResolved }) => {
   useEffect(() => {
     setDailyHourGoalValue(String(dailyHourGoal));
   }, [dailyHourGoal]);
+
+  useEffect(() => {
+    setWeekendDaysValue(weekendDays);
+  }, [weekendDays]);
+
+  const toggleWeekendDay = (idx) => {
+    setWeekendDaysValue(prev =>
+      prev.includes(idx)
+        ? prev.filter(d => d !== idx)
+        : [...prev, idx].sort((a, b) => a - b)
+    );
+  };
 
   const handleTimezoneChange = (newTimezone) => {
     setTimezone(newTimezone);
@@ -122,6 +136,7 @@ const Settings = ({ onCorruptionResolved }) => {
         return;
       }
       changeDailyHourGoal(parsedGoal);
+      changeWeekendDays(weekendDaysValue);
       success('Settings saved successfully!');
     } catch (err) {
       error('Failed to save settings');
@@ -287,6 +302,40 @@ const Settings = ({ onCorruptionResolved }) => {
                 Choose which day your week starts on
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Non-Work Days */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Non-Work Days</h4>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label, idx) => {
+                const isSelected = weekendDaysValue.includes(idx);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => toggleWeekendDay(idx)}
+                    aria-pressed={isSelected}
+                    className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-sm text-gray-500">
+              Days you don't normally work. Skipping these won't break your streak on the Reports view.
+            </p>
           </div>
         </div>
 
