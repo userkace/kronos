@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { saveTimesheetData, loadTimesheetData } from '../utils/storage';
+import { writeWeeklyTimesheetForDates } from '../utils/weeklyTimesheet';
 import { format, addSeconds, differenceInSeconds } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { useToast } from './ToastContext';
@@ -276,7 +277,7 @@ export const PomodoroProvider = ({ children }) => {
       };
 
       const storageKey = getStorageDateKey(taskStartTime);
-      
+
       // Save using the same storage system as DailyTracker
       const allData = loadTimesheetData() || {};
       if (!allData[storageKey]) {
@@ -285,7 +286,14 @@ export const PomodoroProvider = ({ children }) => {
       allData[storageKey].push(timeEntry);
       saveTimesheetData(allData);
 
-      success(`Pomodoro session completed: ${currentTask}`);
+      // Auto-save to weekly timesheet so the weekly view stays in sync
+      // with timer-based completions everywhere else in the app.
+      const { saved } = writeWeeklyTimesheetForDates([storageKey], selectedTimezone);
+      if (saved.length > 0) {
+        success(`Pomodoro session completed and auto-saved: ${currentTask}`);
+      } else {
+        success(`Pomodoro session completed: ${currentTask}`);
+      }
     }
 
     // Move to next phase

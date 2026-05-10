@@ -24,6 +24,7 @@ import {
 } from '../utils/storage';
 import faviconManager from '../utils/faviconManager';
 import storageEventSystem from '../utils/storageEvents';
+import { writeWeeklyTimesheetForDates } from '../utils/weeklyTimesheet';
 
 const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
@@ -726,7 +727,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Use setTimeout to ensure state updates complete before weekly timesheet save
     setTimeout(() => {
-      stopToWeeklyTimesheet(targetDates);
+      autoSaveToWeeklyTimesheet(targetDates);
     }, 100);
   };
 
@@ -899,6 +900,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Update display
     setSelectedDateEntries(remainingEntries);
+
+    autoSaveToWeeklyTimesheet([storageKey]);
   };
 
   // Find entries that have duplicates
@@ -969,6 +972,9 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       allData[entryStorageKey] = [];
     }
 
+    // Track dates affected by this save so we can sync the weekly timesheet.
+    const affectedDates = [entryStorageKey];
+
     // Handle edit vs add
     if (modalState.mode === 'edit') {
       // For editing, we need to find the original entry's date from startTime
@@ -979,7 +985,11 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
       if (oldStorageKey !== entryStorageKey) {
         if (allData[oldStorageKey]) {
           allData[oldStorageKey] = allData[oldStorageKey].filter(entry => entry.id !== modalState.initialData.id);
+          if (allData[oldStorageKey].length === 0) {
+            delete allData[oldStorageKey];
+          }
         }
+        affectedDates.push(oldStorageKey);
       }
 
       // Update/add the entry in the new date
@@ -1004,6 +1014,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     }
 
     handleCloseModal();
+
+    autoSaveToWeeklyTimesheet(affectedDates);
   };
 
   // Remove from localStorage
@@ -1028,6 +1040,8 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const updatedEntries = selectedDateEntries.filter(e => e.id !== entry.id);
     setSelectedDateEntries(updatedEntries);
     handleCloseModal();
+
+    autoSaveToWeeklyTimesheet([storageKey]);
   };
 
   // Merge overlapping time periods to calculate accurate total work time
@@ -1173,129 +1187,51 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     success(`Successfully saved ${completedEntries.length} tasks to weekly timesheet for ${formatInTimezone(selectedDate, 'MMM d, yyyy')}`);
   };
 
-  // Save completed timer entries to weekly timesheet (called from handleStop)
-  const stopToWeeklyTimesheet = (targetDates) => {
-    if (!targetDates || !Array.isArray(targetDates) || targetDates.length === 0) {
-      return;
+  // Recompute the weekly timesheet for the given dates and surface a toast.
+  // Used by every mutation path (timer stop, manual add/edit, delete, merge)
+  // so the weekly view stays in sync without requiring an explicit save.
+  const autoSaveToWeeklyTimesheet = (targetDates) => {
+    if (!Array.isArray(targetDates) || targetDates.length === 0) return;
+
+    const { saved, cleared, errors } = writeWeeklyTimesheetForDates(
+      targetDates,
+      timezone
+    );
+
+    if (saved.length === 1) {
+      const r = saved[0];
+      success(
+        `Auto-saved to weekly timesheet: ${r.completedCount} task(s) for ${formatInTimezone(r.dateObj, 'MMM. d, yyyy')}`
+      );
+    } else if (saved.length > 1) {
+      const parts = saved.map(
+        r => `${r.completedCount} task(s) for ${formatInTimezone(r.dateObj, 'MMM. d')}`
+      );
+      success(`Auto-saved to weekly timesheet: ${parts.join(' & ')}`);
     }
 
-    const savedResults = []; // Track successful saves with totals
+    if (cleared.length === 1) {
+      success(
+        `Cleared weekly timesheet entry for ${formatInTimezone(cleared[0].dateObj, 'MMM. d, yyyy')}`
+      );
+    } else if (cleared.length > 1) {
+      const parts = cleared.map(c => formatInTimezone(c.dateObj, 'MMM. d'));
+      success(`Cleared weekly timesheet entries for ${parts.join(' & ')}`);
+    }
 
-    targetDates.forEach(dateString => {
-      try {
-        // Load all entries for the target date
-        const storageKey = getStorageDateKey(dateString);
-        const allData = loadTimesheetData() || {};
-        const entriesForDate = allData[storageKey] || [];
-
-        if (entriesForDate.length === 0) {
-          return; // No entries for this date
-        }
-
-        // Get only completed entries for this date
-        const completedEntries = entriesForDate.filter(entry => !entry.isActive && entry.endTime);
-
-        if (completedEntries.length === 0) {
-          return; // No completed entries for this date
-        }
-
-        // Find earliest start time and latest end time in selected timezone
-        const startTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.startTime), timezone));
-        const endTimes = completedEntries.map(entry => toZonedTime(parseISO(entry.endTime), timezone));
-
-        // Find the earliest and latest times while preserving timezone
-        const earliestStart = startTimes.reduce((earliest, current) =>
-          current < earliest ? current : earliest, startTimes[0]);
-        const latestEnd = endTimes.reduce((latest, current) =>
-          current > latest ? current : latest, endTimes[0]);
-
-        // Normalize to minute precision for consistency
-        earliestStart.setSeconds(0, 0);
-        latestEnd.setSeconds(0, 0);
-
-        // Calculate total work hours using merged overlapping periods
-        const mergedPeriods = mergeOverlappingPeriods(completedEntries);
-
-        const totalWorkMinutes = mergedPeriods.reduce((total, period) => {
-          return total + differenceInMinutes(period.end, period.start);
-        }, 0);
-
-        const totalWorkHours = totalWorkMinutes / 60;
-        const timeSpanMinutes = differenceInMinutes(latestEnd, earliestStart);
-        const breakHoursDecimal = Math.max(0, (timeSpanMinutes - totalWorkMinutes) / 60);
-
-        // Create work details from unique task descriptions separated by semicolons
-        const uniqueDescriptions = [...new Set(
-          completedEntries
-            .map(entry => entry.description)
-            .filter(desc => desc.trim())
-        )];
-        const workDetails = uniqueDescriptions.join('; ');
-
-        // Get current weekly timesheet data
-        const weeklyData = loadWeeklyTimesheet() || {};
-        const dayKey = dateString;
-
-        // Update the day's data
-        if (!weeklyData[dayKey]) {
-          weeklyData[dayKey] = {
-            tasks: '',
-            workDetails: '',
-            timeIn: '',
-            timeOut: '',
-            breakHours: '0'
-          };
-        }
-
-        weeklyData[dayKey] = {
-          ...weeklyData[dayKey],
-          tasks: completedEntries.length > 0 ? `${completedEntries.length} task(s)` : '',
-          workDetails: workDetails,
-          timeIn: format(earliestStart, 'HH:mm'),
-          timeOut: format(latestEnd, 'HH:mm'),
-          breakHours: breakHoursDecimal.toFixed(2)
-        };
-
-        // Save the updated weekly timesheet
-        saveWeeklyTimesheet(weeklyData);
-
-        // Store result for combined toast
-        savedResults.push({
-          dateString,
-          completedCount: completedEntries.length,
-          dateObj: parse(dateString, 'yyyy-MM-dd', new Date())
-        });
-
-      } catch (error) {
-        console.error('Error in stopToWeeklyTimesheet for date:', dateString, error);
-        const dateObj = parse(dateString, 'yyyy-MM-dd', new Date());
-        warning(`Failed to save to weekly timesheet for ${formatInTimezone(dateObj, 'MMM. d, yyyy')}`);
-      }
+    errors.forEach(({ dateString }) => {
+      const dateObj = parse(dateString, 'yyyy-MM-dd', new Date());
+      warning(
+        `Failed to auto-save weekly timesheet for ${formatInTimezone(dateObj, 'MMM. d, yyyy')}`
+      );
     });
 
-    // Show one combined success toast if we saved anything
-    if (savedResults.length > 0) {
-      if (savedResults.length === 1) {
-        // Single date - use original format
-        const result = savedResults[0];
-        success(`Auto-saved to weekly timesheet: ${result.completedCount} task(s) for ${formatInTimezone(result.dateObj, 'MMM. d, yyyy')}`);
-      } else {
-        // Multiple dates - show each date with full details
-        const messageParts = savedResults.map(result =>
-          `${result.completedCount} task(s) for ${formatInTimezone(result.dateObj, 'MMM. d')}`
-        );
-        const combinedMessage = `Auto-saved to weekly timesheet: ${messageParts.join(' & ')}`;
-        success(combinedMessage);
+    if (saved.length > 0 || cleared.length > 0) {
+      try {
+        if (onWeeklyTimesheetSave) onWeeklyTimesheetSave();
+      } catch (err) {
+        console.error('Error triggering weekly timesheet refresh:', err);
       }
-    }
-
-    // Trigger refresh of weekly timesheet data once after all dates processed
-    try {
-      if (onWeeklyTimesheetSave) {
-        onWeeklyTimesheetSave();
-      }
-    } catch (error) {
-      console.error('Error triggering weekly timesheet refresh:', error);
     }
   };
 
