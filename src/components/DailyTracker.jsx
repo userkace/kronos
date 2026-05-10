@@ -316,52 +316,70 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
   // Load data from localStorage on mount and when date changes
   useEffect(() => {
     const loadData = () => {
-      const loadedData = loadTimesheetData();
+      const loadedData = loadTimesheetData() || {};
       const storageKey = getStorageDateKey(selectedDate);
-      const displayDate = formatInTimezone(selectedDate, 'yyyy-MM-dd');
 
-      if (loadedData && loadedData[storageKey]) {
-        const dayEntries = loadedData[storageKey] || [];
-        // Sort entries by start time (earliest first)
-        const sortedEntries = dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-        setSelectedDateEntries(sortedEntries);
+      // Display entries for the viewed day.
+      const dayEntries = loadedData[storageKey] || [];
+      const sortedEntries = [...dayEntries].sort(
+        (a, b) => new Date(a.startTime) - new Date(b.startTime)
+      );
+      setSelectedDateEntries(sortedEntries);
 
-        // Check for active entry (only for current date in selected timezone)
-        const todayInSelectedTimezone = formatInTimezone(new Date(), 'yyyy-MM-dd');
-        const isCurrentDate = todayInSelectedTimezone === displayDate;
-
-        if (isCurrentDate) {
-          const activeEntry = dayEntries.find(entry => entry.isActive);
-          if (activeEntry) {
-            setActiveEntry(activeEntry);
-          } else {
-            setActiveEntry(null);
-          }
-        } else {
-          // Only clear if there's no active timer at all
-          if (!activeEntry) {
-            setActiveEntry(null);
-          }
-        }
-    } else {
-      setSelectedDateEntries([]);
-
-      // Before clearing activeEntry, check if there's an active timer in any date
-      let foundActive = null;
+      // Enforce the global single-active invariant: scan EVERY date for an
+      // isActive entry. If only the previously-viewed date is checked (the
+      // old behavior), an active timer running on day A becomes invisible
+      // when the user views day B, so handleStart on a fresh navigation can
+      // create a second active entry without closing the first.
+      const activeEntries = [];
       Object.keys(loadedData).forEach(dateKey => {
-        const entries = loadedData[dateKey];
-        const activeInDate = entries.find(entry => entry.isActive);
-        if (activeInDate) {
-          foundActive = activeInDate;
-        }
+        (loadedData[dateKey] || []).forEach(entry => {
+          if (entry.isActive) {
+            activeEntries.push({ entry, dateKey });
+          }
+        });
       });
 
-      if (foundActive) {
-        setActiveEntry(foundActive);
-      } else {
+      if (activeEntries.length === 0) {
         setActiveEntry(null);
+        return;
       }
-    }
+
+      // Newest first.
+      activeEntries.sort(
+        (a, b) => new Date(b.entry.startTime) - new Date(a.entry.startTime)
+      );
+
+      if (activeEntries.length > 1) {
+        // Multiple actives shouldn't exist; close the older ones. Cap recorded
+        // duration at 8h since anything beyond that is almost certainly a
+        // forgot-to-stop timer rather than real work.
+        const MAX_RECOVERED_SECONDS = 8 * 60 * 60;
+        const nowMs = Date.now();
+        let mutated = false;
+        for (let i = 1; i < activeEntries.length; i++) {
+          const { entry, dateKey } = activeEntries[i];
+          const startMs = parseISO(entry.startTime).getTime();
+          const cappedEndMs = Math.min(nowMs, startMs + MAX_RECOVERED_SECONDS * 1000);
+          const idx = (loadedData[dateKey] || []).findIndex(e => e.id === entry.id);
+          if (idx >= 0) {
+            loadedData[dateKey][idx] = {
+              ...entry,
+              isActive: false,
+              endTime: new Date(cappedEndMs).toISOString(),
+            };
+            mutated = true;
+          }
+        }
+        if (mutated) {
+          saveTimesheetData(loadedData);
+          warning(
+            `Found ${activeEntries.length} active timers; kept the newest and closed the rest`
+          );
+        }
+      }
+
+      setActiveEntry(activeEntries[0].entry);
     };
 
     loadData();
