@@ -14,28 +14,39 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
   const timeoutRefs = useRef(new Map());
+  // Monotonic ID source. Avoids Date.now()/Math.random() — both flagged as
+  // impure by react-hooks/purity since the function is defined in the
+  // component body — and is also collision-free for rapid-fire toasts.
+  const nextIdRef = useRef(0);
 
-  const addToast = (message, type = 'info', duration = 3000) => {
-    const id = Date.now();
-    const newToast = { id, message, type };
-    
+  const addToast = (message, type = 'info', duration = 3000, action = null) => {
+    nextIdRef.current += 1;
+    const id = nextIdRef.current;
+    const newToast = { id, message, type, action };
+
     setToasts(prev => [...prev, newToast]);
-    
+
     if (duration > 0) {
-      // Clear any existing timeout for this ID
       if (timeoutRefs.current.has(id)) {
         clearTimeout(timeoutRefs.current.get(id));
       }
-      
+
       const timeoutId = setTimeout(() => {
         removeToast(id);
         timeoutRefs.current.delete(id);
       }, duration);
-      
+
       timeoutRefs.current.set(id, timeoutId);
     }
-    
+
     return id;
+  };
+
+  // Toast with an action button (e.g. "Undo"). Default duration is 5s — long
+  // enough to reach for the button, short enough to stay out of the way.
+  const actionToast = (message, action, options = {}) => {
+    const { type = 'info', duration = 5000 } = options;
+    return addToast(message, type, duration, action);
   };
 
   const removeToast = (id) => {
@@ -63,7 +74,7 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   return (
-    <ToastContext.Provider value={{ addToast, removeToast, success, error, info, warning }}>
+    <ToastContext.Provider value={{ addToast, removeToast, success, error, info, warning, actionToast }}>
       {children}
       <div className="fixed bottom-4 right-4 z-50 space-y-2">
         {toasts.map(toast => (
@@ -85,12 +96,26 @@ export const ToastProvider = ({ children }) => {
               {toast.type === 'info' && <Info className="w-5 h-5" />}
               <span className="text-sm font-medium">{toast.message}</span>
             </div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="ml-4 text-white hover:text-gray-200 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center ml-4 space-x-1">
+              {toast.action && (
+                <button
+                  onClick={() => {
+                    try { toast.action.onClick(); } catch (err) { console.error('Toast action error:', err); }
+                    removeToast(toast.id);
+                  }}
+                  className="px-2 py-1 text-sm font-semibold rounded hover:bg-white/20 transition-colors"
+                >
+                  {toast.action.label}
+                </button>
+              )}
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="text-white hover:text-gray-200 transition-colors p-1"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ))}
       </div>

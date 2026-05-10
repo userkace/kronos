@@ -47,7 +47,7 @@ const FUNNY_DEFAULT_TASKS = Object.freeze([
 ]);
 
 const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
-  const { success, error, warning } = useToast();
+  const { success, error, warning, actionToast } = useToast();
   const { isRunning: pomodoroIsRunning } = usePomodoro();
   const { getTransition, animations } = useMotionPreferences();
 
@@ -74,6 +74,12 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     mode: 'add',
     initialData: null
   });
+
+  // Inline-edit state. When non-null, the entry's `field` is rendered as an
+  // input. Save happens on Enter or blur; Esc cancels without writing. Only
+  // one cell is edited at a time.
+  // Shape: { entryId: string, field: 'description' | 'startTime' | 'endTime', value: string }
+  const [inlineEdit, setInlineEdit] = useState(null);
 
   // Check if timezone is properly initialized. Use the explicit flag from
   // TimezoneContext rather than a value-based sentinel — comparing against
@@ -912,10 +918,6 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
 // Merge entries with the same description
   const handleMergeEntries = (description) => {
-    if (!window.confirm(`Merge all entries named "${description}"? This will combine them into a single entry.`)) {
-      return;
-    }
-
     const storageKey = getStorageDateKey(selectedDate);
     const allData = loadTimesheetData() || {};
     const entries = allData[storageKey] || [];
@@ -927,6 +929,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
       warning('Need at least 2 entries to merge');
       return;
     }
+
+    // Snapshot the day's entries before mutating so Undo can restore them.
+    // Deep-cloned to insulate from any subsequent in-place mutations.
+    const dayBeforeSnapshot = JSON.parse(JSON.stringify(entries));
 
     // Calculate the earliest start time and latest end time
     const startTimes = entriesToMerge.map(entry => parseISO(entry.startTime));
@@ -962,6 +968,21 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     setSelectedDateEntries(remainingEntries);
 
     autoSaveToWeeklyTimesheet([storageKey]);
+
+    actionToast(
+      `Merged ${entriesToMerge.length} entries into "${description}"`,
+      {
+        label: 'Undo',
+        onClick: () => {
+          const data = loadTimesheetData() || {};
+          data[storageKey] = dayBeforeSnapshot;
+          saveTimesheetData(data);
+          setSelectedDateEntries(dayBeforeSnapshot);
+          autoSaveToWeeklyTimesheet([storageKey]);
+          success('Merge undone');
+        },
+      }
+    );
   };
 
   // Find entries that have duplicates
@@ -1084,12 +1105,131 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     autoSaveToWeeklyTimesheet(affectedDates);
   };
 
+  // Set when Esc is pressed in an inline editor — tells commitInlineEdit
+  // (which also runs from onBlur) to skip writing for that one trigger.
+  const skipNextBlurCommitRef = useRef(false);
+
+  const startInlineEdit = (entry, field, dims = null) => {
+    if (!entry || !field) return;
+    // Active entries can't have their times inline-edited (no endTime, and
+    // mutating startTime mid-run is a footgun handled better by the modal).
+    if ((field === 'startTime' || field === 'endTime') && (entry.isActive || !entry.endTime)) return;
+
+    let initialValue = '';
+    if (field === 'description') {
+      initialValue = entry.description || '';
+    } else if (field === 'startTime') {
+      initialValue = formatInTimezone(parseISO(entry.startTime), 'HH:mm:ss');
+    } else if (field === 'endTime') {
+      initialValue = formatInTimezone(parseISO(entry.endTime), 'HH:mm:ss');
+    }
+    setInlineEdit({ entryId: entry.id, field, value: initialValue, dims });
+  };
+
+  const updateInlineValue = (value) => {
+    setInlineEdit(prev => prev ? { ...prev, value } : prev);
+  };
+
+  const cancelInlineEdit = () => {
+    skipNextBlurCommitRef.current = true;
+    setInlineEdit(null);
+  };
+
+  const commitInlineEdit = () => {
+    if (skipNextBlurCommitRef.current) {
+      skipNextBlurCommitRef.current = false;
+      return;
+    }
+    if (!inlineEdit) return;
+    const editing = inlineEdit;
+    setInlineEdit(null);
+
+    const entry = selectedDateEntries.find(e => e.id === editing.entryId);
+    if (!entry) return;
+
+    let updated = null;
+
+    if (editing.field === 'description') {
+      const trimmed = (editing.value || '').trim();
+      if (!trimmed) {
+        warning('Task name cannot be empty');
+        return;
+      }
+      if (trimmed === (entry.description || '').trim()) return;
+      updated = { ...entry, description: trimmed };
+    } else if (editing.field === 'startTime' || editing.field === 'endTime') {
+      const v = (editing.value || '').trim();
+      // Accept HH:mm or HH:mm:ss — browsers may strip seconds on some <input
+      // type="time"> implementations even when step="1" is set, so seconds
+      // are optional on input. They're always emitted on save.
+      if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(v)) {
+        warning('Invalid time');
+        return;
+      }
+      const parts = v.split(':').map(Number);
+      const [h, m] = parts;
+      const s = Number.isFinite(parts[2]) ? parts[2] : 0;
+      if (h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59) {
+        warning('Invalid time');
+        return;
+      }
+
+      // Preserve the original calendar day in the user's timezone — keeps
+      // overnight entries (where the end falls on day+1) from collapsing
+      // back to a single day when only the time-of-day is changed.
+      const isoToEdit = editing.field === 'startTime' ? entry.startTime : entry.endTime;
+      if (!isoToEdit) return;
+      const zonedOriginal = toZonedTime(parseISO(isoToEdit), timezone);
+      zonedOriginal.setHours(h, m, s, 0);
+      const newIso = fromZonedTime(zonedOriginal, timezone).toISOString();
+
+      const newStartIso = editing.field === 'startTime' ? newIso : entry.startTime;
+      const newEndIso = editing.field === 'endTime' ? newIso : entry.endTime;
+      if (newEndIso && parseISO(newStartIso).getTime() >= parseISO(newEndIso).getTime()) {
+        warning('End must be after start. Use the Edit button for overnight entries.');
+        return;
+      }
+
+      updated = { ...entry };
+      if (editing.field === 'startTime') updated.startTime = newIso;
+      else updated.endTime = newIso;
+    }
+
+    if (!updated) return;
+
+    // Use the entry's startTime to derive the storage key so an entry whose
+    // start day doesn't match `selectedDate` (rare, but possible across
+    // timezone changes) still writes to the right bucket.
+    const entryDateStr = format(toZonedTime(parseISO(entry.startTime), timezone), 'yyyy-MM-dd');
+    const storageKey = entryDateStr;
+    const allData = loadTimesheetData() || {};
+    const dayEntries = allData[storageKey] || [];
+    const idx = dayEntries.findIndex(e => e.id === entry.id);
+    if (idx >= 0) {
+      dayEntries[idx] = updated;
+      dayEntries.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      allData[storageKey] = dayEntries;
+      saveTimesheetData(allData);
+    }
+
+    setSelectedDateEntries(prev => {
+      const next = prev.map(e => e.id === entry.id ? updated : e);
+      return next.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    });
+
+    autoSaveToWeeklyTimesheet([storageKey]);
+  };
+
   // Remove from localStorage
   const handleDeleteEntry = (entry) => {
     // Use startTime to determine the storage key instead of date field
     const entryDate = format(toZonedTime(parseISO(entry.startTime), timezone), 'yyyy-MM-dd');
     const storageKey = getStorageDateKey(entryDate);
     const allData = loadTimesheetData() || {};
+    // Snapshot the day's entries so Undo can restore them verbatim. Deep-cloned
+    // to insulate from any in-place mutations elsewhere.
+    const dayBeforeSnapshot = JSON.parse(JSON.stringify(allData[storageKey] || []));
+    const wasOnSelectedDate = storageKey === getStorageDateKey(selectedDate);
 
     if (allData[storageKey]) {
       allData[storageKey] = allData[storageKey].filter(e => e.id !== entry.id);
@@ -1108,6 +1248,21 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     handleCloseModal();
 
     autoSaveToWeeklyTimesheet([storageKey]);
+
+    actionToast(
+      `Deleted "${entry.description || 'entry'}"`,
+      {
+        label: 'Undo',
+        onClick: () => {
+          const data = loadTimesheetData() || {};
+          data[storageKey] = dayBeforeSnapshot;
+          saveTimesheetData(data);
+          if (wasOnSelectedDate) setSelectedDateEntries(dayBeforeSnapshot);
+          autoSaveToWeeklyTimesheet([storageKey]);
+          success('Restored');
+        },
+      }
+    );
   };
 
   // Merge overlapping time periods to calculate accurate total work time
@@ -1733,15 +1888,95 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                       <div className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">
-                              {entry.description}
-                            </h3>
+                            {inlineEdit?.entryId === entry.id && inlineEdit.field === 'description' ? (
+                              <textarea
+                                autoFocus
+                                value={inlineEdit.value}
+                                onChange={(e) => updateInlineValue(e.target.value)}
+                                onBlur={commitInlineEdit}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitInlineEdit(); }
+                                  else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
+                                }}
+                                onFocus={(e) => e.target.select()}
+                                aria-label="Edit task name"
+                                style={inlineEdit.dims ? {
+                                  width: `${inlineEdit.dims.width}px`,
+                                  height: `${inlineEdit.dims.height}px`,
+                                } : undefined}
+                                className="font-semibold text-gray-900 bg-blue-50 border border-blue-300 rounded px-2 py-0.5 outline-none focus:ring-2 focus:ring-blue-300 resize leading-snug box-border"
+                              />
+                            ) : (
+                              <h3
+                                className="font-semibold text-gray-900 cursor-text hover:bg-gray-100 rounded px-2 py-0.5 -mx-2 inline-block whitespace-pre-wrap wrap-break-word box-border"
+                                onClick={(e) => {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  startInlineEdit(entry, 'description', {
+                                    width: rect.width,
+                                    height: rect.height,
+                                  });
+                                }}
+                                title="Click to edit"
+                              >
+                                {entry.description}
+                              </h3>
+                            )}
                             <p className="text-gray-600 text-sm mb-2">
                               {entry.project || ''}
                             </p>
                             <div className="flex items-center space-x-4 text-gray-500">
-                              <span className="text-sm">
-                                {formatInTimezone(parseISO(entry.startTime), 'h:mm a')} - {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
+                              <span className="text-sm flex items-center gap-1 flex-wrap">
+                                {inlineEdit?.entryId === entry.id && inlineEdit.field === 'startTime' ? (
+                                  <input
+                                    type="time"
+                                    step="1"
+                                    autoFocus
+                                    value={inlineEdit.value}
+                                    onChange={(e) => updateInlineValue(e.target.value)}
+                                    onBlur={commitInlineEdit}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') { e.preventDefault(); commitInlineEdit(); }
+                                      else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
+                                    }}
+                                    aria-label="Edit start time"
+                                    className="text-sm border border-blue-300 bg-blue-50 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-300"
+                                  />
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => startInlineEdit(entry, 'startTime')}
+                                    className="cursor-text hover:bg-gray-100 rounded px-1 -mx-1"
+                                    title="Click to edit"
+                                  >
+                                    {formatInTimezone(parseISO(entry.startTime), 'h:mm a')}
+                                  </button>
+                                )}
+                                <span>-</span>
+                                {inlineEdit?.entryId === entry.id && inlineEdit.field === 'endTime' ? (
+                                  <input
+                                    type="time"
+                                    step="1"
+                                    autoFocus
+                                    value={inlineEdit.value}
+                                    onChange={(e) => updateInlineValue(e.target.value)}
+                                    onBlur={commitInlineEdit}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') { e.preventDefault(); commitInlineEdit(); }
+                                      else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
+                                    }}
+                                    aria-label="Edit end time"
+                                    className="text-sm border border-blue-300 bg-blue-50 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-300"
+                                  />
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => startInlineEdit(entry, 'endTime')}
+                                    className="cursor-text hover:bg-gray-100 rounded px-1 -mx-1"
+                                    title="Click to edit"
+                                  >
+                                    {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
+                                  </button>
+                                )}
                               </span>
                               <span className="font-mono">
                                 {formatDisplayDuration(duration)}
