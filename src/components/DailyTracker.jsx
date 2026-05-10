@@ -8,7 +8,7 @@ import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import TimezoneSelect from './TimezoneSelect';
 import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
-import { insertActiveEntryChronologically } from '../utils/entryUtils';
+import { insertActiveEntryChronologically, generateEntryId } from '../utils/entryUtils';
 import { usePomodoro } from '../contexts/PomodoroContext';
 import { useUnifiedDisplay } from '../hooks/useUnifiedDisplay';
 import { useMotionPreferences } from '../hooks/useMotionPreferences';
@@ -622,7 +622,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const utcTime = now; // Already UTC
 
     const newEntry = {
-      id: Date.now(),
+      id: generateEntryId(),
       description: taskToStart,
       startTime: utcTime.toISOString(),
       isActive: true
@@ -728,7 +728,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
         const segEnd = isLastDay ? utcTime : buildBoundaryUTC(dateString, '23:59:59');
 
         const segmentEntry = {
-          id: `${Date.now()}-${i}`,
+          id: generateEntryId(),
           description: activeEntry.description,
           project: activeEntry.project,
           task: activeEntry.task,
@@ -797,7 +797,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
     const utcTime = now; // Already UTC
 
     const newEntry = {
-      id: Date.now(),
+      id: generateEntryId(),
       description: entry.description,
       project: entry.project,
       startTime: utcTime.toISOString(),
@@ -919,7 +919,7 @@ const DailyTracker = ({ timezone, onTimezoneChange, onWeeklyTimesheetSave = () =
 
     // Create merged entry
     const mergedEntry = {
-      id: Date.now(),
+      id: generateEntryId(),
       description: description,
       project: entriesToMerge[0].project || '', // Use project from first entry
       task: entriesToMerge[0].task || '', // Use task from first entry
