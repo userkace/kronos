@@ -683,19 +683,27 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     }
 
     // Convert a wall-clock boundary on a given day into a UTC instant.
-    const buildBoundaryUTC = (dateString, timeString) => {
+    // The optional msOffset lets us hit the very-end-of-day boundary
+    // (23:59:59.999) so an end-of-day segment touches the next day's
+    // 00:00:00.000 with no gap. Without this, every midnight crossing
+    // would lose one second of tracked time.
+    const buildBoundaryUTC = (dateString, timeString, msOffset = 0) => {
       const baseDate = parse(dateString, 'yyyy-MM-dd', new Date());
       const wallTime = parse(timeString, 'HH:mm:ss', baseDate);
-      return fromZonedTime(wallTime, timezone);
+      const adjusted = msOffset
+        ? new Date(wallTime.getTime() + msOffset)
+        : wallTime;
+      return fromZonedTime(adjusted, timezone);
     };
 
     const isMultiDay = datesInRange.length > 1;
     const allData = loadTimesheetData() || {};
     if (!allData[storageKey]) allData[storageKey] = [];
 
-    // Close the original entry: end at now if same day, else end at 23:59:59 of its start day.
+    // Close the original entry: end at now if same day, else end at the very
+    // end of its start day so the next day's 00:00:00 segment is contiguous.
     const stopTime = isMultiDay
-      ? buildBoundaryUTC(timerStartDate, '23:59:59')
+      ? buildBoundaryUTC(timerStartDate, '23:59:59', 999)
       : utcTime;
 
     const updatedEntry = {
@@ -727,7 +735,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
         const dateString = datesInRange[i];
         const isLastDay = i === datesInRange.length - 1;
         const segStart = buildBoundaryUTC(dateString, '00:00:00');
-        const segEnd = isLastDay ? utcTime : buildBoundaryUTC(dateString, '23:59:59');
+        const segEnd = isLastDay ? utcTime : buildBoundaryUTC(dateString, '23:59:59', 999);
 
         const segmentEntry = {
           id: generateEntryId(),
