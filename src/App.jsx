@@ -47,11 +47,6 @@ function AppContent() {
     const loadedData = loadWeeklyTimesheet();
     const hasCompletedOnboarding = loadOnboardingCompleted();
 
-    console.log('=== App Load Debug ===');
-    console.log('Loaded weekly data:', loadedData);
-    console.log('Selected timezone:', selectedTimezone);
-    console.log('Onboarding completed:', hasCompletedOnboarding);
-
     setCurrentDate(loadedDate);
     setTimesheetData(loadedData || {});
     setShowOnboarding(!hasCompletedOnboarding);
@@ -110,23 +105,11 @@ function AppContent() {
   };
 
   const handleOnboardingComplete = (preferences) => {
-    console.log('=== Onboarding Complete ===');
-    console.log('Preferences received:', preferences);
-    console.log('Current selectedTimezone before change:', selectedTimezone);
-    
-    // Save preferences
     changeTimezone(preferences.timezone);
-    console.log('Called changeTimezone with:', preferences.timezone);
     changeWeekStart(preferences.weekStart);
-    console.log('Called changeWeekStart with:', preferences.weekStart);
     saveOnboardingCompleted();
-    
-    // Also save timezone directly to ensure it's persisted
+    // Also save timezone directly to ensure it's persisted before the next render.
     saveTimezone(preferences.timezone);
-    
-    console.log('Current selectedTimezone after change:', selectedTimezone);
-    
-    // Hide onboarding
     setShowOnboarding(false);
   };
 

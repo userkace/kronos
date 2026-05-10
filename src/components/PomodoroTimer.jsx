@@ -115,7 +115,7 @@ const PomodoroTimer = () => {
   useEffect(() => {
     if (timeLeft === 0 && isRunning) {
       if (audioRef.current) {
-        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+        audioRef.current.play().catch(e => console.error('Audio play failed:', e));
       }
     }
   }, [timeLeft, isRunning]);
