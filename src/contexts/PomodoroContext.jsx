@@ -181,12 +181,10 @@ export const PomodoroProvider = ({ children }) => {
   }, [timeLeft]);
 
   useEffect(() => {
-    console.log('Saving currentSet to localStorage:', currentSet);
     localStorage.setItem('kronos_pomodoro_current_set', currentSet.toString());
   }, [currentSet]);
 
   useEffect(() => {
-    console.log('Saving completedSets to localStorage:', completedSets);
     localStorage.setItem('kronos_pomodoro_completed_sets', completedSets.toString());
   }, [completedSets]);
 

@@ -28,10 +28,6 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     const weekStart = startOfWeek(currentDate, { weekStartsOn });
     const newWeekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
     setWeekDays(newWeekDays);
-    console.log('=== TimesheetTable Week Recalculation ===');
-    console.log('User week start:', userWeekStart);
-    console.log('Week starts on:', weekStartsOn);
-    console.log('New week days:', newWeekDays);
   }, [userWeekStart, currentDate]);
 
   // Helper function to get storage date key (same as DailyTracker)
@@ -76,24 +72,13 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     if (!timeIn || !timeOut) return 0;
 
     try {
-      console.log('=== Day Total Calculation Debug ===');
-      console.log('Time In:', timeIn);
-      console.log('Time Out:', timeOut);
-      console.log('Break Hours:', breakHours);
-
       // Split time strings to get hours and minutes
       const [inHours, inMinutes] = timeIn.split(':').map(Number);
       const [outHours, outMinutes] = timeOut.split(':').map(Number);
 
-      console.log('In Hours/Minutes:', inHours, inMinutes);
-      console.log('Out Hours/Minutes:', outHours, outMinutes);
-
       // Convert to total minutes
       const inTotalMinutes = (inHours * 60) + inMinutes;
       const outTotalMinutes = (outHours * 60) + outMinutes;
-
-      console.log('In Total Minutes:', inTotalMinutes);
-      console.log('Out Total Minutes:', outTotalMinutes);
 
       // Calculate difference
       let totalMinutes = outTotalMinutes - inTotalMinutes;
@@ -103,14 +88,8 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
         totalMinutes = totalMinutes + (24 * 60);
       }
 
-      console.log('Total Minutes:', totalMinutes);
-      console.log('Total Hours (raw):', totalMinutes / 60);
-
       // Convert to hours and subtract break hours
       const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
-
-      console.log('Total Hours (after break):', totalHours);
-      console.log('Final Result:', Math.max(0, totalHours));
 
       // Don't allow negative hours
       return Math.max(0, totalHours);

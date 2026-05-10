@@ -22,7 +22,6 @@ class FaviconManager {
     if (this.currentFavicon !== newFavicon) {
       favicon.href = newFavicon;
       this.currentFavicon = newFavicon;
-      console.log(`Favicon updated to: ${newFavicon}`);
     }
   }
 

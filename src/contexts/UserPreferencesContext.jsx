@@ -29,81 +29,37 @@ export const UserPreferencesProvider = ({ children }) => {
 
   // Load preferences from localStorage on mount
   useEffect(() => {
-    const savedWeekStart = loadWeekStart();
-    const savedClockFormat = loadClockFormat();
-    const savedSortOrder = loadSortOrder();
-    const savedShowBreaks = loadShowBreaks();
-    console.log('=== UserPreferencesContext Load ===');
-    console.log('Loaded week start from storage:', savedWeekStart);
-    console.log('Loaded clock format from storage:', savedClockFormat);
-    console.log('Loaded sort order from storage:', savedSortOrder);
-    console.log('Loaded show breaks from storage:', savedShowBreaks);
-    setWeekStart(savedWeekStart);
-    setClockFormat(savedClockFormat);
-    setSortOrder(savedSortOrder);
-    setShowBreaks(savedShowBreaks);
+    setWeekStart(loadWeekStart());
+    setClockFormat(loadClockFormat());
+    setSortOrder(loadSortOrder());
+    setShowBreaks(loadShowBreaks());
     setIsInitialized(true);
   }, []);
 
   // Save week start to localStorage whenever it changes (but not on initial load)
   useEffect(() => {
-    if (isInitialized) {
-      console.log('=== UserPreferencesContext Save Week Start ===');
-      console.log('Saving week start to storage:', weekStart);
-      saveWeekStart(weekStart);
-    }
+    if (isInitialized) saveWeekStart(weekStart);
   }, [weekStart, isInitialized]);
 
   // Save clock format to localStorage whenever it changes (but not on initial load)
   useEffect(() => {
-    if (isInitialized) {
-      console.log('=== UserPreferencesContext Save Clock Format ===');
-      console.log('Saving clock format to storage:', clockFormat);
-      saveClockFormat(clockFormat);
-    }
+    if (isInitialized) saveClockFormat(clockFormat);
   }, [clockFormat, isInitialized]);
 
   // Save sort order to localStorage whenever it changes (but not on initial load)
   useEffect(() => {
-    if (isInitialized) {
-      console.log('=== UserPreferencesContext Save Sort Order ===');
-      console.log('Saving sort order to storage:', sortOrder);
-      saveSortOrder(sortOrder);
-    }
+    if (isInitialized) saveSortOrder(sortOrder);
   }, [sortOrder, isInitialized]);
 
   // Save show breaks preference to localStorage whenever it changes (but not on initial load)
   useEffect(() => {
-    if (isInitialized) {
-      console.log('=== UserPreferencesContext Save Show Breaks ===');
-      console.log('Saving show breaks to storage:', showBreaks);
-      saveShowBreaks(showBreaks);
-    }
+    if (isInitialized) saveShowBreaks(showBreaks);
   }, [showBreaks, isInitialized]);
 
-  const changeWeekStart = (newWeekStart) => {
-    console.log('=== UserPreferencesContext Change Week Start ===');
-    console.log('Changing week start from', weekStart, 'to', newWeekStart);
-    setWeekStart(newWeekStart);
-  };
-
-  const changeClockFormat = (newClockFormat) => {
-    console.log('=== UserPreferencesContext Change Clock Format ===');
-    console.log('Changing clock format from', clockFormat, 'to', newClockFormat);
-    setClockFormat(newClockFormat);
-  };
-
-  const changeSortOrder = (newSortOrder) => {
-    console.log('=== UserPreferencesContext Change Sort Order ===');
-    console.log('Changing sort order from', sortOrder, 'to', newSortOrder);
-    setSortOrder(newSortOrder);
-  };
-
-  const toggleShowBreaks = () => {
-    console.log('=== UserPreferencesContext Toggle Show Breaks ===');
-    console.log('Toggling show breaks from', showBreaks, 'to', !showBreaks);
-    setShowBreaks(prev => !prev);
-  };
+  const changeWeekStart = (newWeekStart) => setWeekStart(newWeekStart);
+  const changeClockFormat = (newClockFormat) => setClockFormat(newClockFormat);
+  const changeSortOrder = (newSortOrder) => setSortOrder(newSortOrder);
+  const toggleShowBreaks = () => setShowBreaks(prev => !prev);
 
   const value = {
     weekStart,
