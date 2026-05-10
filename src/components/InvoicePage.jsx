@@ -540,10 +540,41 @@ const InvoicePage = () => {
   // Debounce settings for PDF generation to prevent lag during typing
   const debouncedSettings = useDebounce(settings, 500); // 500ms delay
 
-  // Memoize filtered entries for PDF to prevent unnecessary recalculations
+  // Compute the PDF's entries from the same debounced settings used for its
+  // totals. Previously we reused `filterEntries` (computed from live settings),
+  // which produced a brief inconsistency window during typing where row
+  // amounts used the new rate while the totals box still showed the old one.
   const pdfEntries = useMemo(() => {
-    return filterEntries;
-  }, [filterEntries]);
+    if (!debouncedSettings.startDate || !debouncedSettings.endDate) return [];
+    const entries = [];
+    const start = parseISO(debouncedSettings.startDate);
+    const end = parseISO(debouncedSettings.endDate);
+
+    Object.entries(timesheetData).forEach(([dateKey, dayData]) => {
+      try {
+        const entryDate = parseISO(dateKey);
+        if (isWithinInterval(entryDate, { start, end })) {
+          const dayTotal = calculateDayTotal(
+            dayData.timeIn,
+            dayData.timeOut,
+            dayData.breakHours
+          );
+          if (dayTotal > 0) {
+            entries.push({
+              date: format(entryDate, 'MMM dd, yyyy'),
+              description: dayData.workDetails || dayData.tasks || 'Time Entry',
+              amount: formatCurrency(dayTotal * debouncedSettings.hourlyRate, debouncedSettings.currency),
+              hours: dayTotal.toFixed(2),
+              duration: dayTotal * 3600,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error processing date:', dateKey, error);
+      }
+    });
+    return entries;
+  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.currency]);
 
   // Memoize totals for PDF
   const pdfTotals = useMemo(() => {
