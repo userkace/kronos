@@ -13,6 +13,7 @@ import {
 } from '@react-pdf/renderer';
 import { format, parseISO, isWithinInterval, startOfWeek } from 'date-fns';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
+import { useToast } from '../contexts/ToastContext';
 
 // Debounce hook
 const useDebounce = (value, delay) => {
@@ -321,6 +322,7 @@ const InvoicePDF = ({ invoiceData, settings, entries }) => (
 
 const InvoicePage = () => {
   const { weekStart: userWeekStart } = useUserPreferences();
+  const { warning } = useToast();
   const [timesheetData, setTimesheetData] = useState({});
   const [isAnyFieldFocused, setIsAnyFieldFocused] = useState(false);
   const focusTimeoutRef = useRef(null);
@@ -354,7 +356,12 @@ const InvoicePage = () => {
     saveInvoiceSettings(settings);
   }, [settings]);
 
-  // Date validation function for clamping
+  // When the user enters an out-of-order range, clamp the field they JUST
+  // edited rather than silently mutating the other one. Previously this
+  // function moved start backward when end was edited (or end forward when
+  // start was edited), which surprised users by changing a field they hadn't
+  // touched. Clamping the edited field keeps the change local to the user's
+  // intent — the other field's value is preserved.
   const validateAndClampDates = (newStartDate, newEndDate, changedField) => {
     if (!newStartDate || !newEndDate) {
       return { startDate: newStartDate, endDate: newEndDate };
@@ -363,26 +370,18 @@ const InvoicePage = () => {
     const start = parseISO(newStartDate);
     const end = parseISO(newEndDate);
 
-    let adjustedStart = newStartDate;
-    let adjustedEnd = newEndDate;
-
-    if (changedField === 'start') {
-      // If start date exceeds end date, set end date = start date + 1 day
-      if (start > end) {
-        const newEnd = new Date(start);
-        newEnd.setDate(newEnd.getDate() + 1);
-        adjustedEnd = format(newEnd, 'yyyy-MM-dd');
-      }
-    } else if (changedField === 'end') {
-      // If end date is before start date, set start date = end date - 1 day
-      if (end < start) {
-        const newStart = new Date(end);
-        newStart.setDate(newStart.getDate() - 1);
-        adjustedStart = format(newStart, 'yyyy-MM-dd');
-      }
+    if (changedField === 'start' && start > end) {
+      // User pushed start past end — clamp start down to end.
+      warning('Start date adjusted to match end date');
+      return { startDate: newEndDate, endDate: newEndDate };
+    }
+    if (changedField === 'end' && end < start) {
+      // User pulled end before start — clamp end up to start.
+      warning('End date adjusted to match start date');
+      return { startDate: newStartDate, endDate: newStartDate };
     }
 
-    return { startDate: adjustedStart, endDate: adjustedEnd };
+    return { startDate: newStartDate, endDate: newEndDate };
   };
 
   // Auto-update invoice number when end date changes
