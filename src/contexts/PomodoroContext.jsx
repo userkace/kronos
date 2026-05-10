@@ -5,6 +5,7 @@ import { generateEntryId } from '../utils/entryUtils';
 import { format, addSeconds, differenceInSeconds } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { useToast } from './ToastContext';
+import { useTimezone } from './TimezoneContext';
 
 const PomodoroContext = createContext();
 
@@ -20,6 +21,12 @@ export const PomodoroProvider = ({ children }) => {
   // Get toast notifications
   const { success, warning } = useToast();
 
+  // Single source of truth for timezone — previously this provider kept its
+  // own copy synced via a 1Hz polling interval and a `storage` listener,
+  // which (a) wasted CPU and (b) lagged same-tab changes by up to 1s,
+  // potentially landing pomodoro entries on the wrong day near midnight.
+  const { selectedTimezone } = useTimezone();
+
   // Snapshot of the persisted timer state at component creation. Captured here
   // (synchronously) so it isn't clobbered by other effects that re-persist
   // timer fields on first render.
@@ -34,37 +41,6 @@ export const PomodoroProvider = ({ children }) => {
   // "tab abandoned" and triggers a reset (see mount effect below) rather than
   // silently inventing minutes/hours of work.
   const STALE_TIMER_THRESHOLD_SECONDS = 5 * 60;
-  
-  // Get timezone from context or use default
-  const [selectedTimezone, setSelectedTimezone] = useState(() => {
-    return localStorage.getItem('kronos_selected_timezone') || 'UTC';
-  });
-
-  // Sync timezone with TimezoneContext
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'kronos_selected_timezone') {
-        setSelectedTimezone(e.newValue || 'UTC');
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Check for timezone changes from other tabs
-    const checkTimezone = () => {
-      const currentTimezone = localStorage.getItem('kronos_selected_timezone');
-      if (currentTimezone && currentTimezone !== selectedTimezone) {
-        setSelectedTimezone(currentTimezone);
-      }
-    };
-
-    const interval = setInterval(checkTimezone, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [selectedTimezone]);
 
   // Settings state
   const [workDuration, setWorkDuration] = useState(() => {
@@ -555,8 +531,7 @@ export const PomodoroProvider = ({ children }) => {
     isTrackingTask,
     taskStartTime,
     selectedTimezone,
-    setSelectedTimezone,
-    
+
     // Timer actions
     startTimer,
     pauseTimer,

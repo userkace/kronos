@@ -41,8 +41,7 @@ const PomodoroTimer = () => {
     resetAll,
     setCurrentTask,
     setIsTrackingTask,
-    setTaskStartTime,
-    selectedTimezone: pomodoroTimezone
+    setTaskStartTime
   } = usePomodoro();
 
   // Local state
