@@ -30,9 +30,30 @@ const entrySeconds = (entry, now) => {
 
 const dayKey = (date, timezone) => formatInTimeZone(date, timezone, 'yyyy-MM-dd');
 
+// Day-of-week (0=Sun..6=Sat) for a yyyy-MM-dd calendar date — independent of
+// the runtime locale/timezone since calendar dates aren't timezone-shifted.
+const dowFromKey = (yyyymmdd) => {
+  const [y, m, d] = yyyymmdd.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+};
+
+// Tailwind class for a heatmap cell. Buckets are tied to the daily hour goal
+// so the colors mean "how close did I get to my target today" rather than
+// "vs the busiest day in the range" (which would penalize consistent days).
+const heatmapClass = (hours, goal, inRange) => {
+  if (!inRange) return 'invisible';
+  if (!Number.isFinite(hours) || hours <= 0) return 'bg-gray-200';
+  if (!Number.isFinite(goal) || goal <= 0) return 'bg-blue-500';
+  const ratio = hours / goal;
+  if (ratio >= 1) return 'bg-blue-800';
+  if (ratio > 2 / 3) return 'bg-blue-600';
+  if (ratio > 1 / 3) return 'bg-blue-400';
+  return 'bg-blue-200';
+};
+
 const Reports = () => {
   const { selectedTimezone: timezone, isInitialized: timezoneInitialized } = useTimezone();
-  const { dailyHourGoal } = useUserPreferences();
+  const { dailyHourGoal, weekStart } = useUserPreferences();
   const [range, setRange] = useState('week');
   const [timesheet, setTimesheet] = useState(() => loadTimesheetData());
   const [now, setNow] = useState(() => new Date());
@@ -73,30 +94,39 @@ const Reports = () => {
     return days;
   }, [timesheet, rangeDef.days, now, timezone, todayKey]);
 
-  // Quarter view aggregates 7-day buckets so 90+ bars don't get squished.
-  const chartBuckets = useMemo(() => {
-    if (range !== 'quarter') return dailySeries;
-    const buckets = [];
-    let bucket = null;
-    dailySeries.forEach((d, idx) => {
-      if (idx % 7 === 0) {
-        if (bucket) buckets.push(bucket);
-        bucket = {
-          key: d.key,
-          date: d.date,
-          seconds: 0,
-          hours: 0,
-          label: format(d.date, 'MMM d'),
-        };
-      }
-      bucket.seconds += d.seconds;
-      bucket.hours += d.hours;
-    });
-    if (bucket) buckets.push(bucket);
-    return buckets;
-  }, [dailySeries, range]);
+  // Heatmap layout for the month/quarter views. Pads the first/last weeks so
+  // the grid is rectangular regardless of which weekday the range starts on.
+  const heatmapData = useMemo(() => {
+    if (range === 'week' || dailySeries.length === 0) return null;
+    const weekStartsOn = weekStart === 'monday' ? 1 : 0;
+    const oldestDow = dowFromKey(dailySeries[0].key);
+    const newestDow = dowFromKey(dailySeries[dailySeries.length - 1].key);
+    const leading = (oldestDow - weekStartsOn + 7) % 7;
+    const trailing = (weekStartsOn + 6 - newestDow + 7) % 7;
 
-  const maxHours = Math.max(0.5, ...chartBuckets.map(b => b.hours));
+    const cells = [];
+    for (let i = 0; i < leading; i++) {
+      cells.push({ inRange: false, key: `lead-${i}` });
+    }
+    dailySeries.forEach(d => cells.push({ ...d, inRange: true }));
+    for (let i = 0; i < trailing; i++) {
+      cells.push({ inRange: false, key: `trail-${i}` });
+    }
+
+    const weeks = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      weeks.push(cells.slice(i, i + 7));
+    }
+    return { weeks, weekStartsOn };
+  }, [dailySeries, range, weekStart]);
+
+  const weekdayLabels = useMemo(() => (
+    weekStart === 'monday'
+      ? ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+      : ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+  ), [weekStart]);
+
+  const maxHours = Math.max(0.5, ...dailySeries.map(d => d.hours));
   const totalSeconds = dailySeries.reduce((s, d) => s + d.seconds, 0);
   const totalHours = totalSeconds / 3600;
   const avgPerDay = rangeDef.days > 0 ? totalHours / rangeDef.days : 0;
@@ -272,7 +302,7 @@ const Reports = () => {
         <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="w-4 h-4 text-gray-500" />
           <h3 className="text-sm font-semibold text-gray-900">
-            {range === 'quarter' ? 'Weekly hours' : 'Daily hours'}
+            {range === 'week' ? 'Daily hours' : 'Activity heatmap'}
           </h3>
         </div>
 
@@ -280,19 +310,19 @@ const Reports = () => {
           <div className="text-sm text-gray-500 py-12 text-center">
             No tracked time in this range yet.
           </div>
-        ) : (
+        ) : range === 'week' ? (
           <div
             className="flex items-end gap-1 h-48"
             role="img"
-            aria-label={`${range === 'quarter' ? 'Weekly' : 'Daily'} hours bar chart`}
+            aria-label="Daily hours bar chart"
           >
-            {chartBuckets.map(b => {
+            {dailySeries.map(b => {
               const heightPct = maxHours > 0 ? (b.hours / maxHours) * 100 : 0;
-              const isToday = range !== 'quarter' && b.key === todayKey;
+              const isToday = b.key === todayKey;
               return (
                 <div
                   key={b.key}
-                  className="flex-1 flex flex-col items-center gap-1 min-w-0"
+                  className="flex-1 h-full flex flex-col items-center gap-1 min-w-0"
                 >
                   <div
                     className="text-[10px] text-gray-700 font-medium"
@@ -308,25 +338,79 @@ const Reports = () => {
                       style={{
                         height: `${b.hours > 0 ? Math.max(heightPct, 2) : 0}%`,
                       }}
-                      title={
-                        range === 'quarter'
-                          ? `Week of ${b.label}: ${b.hours.toFixed(2)}h`
-                          : `${format(b.date, 'EEE MMM d')}: ${b.hours.toFixed(2)}h`
-                      }
+                      title={`${format(b.date, 'EEE MMM d')}: ${b.hours.toFixed(2)}h`}
                     />
                   </div>
                   <div className="text-[10px] text-gray-500 truncate w-full text-center">
-                    {range === 'quarter'
-                      ? b.label
-                      : range === 'month'
-                        ? format(b.date, 'd')
-                        : format(b.date, 'EEE')}
+                    {format(b.date, 'EEE')}
                   </div>
                 </div>
               );
             })}
           </div>
-        )}
+        ) : heatmapData ? (
+          (() => {
+            const isMonth = range === 'month';
+            const cellSize = isMonth ? 'w-6 h-6' : 'w-3.5 h-3.5';
+            const labelSize = isMonth ? 'h-6' : 'h-3.5';
+            return (
+              <div className="space-y-3" role="img" aria-label="Daily activity heatmap">
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  <div className="flex flex-col gap-1 text-[10px] text-gray-500 shrink-0">
+                    {weekdayLabels.map((label, idx) => (
+                      <div
+                        key={idx}
+                        className={`${labelSize} flex items-center leading-none`}
+                      >
+                        {idx % 2 === 1 ? label : ''}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    {heatmapData.weeks.map((week, wIdx) => (
+                      <div key={wIdx} className="flex flex-col gap-1">
+                        {week.map((cell, dIdx) => {
+                          const cls = heatmapClass(
+                            cell.hours || 0,
+                            dailyHourGoal,
+                            cell.inRange
+                          );
+                          const isToday = cell.inRange && cell.key === todayKey;
+                          return (
+                            <div
+                              key={`${wIdx}-${dIdx}-${cell.key}`}
+                              className={`${cellSize} rounded-sm ${cls} ${
+                                isToday ? 'ring-2 ring-blue-600 ring-offset-1' : ''
+                              }`}
+                              title={
+                                cell.inRange
+                                  ? `${format(cell.date, 'EEE MMM d')}: ${(cell.hours || 0).toFixed(2)}h`
+                                  : ''
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-1.5 text-[10px] text-gray-500">
+                  <span>Less</span>
+                  <div className="w-3 h-3 rounded-sm bg-gray-200" />
+                  <div className="w-3 h-3 rounded-sm bg-blue-200" />
+                  <div className="w-3 h-3 rounded-sm bg-blue-400" />
+                  <div className="w-3 h-3 rounded-sm bg-blue-600" />
+                  <div className="w-3 h-3 rounded-sm bg-blue-800" />
+                  <span>More</span>
+                  <span className="ml-2 text-gray-400">
+                    Goal: {dailyHourGoal}h/day
+                  </span>
+                </div>
+              </div>
+            );
+          })()
+        ) : null}
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 p-4">
