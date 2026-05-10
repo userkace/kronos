@@ -22,7 +22,7 @@ import {
 import storageEventSystem from './utils/storageEvents';
 import { AlertTriangle } from 'lucide-react';
 import ChangelogModal from './components/ChangelogModal';
-import { getLatestChangelogVersion, getChangesSince } from './data/changelog';
+import { getLatestChangelogVersion, getChangesSince, CHANGELOG } from './data/changelog';
 import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -48,10 +48,20 @@ function AppContent() {
   // "What's new" modal state. Populated on mount with the entries the user
   // hasn't seen yet; null/empty means nothing to show.
   const [changelogEntries, setChangelogEntries] = useState([]);
+  // Whether there are entries the user hasn't acknowledged. Drives the dot on
+  // the header bell icon and is independent of whether the modal is open.
+  const [hasUnseenChangelog, setHasUnseenChangelog] = useState(false);
 
   const dismissChangelog = () => {
     saveChangelogLastSeenVersion(getLatestChangelogVersion());
     setChangelogEntries([]);
+    setHasUnseenChangelog(false);
+  };
+
+  // Manual open from the header bell — shows the full changelog so the user
+  // can browse history, not just the unseen subset.
+  const openChangelog = () => {
+    setChangelogEntries(CHANGELOG);
   };
 
   // Load data from LocalStorage on component mount
@@ -89,6 +99,7 @@ function AppContent() {
       saveChangelogLastSeenVersion(latestVersion);
     } else if (hasCompletedOnboarding && (lastSeen ?? 0) < latestVersion) {
       setChangelogEntries(getChangesSince(lastSeen));
+      setHasUnseenChangelog(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -187,6 +198,8 @@ function AppContent() {
           <AppLayout
             currentView={currentView}
             onViewChange={setCurrentView}
+            onShowChangelog={openChangelog}
+            hasUnseenChangelog={hasUnseenChangelog}
           >
             {currentView === 'tracker' ? (
               // Daily Tracker View

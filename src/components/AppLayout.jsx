@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText } from 'lucide-react';
+import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText, Bell } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { loadSidebarState, saveSidebarState } from '../utils/storage';
@@ -8,7 +8,7 @@ import DataImportExport from './DataImportExport';
 import PomodoroProgressBar from './atoms/PomodoroProgressBar';
 import DailyTrackerProgressBar from './atoms/DailyTrackerProgressBar';
 
-const AppLayout = ({ children, currentView, onViewChange }) => {
+const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUnseenChangelog }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { clockFormat } = useUserPreferences();
@@ -246,12 +246,32 @@ const AppLayout = ({ children, currentView, onViewChange }) => {
               </div>
             </div>
 
-            {/* Current Time Display */}
-            <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-              <Clock className="w-4 h-4" />
-              <span className="font-medium">
-                {formatTimeInTimezone(currentTime, selectedTimezone, clockFormat)}
-              </span>
+            <div className="flex items-center space-x-3">
+              {onShowChangelog && (
+                <button
+                  type="button"
+                  onClick={onShowChangelog}
+                  className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label={hasUnseenChangelog ? "What's new (unread updates)" : "What's new"}
+                  title="What's new"
+                >
+                  <Bell className="w-5 h-5" />
+                  {hasUnseenChangelog && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"
+                    />
+                  )}
+                </button>
+              )}
+
+              {/* Current Time Display */}
+              <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                <Clock className="w-4 h-4" />
+                <span className="font-medium">
+                  {formatTimeInTimezone(currentTime, selectedTimezone, clockFormat)}
+                </span>
+              </div>
             </div>
           </div>
         </header>
