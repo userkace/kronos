@@ -129,7 +129,12 @@ export const PomodoroProvider = ({ children }) => {
   
   const [taskStartTime, setTaskStartTime] = useState(() => {
     const saved = localStorage.getItem('kronos_pomodoro_task_start_time');
-    return saved ? new Date(saved) : null;
+    if (!saved) return null;
+    // Guard against a corrupt persisted value: `new Date('garbage')` yields an
+    // Invalid Date whose `.toISOString()` throws RangeError, which would crash
+    // the next phase completion (handlePhaseComplete calls .toISOString()).
+    const d = new Date(saved);
+    return Number.isNaN(d.getTime()) ? null : d;
   });
 
   const intervalRef = useRef(null);
