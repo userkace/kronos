@@ -264,29 +264,36 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDropdown]);
 
-  // Helper function to clean up duplicate entries caused by timezone conversion bugs
+  // Helper function to clean up duplicate entries caused by timezone conversion bugs.
+  // Returns null when nothing was duplicated (so storage-event-triggered calls
+  // don't write needlessly, and don't risk an infinite event loop).
   const cleanupDuplicateEntries = () => {
     const allData = loadTimesheetData();
-    const cleanedData = {};
+
+    // Pass 1: detect. If there are no duplicates we can early-return without
+    // touching storage at all.
     const seenIds = new Set();
-
-    Object.keys(allData).forEach(dateKey => {
-      const entries = allData[dateKey];
-      const validEntries = [];
-
-      entries.forEach(entry => {
-        // Skip if we've already seen this ID (true duplicates)
+    let hadDuplicates = false;
+    outer: for (const dateKey of Object.keys(allData)) {
+      for (const entry of allData[dateKey] || []) {
         if (seenIds.has(entry.id)) {
-          return;
+          hadDuplicates = true;
+          break outer;
         }
-
         seenIds.add(entry.id);
+      }
+    }
+    if (!hadDuplicates) return null;
 
-        // Keep entries in their original date keys - don't recalculate based on timezone
-        // This prevents entries from moving between dates on page reload
-        if (!cleanedData[dateKey]) {
-          cleanedData[dateKey] = [];
-        }
+    // Pass 2: dedupe. Keep entries in their original date keys so we don't
+    // recalculate dates based on timezone (which would move entries around).
+    const cleanedData = {};
+    const seenIds2 = new Set();
+    Object.keys(allData).forEach(dateKey => {
+      (allData[dateKey] || []).forEach(entry => {
+        if (seenIds2.has(entry.id)) return;
+        seenIds2.add(entry.id);
+        if (!cleanedData[dateKey]) cleanedData[dateKey] = [];
         cleanedData[dateKey].push(entry);
       });
     });
@@ -309,15 +316,15 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     setSelectedDate(new Date());
   }, [timezone]);
 
-  // Run cleanup only once on mount
-  useEffect(() => {
-    // Clean up duplicate entries first
-    cleanupDuplicateEntries();
-  }, []); // Empty dependency array - run only once on mount
-
   // Load data from localStorage on mount and when date changes
   useEffect(() => {
     const loadData = () => {
+      // Dedupe before reading. Previously this only ran on mount, which
+      // meant duplicates introduced via mid-session import sat around until
+      // the next reload. cleanupDuplicateEntries early-returns when there's
+      // nothing to do, so storage-event-triggered calls don't write or loop.
+      cleanupDuplicateEntries();
+
       const loadedData = loadTimesheetData() || {};
       const storageKey = getStorageDateKey(selectedDate);
 
