@@ -25,7 +25,7 @@ export const CHANGELOG = [
   {
     version: '0.2.0',
     date: '2026-05-11',
-    title: 'Inline editing, Undo system, Reports view & Mobile timesheet redesign',
+    title: 'Inline editing, Undo system, Reports view, Goals & Mobile redesign',
     changes: [
       { type: 'added', description: 'Click an entry\'s name or start/end time to edit it inline — no modal trip. Name opens as a multi-line textarea sized to match the rendered task (Enter saves, Shift+Enter inserts a newline, Esc cancels).' },
       { type: 'added', description: 'Deleting an entry or merging duplicates now shows an Undo toast for ~5s, restoring the day\'s entries verbatim if clicked.' },

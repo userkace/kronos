@@ -60,11 +60,13 @@ const ChangelogModal = ({ entries, onDismiss }) => {
         <div className="overflow-y-auto p-6 space-y-6">
           {entries.map(entry => (
             <section key={entry.version}>
-              <header className="flex items-baseline justify-between mb-2">
-                <h3 className="text-base font-semibold text-gray-900">
+              <header className="flex items-baseline justify-between gap-3 mb-2">
+                <h3 className="text-base font-semibold text-gray-900 min-w-0 wrap-break-word">
                   {entry.title}
                 </h3>
-                <span className="text-xs text-gray-500">{formatChangelogDate(entry.date)}</span>
+                <span className="text-xs text-gray-500 whitespace-nowrap shrink-0">
+                  {formatChangelogDate(entry.date)}
+                </span>
               </header>
               <ul className="space-y-2">
                 {entry.changes.map((change, idx) => (
