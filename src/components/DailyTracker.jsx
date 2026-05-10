@@ -26,6 +26,26 @@ import faviconManager from '../utils/faviconManager';
 import storageEventSystem from '../utils/storageEvents';
 import { writeWeeklyTimesheetForDates } from '../utils/weeklyTimesheet';
 
+// Hoisted to module scope so the array isn't reallocated on every render of
+// DailyTracker. Frozen because we never want to mutate it.
+const FUNNY_DEFAULT_TASKS = Object.freeze([
+  "Sure... work!",
+  "Doing important things!",
+  "Adulting responsibly!",
+  "Pretending to be productive!",
+  "Making magic happen!",
+  "Turning coffee into code!",
+  "Solving world problems!",
+  "Being a professional!",
+  "Doing the needful!",
+  "Working hard hardly working!",
+  "Manifesting success!",
+  "Crushing it (probably)!",
+  "Business stuff!",
+  "Very busy vibes!",
+  "Productivity performance!"
+]);
+
 const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning } = useToast();
   const { isRunning: pomodoroIsRunning } = usePomodoro();
@@ -118,25 +138,6 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     newMonth.setMonth(newMonth.getMonth() + increment);
     setCurrentMonth(newMonth);
   };
-
-  // Array of funny default task descriptions
-  const funnyDefaultTasks = [
-    "Sure... work!",
-    "Doing important things!",
-    "Adulting responsibly!",
-    "Pretending to be productive!",
-    "Making magic happen!",
-    "Turning coffee into code!",
-    "Solving world problems!",
-    "Being a professional!",
-    "Doing the needful!",
-    "Working hard hardly working!",
-    "Manifesting success!",
-    "Crushing it (probably)!",
-    "Business stuff!",
-    "Very busy vibes!",
-    "Productivity performance!"
-  ];
 
   // Helper function to format date in selected timezone
   const formatInTimezone = (date, formatStr) => {
@@ -612,7 +613,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
       return;
     }
 
-    const taskToStart = currentTask.trim() || funnyDefaultTasks[Math.floor(Math.random() * funnyDefaultTasks.length)];
+    const taskToStart = currentTask.trim() || FUNNY_DEFAULT_TASKS[Math.floor(Math.random() * FUNNY_DEFAULT_TASKS.length)];
 
     if (!taskToStart) return;
     if (!isToday()) {
