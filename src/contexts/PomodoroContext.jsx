@@ -320,14 +320,21 @@ export const PomodoroProvider = ({ children }) => {
     if (currentPhase === 'work' && isTrackingTask && currentTask) {
       // Save completed work session
       const endTime = new Date();
-      // Use the specified work duration consistently
       const duration = workDuration * 60;
-      
+
+      // Use end - workDuration as the effective startTime instead of the
+      // original taskStartTime. If the user paused mid-pomodoro, the wall
+      // time between taskStartTime and endTime is longer than the actual
+      // work, and downstream aggregators (weeklyTimesheet.js) would count
+      // the pause as work. Trimming the start forward makes pauses appear
+      // as gaps between entries — i.e. break time — which is what they are.
+      const effectiveStart = new Date(endTime.getTime() - duration * 1000);
+
       // Create time entry for the completed work session using same structure as DailyTracker
       const timeEntry = {
         id: generateEntryId(),
         description: `${currentTask}`,
-        startTime: taskStartTime.toISOString(),
+        startTime: effectiveStart.toISOString(),
         endTime: endTime.toISOString(),
         duration: duration,
         timezone: selectedTimezone,
@@ -340,7 +347,7 @@ export const PomodoroProvider = ({ children }) => {
         return format(dateInTimezone, 'yyyy-MM-dd');
       };
 
-      const storageKey = getStorageDateKey(taskStartTime);
+      const storageKey = getStorageDateKey(effectiveStart);
 
       // Save using the same storage system as DailyTracker
       const allData = loadTimesheetData() || {};
