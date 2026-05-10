@@ -140,9 +140,10 @@ const Reports = () => {
 
   // Walk back from today counting consecutive days with tracked time. Today is
   // allowed to be 0 (in-progress) so a streak from yesterday isn't reset just
-  // because the user hasn't started yet today. Days marked as non-work in
-  // user preferences are skipped without counting or breaking — taking
-  // weekends off shouldn't reset a streak.
+  // because the user hasn't started yet today. Non-work days behave like this:
+  //   - worked   → +1 (the seconds > 0 branch fires regardless of dow)
+  //   - skipped  → +0, but the streak doesn't break either
+  // So Sunday-no-work doesn't add, Sunday-with-work does.
   const streak = useMemo(() => {
     if (!todayKey) return 0;
     const weekendSet = new Set(weekendDays);
@@ -243,10 +244,7 @@ const Reports = () => {
                 {' '}{streak === 1 ? 'day' : 'days'}
               </span>
             </div>
-            <div className="text-xs text-gray-500">
-              Consecutive days with tracked time
-              {weekendDays.length > 0 ? ' (non-work days don\'t count against you)' : ''}
-            </div>
+            <div className="text-xs text-gray-500">Consecutive days you tracked time.</div>
           </div>
         </div>
 
