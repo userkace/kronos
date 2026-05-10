@@ -29,8 +29,9 @@ export const CHANGELOG = [
       { type: 'added', description: 'Reports view: weekly/monthly/quarterly bars of tracked hours, time-by-task breakdown, current streak, and a daily-goal progress ring.' },
       { type: 'added', description: 'Daily hour goal setting (Settings → Daily Hour Goal) drives the goal ring on the Reports view.' },
       { type: 'added', description: 'Header bell icon opens the "What\'s new" changelog at any time, with a red dot when there are unread updates.' },
-      { type: 'changed', description: 'Merging duplicates no longer requires a confirm prompt — Undo replaces it.' },
       { type: 'fixed', description: 'Edit modal time validation now compares seconds, not minutes — sub-minute differences (e.g. 09:00:30 → 09:00:45) no longer falsely trigger the "end equals start" toast.' },
+      { type: 'changed', description: 'Weekly Timesheet now uses a stacked card-per-day layout on phone-sized screens. The wide table still appears on tablet and up.' },
+      { type: 'changed', description: 'Merging duplicates no longer requires a confirm prompt — Undo replaces it.' },
     ],
   },
   {
