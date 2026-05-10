@@ -67,31 +67,23 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     }
   };
 
-  // Calculate total hours for a single day
+  // Calculate total hours for a single day. Accepts both "HH:mm" (legacy) and
+  // "HH:mm:ss" (current) — seconds default to 0 when absent so precision is
+  // preserved for new entries without breaking older ones.
   const calculateDayTotal = (timeIn, timeOut, breakHours) => {
     if (!timeIn || !timeOut) return 0;
 
     try {
-      // Split time strings to get hours and minutes
-      const [inHours, inMinutes] = timeIn.split(':').map(Number);
-      const [outHours, outMinutes] = timeOut.split(':').map(Number);
+      const [inH = 0, inM = 0, inS = 0] = timeIn.split(':').map(Number);
+      const [outH = 0, outM = 0, outS = 0] = timeOut.split(':').map(Number);
 
-      // Convert to total minutes
-      const inTotalMinutes = (inHours * 60) + inMinutes;
-      const outTotalMinutes = (outHours * 60) + outMinutes;
+      const inSeconds = (inH * 3600) + (inM * 60) + inS;
+      const outSeconds = (outH * 3600) + (outM * 60) + outS;
 
-      // Calculate difference
-      let totalMinutes = outTotalMinutes - inTotalMinutes;
+      let totalSeconds = outSeconds - inSeconds;
+      if (totalSeconds < 0) totalSeconds += 24 * 3600;
 
-      // Handle overnight shifts
-      if (totalMinutes < 0) {
-        totalMinutes = totalMinutes + (24 * 60);
-      }
-
-      // Convert to hours and subtract break hours
-      const totalHours = (totalMinutes / 60) - (parseFloat(breakHours) || 0);
-
-      // Don't allow negative hours
+      const totalHours = (totalSeconds / 3600) - (parseFloat(breakHours) || 0);
       return Math.max(0, totalHours);
     } catch (error) {
       console.error('Error calculating time:', error);
@@ -160,18 +152,20 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     }
   };
 
-  // Convert 24-hour time to 12-hour format with AM/PM
+  // Convert 24-hour time to 12-hour format with AM/PM. Preserves seconds when
+  // present so copy-to-clipboard doesn't drop precision.
   const convertTo12HourFormat = (time24) => {
     if (!time24) return time24;
-    
-    const [hours, minutes] = time24.split(':');
+
+    const [hours, minutes, seconds] = time24.split(':');
     const hour = parseInt(hours);
-    const minute = minutes;
-    
+
     const period = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12; // Convert 0 to 12
-    
-    return `${hour12}:${minute} ${period}`;
+
+    return seconds != null
+      ? `${hour12}:${minutes}:${seconds} ${period}`
+      : `${hour12}:${minutes} ${period}`;
   };
 
   // Sync with props
@@ -336,12 +330,13 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                 <td className="px-4 py-3 w-20 min-w-20">
                   <input
                     type="time"
+                    step="1"
                     value={dayData.timeIn || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
                     className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
-                      copiedField === `${dayKey}-timeIn` 
-                        ? 'bg-green-100 border-green-400' 
+                      copiedField === `${dayKey}-timeIn`
+                        ? 'bg-green-100 border-green-400'
                         : 'border-gray-300 hover:bg-gray-50'
                     }`}
                     title="Click to copy"
@@ -350,12 +345,13 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                 <td className="px-4 py-3 w-20 min-w-20">
                   <input
                     type="time"
+                    step="1"
                     value={dayData.timeOut || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
                     className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
-                      copiedField === `${dayKey}-timeOut` 
-                        ? 'bg-green-100 border-green-400' 
+                      copiedField === `${dayKey}-timeOut`
+                        ? 'bg-green-100 border-green-400'
                         : 'border-gray-300 hover:bg-gray-50'
                     }`}
                     title="Click to copy"

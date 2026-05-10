@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, differenceInSeconds, differenceInMinutes, parseISO, parse, addDays, subDays } from 'date-fns';
+import { format, differenceInSeconds, parseISO, parse, addDays, subDays } from 'date-fns';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Play, Pause, Square, Plus, Clock, Edit, ChevronLeft, ChevronRight, Merge, ArrowUp, ArrowDown, Calendar, Coffee } from 'lucide-react';
 import DatePicker from './molecules/DatePicker';
@@ -1114,23 +1114,13 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
   const mergeOverlappingPeriods = (entries) => {
     if (entries.length === 0) return [];
 
-    // Convert entries to time periods in selected timezone, normalized to minutes
-    const periods = entries.map(entry => {
-      const start = toZonedTime(parseISO(entry.startTime), timezone);
-      const end = toZonedTime(parseISO(entry.endTime), timezone);
-
-      // Normalize to minute precision (zero out seconds and milliseconds)
-      const normalizedStart = new Date(start);
-      normalizedStart.setSeconds(0, 0);
-
-      const normalizedEnd = new Date(end);
-      normalizedEnd.setSeconds(0, 0);
-
-      return {
-        start: normalizedStart,
-        end: normalizedEnd
-      };
-    });
+    // Full-precision periods in the selected timezone. Previously this
+    // floored each entry to the minute via setSeconds(0, 0), which drifted
+    // the daily total by minutes on busy days.
+    const periods = entries.map(entry => ({
+      start: toZonedTime(parseISO(entry.startTime), timezone),
+      end: toZonedTime(parseISO(entry.endTime), timezone),
+    }));
 
     // Sort by start time
     periods.sort((a, b) => a.start - b.start);
@@ -1189,20 +1179,17 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     const latestEnd = endTimes.reduce((latest, current) =>
       current > latest ? current : latest, endTimes[0]);
 
-    // Normalize to minute precision for consistency
-    earliestStart.setSeconds(0, 0);
-    latestEnd.setSeconds(0, 0);
-
-    // Calculate total work hours using merged overlapping periods
+    // Compute in seconds; format with seconds at the display boundary so the
+    // weekly row reflects full precision (matches weeklyTimesheet.js).
     const mergedPeriods = mergeOverlappingPeriods(completedEntries);
 
-    const totalWorkMinutes = mergedPeriods.reduce((total, period) => {
-      return total + differenceInMinutes(period.end, period.start);
+    const totalWorkSeconds = mergedPeriods.reduce((total, period) => {
+      return total + differenceInSeconds(period.end, period.start);
     }, 0);
 
-    const totalWorkHours = totalWorkMinutes / 60;
-    const timeSpanMinutes = differenceInMinutes(latestEnd, earliestStart);
-    const breakHoursDecimal = Math.max(0, (timeSpanMinutes - totalWorkMinutes) / 60);
+    const totalWorkHours = totalWorkSeconds / 3600;
+    const timeSpanSeconds = differenceInSeconds(latestEnd, earliestStart);
+    const breakHoursDecimal = Math.max(0, (timeSpanSeconds - totalWorkSeconds) / 3600);
 
     // Create work details from unique task descriptions separated by semicolons
     // This avoids duplicates when entries with the same description are split apart
@@ -1237,8 +1224,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
       ...weeklyData[dayKey],
       tasks: completedEntries.length > 0 ? `${completedEntries.length} task(s)` : '',
       workDetails: workDetails,
-      timeIn: format(earliestStart, 'HH:mm'),
-      timeOut: format(latestEnd, 'HH:mm'),
+      timeIn: format(earliestStart, 'HH:mm:ss'),
+      timeOut: format(latestEnd, 'HH:mm:ss'),
       breakHours: breakHoursDecimal.toFixed(2)
     };
 
