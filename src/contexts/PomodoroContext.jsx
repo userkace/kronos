@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { saveTimesheetData, loadTimesheetData } from '../utils/storage';
 import { writeWeeklyTimesheetForDates } from '../utils/weeklyTimesheet';
+import { generateEntryId } from '../utils/entryUtils';
 import { format, addSeconds, differenceInSeconds } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { useToast } from './ToastContext';
@@ -324,7 +325,7 @@ export const PomodoroProvider = ({ children }) => {
       
       // Create time entry for the completed work session using same structure as DailyTracker
       const timeEntry = {
-        id: Date.now().toString(),
+        id: generateEntryId(),
         description: `${currentTask}`,
         startTime: taskStartTime.toISOString(),
         endTime: endTime.toISOString(),

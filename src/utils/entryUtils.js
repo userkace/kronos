@@ -3,6 +3,25 @@
  */
 
 /**
+ * Generates a unique string ID for a time entry.
+ *
+ * Earlier code used Date.now() (sometimes as a number, sometimes stringified),
+ * which had two problems: (1) entries created in the same millisecond got the
+ * same ID, and (2) equality checks across number vs string sources silently
+ * failed. crypto.randomUUID() avoids both.
+ *
+ * @returns {string}
+ */
+export const generateEntryId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for older runtimes — Math.random plus a high-resolution suffix
+  // is collision-resistant enough for our scale.
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+/**
  * Inserts an active entry into the correct chronological position among completed entries
  * @param {Array} completedEntries - Array of completed entries (filtered to exclude active entries)
  * @param {Object} activeEntry - The active entry to insert (can be null/undefined)
