@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { format, addMinutes, differenceInMinutes, differenceInCalendarDays, parse, isValid, parseISO } from 'date-fns';
+import { format, addMinutes, differenceInMinutes, differenceInSeconds, differenceInCalendarDays, parse, isValid, parseISO } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { 
   Menu, 
@@ -143,6 +143,11 @@ const TimeEntryModal = ({
   // Calculate duration from start and end times. Returns '' when end < start
   // unless the user has explicitly enabled the overnight toggle, so a typo
   // doesn't silently produce a 23-hour entry.
+  //
+  // Ordering is checked in seconds so a sub-minute positive difference (e.g.
+  // 09:00:30 → 09:00:45) isn't mis-classified as "end before start". The
+  // duration string still uses minute granularity (its only consumer is the
+  // user-facing summary field).
   const calculateDuration = (startTime, endTime, overnight) => {
     if (!startTime || !endTime) return '';
 
@@ -152,14 +157,14 @@ const TimeEntryModal = ({
 
       if (!isValid(start) || !isValid(end)) return '';
 
-      let diffMinutes = differenceInMinutes(end, start);
+      let diffSeconds = differenceInSeconds(end, start);
 
-      if (diffMinutes < 0) {
+      if (diffSeconds < 0) {
         if (!overnight) return '';
-        diffMinutes += 24 * 60;
+        diffSeconds += 24 * 60 * 60;
       }
 
-      return formatDuration(diffMinutes);
+      return formatDuration(Math.floor(diffSeconds / 60));
     } catch (error) {
       return '';
     }
@@ -201,7 +206,7 @@ const TimeEntryModal = ({
         try {
           const s = parse(nextStart, 'HH:mm:ss', new Date());
           const e = parse(nextEnd, 'HH:mm:ss', new Date());
-          if (isValid(s) && isValid(e) && differenceInMinutes(e, s) >= 0) {
+          if (isValid(s) && isValid(e) && differenceInSeconds(e, s) >= 0) {
             nextOvernight = false;
           }
         } catch {
@@ -252,12 +257,14 @@ const TimeEntryModal = ({
         return;
       }
 
-      const diffMinutes = differenceInMinutes(end, start);
-      if (diffMinutes === 0) {
+      // Seconds, not minutes — otherwise 09:00:30 → 09:00:45 (15s apart)
+      // rounds to 0 minutes and falsely trips the "equal" branch.
+      const diffSeconds = differenceInSeconds(end, start);
+      if (diffSeconds === 0) {
         error('End time cannot equal start time');
         return;
       }
-      if (diffMinutes < 0 && !isOvernight) {
+      if (diffSeconds < 0 && !isOvernight) {
         error('End time is before start time. Enable "Overnight shift" if this entry crosses midnight.');
         return;
       }
