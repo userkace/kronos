@@ -12,7 +12,7 @@ import {
 } from '../utils/storage';
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
-  AlertTriangle, Download, RefreshCcw, X, Target
+  AlertTriangle, Download, RefreshCcw, X
 } from 'lucide-react';
 
 const formatBytes = (n) => {
@@ -277,14 +277,14 @@ const Settings = ({ onCorruptionResolved }) => {
           </div>
         </div>
 
-        {/* Week Settings */}
+        {/* Work Schedule — week start, non-work days, and daily hour goal */}
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center space-x-3 mb-4">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Week Settings</h4>
+            <h4 className="font-medium text-gray-900">Work Schedule</h4>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-5">
             <div>
               <label htmlFor="weekStart" className="block text-sm font-medium text-gray-700 mb-2">
                 Start of the Week
@@ -299,57 +299,42 @@ const Settings = ({ onCorruptionResolved }) => {
                 <option value="monday">Monday</option>
               </select>
               <p className="mt-1 text-sm text-gray-500">
-                Choose which day your week starts on
+                Choose which day your week starts on.
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Non-Work Days */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Non-Work Days</h4>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label, idx) => {
-                const isSelected = weekendDaysValue.includes(idx);
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => toggleWeekendDay(idx)}
-                    aria-pressed={isSelected}
-                    className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
-                      isSelected
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+            <div className="border-t border-gray-100 pt-5">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Non-Work Days
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label, idx) => {
+                  const isSelected = weekendDaysValue.includes(idx);
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => toggleWeekendDay(idx)}
+                      aria-pressed={isSelected}
+                      className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                Days you don't normally work. Skipping these won't break your streak on the Reports view.
+              </p>
             </div>
-            <p className="text-sm text-gray-500">
-              Days you don't normally work. Skipping these won't break your streak on the Reports view.
-            </p>
-          </div>
-        </div>
 
-        {/* Daily Hour Goal */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
-            <Target className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Daily Hour Goal</h4>
-          </div>
-
-          <div className="space-y-3">
-            <div>
+            <div className="border-t border-gray-100 pt-5">
               <label htmlFor="dailyHourGoal" className="block text-sm font-medium text-gray-700 mb-2">
-                Hours per day
+                Daily Hours Goal
               </label>
               <input
                 id="dailyHourGoal"
