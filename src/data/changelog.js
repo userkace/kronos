@@ -20,10 +20,30 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: 2,
+    date: '2026-05-11',
+    title: 'Inline editing, Undo system & Reports view',
+    changes: [
+      { type: 'added', description: 'Click an entry\'s name or start/end time to edit it inline — no modal trip. Name opens as a multi-line textarea sized to match the rendered task (Enter saves, Shift+Enter inserts a newline, Esc cancels).' },
+      { type: 'added', description: 'Deleting an entry or merging duplicates now shows an Undo toast for ~5s, restoring the day\'s entries verbatim if clicked.' },
+      { type: 'added', description: 'Reports view: weekly/monthly/quarterly bars of tracked hours, time-by-task breakdown, current streak, and a daily-goal progress ring.' },
+      { type: 'added', description: 'Daily hour goal setting (Settings → Daily Hour Goal) drives the goal ring on the Reports view.' },
+      { type: 'added', description: 'Header bell icon opens the "What\'s new" changelog at any time, with a red dot when there are unread updates.' },
+      { type: 'changed', description: 'Merging duplicates no longer requires a confirm prompt — Undo replaces it.' },
+      { type: 'fixed', description: 'Edit modal time validation now compares seconds, not minutes — sub-minute differences (e.g. 09:00:30 → 09:00:45) no longer falsely trigger the "end equals start" toast.' },
+    ],
+  },
+  {
     version: 1,
     date: '2026-05-11',
-    title: 'Reliability, accuracy & recovery',
+    title: 'Data integrity & accuracy overhaul',
     changes: [
+      // Recovery & validation
+      { type: 'added', description: 'Data Recovery section in Settings: restore, download, or discard quarantined backups when corruption is detected.' },
+      { type: 'added', description: 'Persistent banner when corrupt storage is detected; saves are paused until you resolve.' },
+      { type: 'fixed', description: 'Backup imports validate every entry, rejecting malformed data with a specific error instead of silently corrupting storage.' },
+      { type: 'fixed', description: 'Corrupt persisted Pomodoro state no longer crashes the app on the next phase completion.' },
+
       // Data-loss prevention
       { type: 'fixed', description: 'Multi-day timer rollovers now record every intermediate day instead of losing them.' },
       { type: 'fixed', description: 'Stopping a timer deleted in another tab now restores the tracked time instead of silently dropping it.' },
@@ -44,12 +64,6 @@ export const CHANGELOG = [
       { type: 'fixed', description: 'Invoice PDF totals and row amounts now derive from the same settings snapshot while typing.' },
       { type: 'fixed', description: 'Edit-modal "unsaved changes" prompt only fires for actual changes now.' },
       { type: 'fixed', description: 'UTC timezone users get document title updates and other timezone-gated features.' },
-
-      // Recovery & validation
-      { type: 'added', description: 'Data Recovery section in Settings: restore, download, or discard quarantined backups when corruption is detected.' },
-      { type: 'added', description: 'Persistent banner when corrupt storage is detected; saves are paused until you resolve.' },
-      { type: 'fixed', description: 'Backup imports validate every entry, rejecting malformed data with a specific error instead of silently corrupting storage.' },
-      { type: 'fixed', description: 'Corrupt persisted Pomodoro state no longer crashes the app on the next phase completion.' },
 
       // Stability & internals
       { type: 'fixed', description: 'Pomodoro phase completion is single-fire — duplicates from React StrictMode or rapid state changes are prevented.' },
