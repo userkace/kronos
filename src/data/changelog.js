@@ -23,6 +23,20 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.2.1',
+    date: '2026-05-11',
+    title: 'Reports heatmap redesign: calendar periods, floating tooltips & full context',
+    changes: [
+      { type: 'added', description: 'Hovering a day cell on the month/quarter heatmap shows a GitHub-style floating tooltip with the date and hours tracked, replacing the slow native browser tooltip.' },
+      { type: 'added', description: 'Future days of the current period now render as dimmed empty slots instead of being hidden, so the heatmap reads as a complete calendar block rather than something that ends abruptly on today.' },
+      { type: 'changed', description: 'Month and quarter views are now calendar-based rather than rolling 30/91-day windows. "Month" snaps to the calendar month containing today; "Quarter" snaps to the calendar quarter.' },
+      { type: 'changed', description: 'The heatmap is right-anchored on the current period and extends backward by full weeks to fill the card\'s available width — so wider screens show many months of past history at lower opacity. The minimum is always the previous full month/quarter plus the current one.' },
+      { type: 'changed', description: 'Range Total and Average per day now reflect "this period so far" (period start through today) rather than a rolling N-day total.' },
+      { type: 'changed', description: 'Heatmap weekday labels are consistent regardless of week-start setting: Sunday-first weeks show M / W / F, and Monday-first weeks show M / W / F / S. Previously Monday-first weeks showed the off-letters T / T / S.' },
+      { type: 'fixed', description: 'Month and quarter heatmaps no longer disappear entirely when the current period has no tracked time yet — the empty grid and any prior-period history still render so you can see where you are in the calendar.' },
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-05-11',
     title: 'Inline editing, Undo system, Reports view, Goals & Mobile redesign',

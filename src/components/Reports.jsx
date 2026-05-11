@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { format, parseISO, subDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Flame, Target, TrendingUp, BarChart3, ListChecks } from 'lucide-react';
@@ -8,9 +8,9 @@ import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 const RANGES = [
-  { id: 'week', label: 'Week', days: 7 },
-  { id: 'month', label: 'Month', days: 30 },
-  { id: 'quarter', label: 'Quarter', days: 91 },
+  { id: 'week', label: 'Week' },
+  { id: 'month', label: 'Month' },
+  { id: 'quarter', label: 'Quarter' },
 ];
 
 // Seconds tracked for one entry. Active entries (no endTime) count up to `now`
@@ -37,6 +37,33 @@ const dowFromKey = (yyyymmdd) => {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 };
 
+// Shift a yyyy-MM-dd key by N calendar days. Uses UTC math to avoid local-tz
+// drift across DST boundaries when we're just walking the calendar grid.
+const shiftKey = (yyyymmdd, n) => {
+  const [y, m, d] = yyyymmdd.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + n));
+  const ny = date.getUTCFullYear();
+  const nm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const nd = String(date.getUTCDate()).padStart(2, '0');
+  return `${ny}-${nm}-${nd}`;
+};
+
+// Local Date for a yyyy-MM-dd key, used only for `format()` display (weekday
+// labels, tooltip dates) — no timezone semantics intended.
+const dateFromKey = (yyyymmdd) => {
+  const [y, m, d] = yyyymmdd.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+// Days between two yyyy-MM-dd keys (k2 - k1) via UTC math, DST-safe.
+const daysBetweenKeys = (k1, k2) => {
+  const [y1, m1, d1] = k1.split('-').map(Number);
+  const [y2, m2, d2] = k2.split('-').map(Number);
+  return Math.round(
+    (Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86_400_000
+  );
+};
+
 // Tailwind class for a heatmap cell. Buckets are tied to the daily hour goal
 // so the colors mean "how close did I get to my target today" rather than
 // "vs the busiest day in the range" (which would penalize consistent days).
@@ -57,6 +84,10 @@ const Reports = () => {
   const [range, setRange] = useState('week');
   const [timesheet, setTimesheet] = useState(() => loadTimesheetData());
   const [now, setNow] = useState(() => new Date());
+  const [tooltip, setTooltip] = useState(null);
+  const [heatmapCardWidth, setHeatmapCardWidth] = useState(0);
+  const heatmapAreaRef = useRef(null);
+  const heatmapCardRef = useRef(null);
 
   // Tick once a minute so the goal ring + active-day totals stay fresh while
   // the user lingers on this view.
@@ -74,43 +105,145 @@ const Reports = () => {
     return unsubscribe;
   }, []);
 
-  const rangeDef = RANGES.find(r => r.id === range) || RANGES[0];
+  // Measure the heatmap card so we can fit as many prior weeks as the
+  // viewport allows. The card itself is always mounted (it also hosts the
+  // week-view bar chart), so the observer survives range changes.
+  useEffect(() => {
+    const el = heatmapCardRef.current;
+    if (!el) return;
+    setHeatmapCardWidth(el.clientWidth);
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width;
+      if (typeof w === 'number') setHeatmapCardWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const todayKey = useMemo(
     () => (timezoneInitialized && timezone ? dayKey(now, timezone) : null),
     [now, timezone, timezoneInitialized]
   );
 
-  // Oldest -> newest list of {key, date, seconds, hours} for the selected range.
+  // The "current period" for the selected range. Week stays a rolling 7-day
+  // window (no calendar concept); month/quarter snap to the calendar month /
+  // calendar quarter containing today so the heatmap can show the full period
+  // (including future days) plus surrounding past context.
+  //   - startKey/endKey   : current period bounds (full-opacity cells)
+  //   - pastStartKey      : first day of the previous full period — the
+  //                         heatmap renders everything from here forward so
+  //                         the user sees the whole prior period dimmed on
+  //                         the left, not just a one-week sliver
+  //   - periodEndKey      : clamps stats and the "inRange" status to <= today
+  const periodInfo = useMemo(() => {
+    if (!todayKey) return null;
+    if (range === 'week') {
+      return {
+        type: 'rolling',
+        startKey: shiftKey(todayKey, -6),
+        endKey: todayKey,
+        periodEndKey: todayKey,
+      };
+    }
+    const [y, m] = todayKey.split('-').map(Number);
+    const startMonth = range === 'month' ? m : Math.floor((m - 1) / 3) * 3 + 1;
+    const endMonth = range === 'month' ? m : startMonth + 2;
+    const lastDay = new Date(Date.UTC(y, endMonth, 0)).getUTCDate();
+    const monthsBack = range === 'month' ? 1 : 3;
+    const pastStartDate = new Date(Date.UTC(y, startMonth - 1 - monthsBack, 1));
+    const pastY = pastStartDate.getUTCFullYear();
+    const pastM = pastStartDate.getUTCMonth() + 1;
+    return {
+      type: 'calendar',
+      startKey: `${y}-${String(startMonth).padStart(2, '0')}-01`,
+      endKey: `${y}-${String(endMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+      pastStartKey: `${pastY}-${String(pastM).padStart(2, '0')}-01`,
+      periodEndKey: todayKey,
+    };
+  }, [todayKey, range]);
+
+  // In-period days from period start to today (inclusive). Drives the week bar
+  // chart, range stats, and task breakdown — all "this period so far".
   const dailySeries = useMemo(() => {
-    if (!todayKey) return [];
+    if (!periodInfo) return [];
     const days = [];
-    for (let i = rangeDef.days - 1; i >= 0; i--) {
-      const d = subDays(now, i);
-      const key = dayKey(d, timezone);
-      const entries = timesheet[key] || [];
+    let cursor = periodInfo.startKey;
+    while (cursor <= periodInfo.periodEndKey) {
+      const entries = timesheet[cursor] || [];
       const seconds = entries.reduce((sum, e) => sum + entrySeconds(e, now), 0);
-      days.push({ key, date: d, seconds, hours: seconds / 3600 });
+      days.push({
+        key: cursor,
+        date: dateFromKey(cursor),
+        seconds,
+        hours: seconds / 3600,
+      });
+      cursor = shiftKey(cursor, 1);
     }
     return days;
-  }, [timesheet, rangeDef.days, now, timezone, todayKey]);
+  }, [periodInfo, timesheet, now]);
 
-  // Heatmap layout for the month/quarter views. Pads the first/last weeks so
-  // the grid is rectangular regardless of which weekday the range starts on.
+  // Heatmap layout for month/quarter. The grid ALWAYS ends at the last day of
+  // the current period (week-aligned), then walks backward by full weeks to
+  // fill whatever horizontal space the card has — clamped to a minimum of
+  // (prior full period + current full period) so narrow viewports still show
+  // useful past context. Cells are tagged so the renderer can dim the
+  // surround:
+  //   - 'past'    — any day before the current period. Real data, dimmed.
+  //   - 'inRange' — current period, day on or before today. Real, full op.
+  //   - 'future'  — current period after today, or trailing pad. Empty, dim.
   const heatmapData = useMemo(() => {
-    if (range === 'week' || dailySeries.length === 0) return null;
+    if (range === 'week' || !periodInfo || periodInfo.type !== 'calendar') return null;
     const weekStartsOn = weekStart === 'monday' ? 1 : 0;
-    const oldestDow = dowFromKey(dailySeries[0].key);
-    const newestDow = dowFromKey(dailySeries[dailySeries.length - 1].key);
-    const leading = (oldestDow - weekStartsOn + 7) % 7;
-    const trailing = (weekStartsOn + 6 - newestDow + 7) % 7;
+
+    // Pixel sizing of one week column. Tailwind w-6 = 24px, w-3.5 = 14px;
+    // gap-1 between columns adds 4px. Card has p-4 (32px total) + a label
+    // column (cell-sized) + gap-2 (8px) between label and grid.
+    const cellPx = range === 'month' ? 24 : 14;
+    const colPx = cellPx + 4;
+    const reservedPx = 32 /* p-4 */ + cellPx + 8 /* label col + gap */;
+    const availablePx = Math.max(0, heatmapCardWidth - reservedPx);
+    const weeksThatFit = Math.floor(availablePx / colPx);
+
+    // Anchor the right edge to a week-end-aligned cell past the current
+    // period end, then derive everything else by walking back.
+    const endDow = dowFromKey(periodInfo.endKey);
+    const trailing = (weekStartsOn + 6 - endDow + 7) % 7;
+    const lastGridKey = shiftKey(periodInfo.endKey, trailing);
+
+    // Floor: prior full period + current full period + alignment pads.
+    const pastStartDow = dowFromKey(periodInfo.pastStartKey);
+    const minLeading = (pastStartDow - weekStartsOn + 7) % 7;
+    const minFirstKey = shiftKey(periodInfo.pastStartKey, -minLeading);
+    const minWeeks = Math.ceil((daysBetweenKeys(minFirstKey, lastGridKey) + 1) / 7);
+
+    const totalWeeks = Math.max(minWeeks, weeksThatFit);
+    const firstGridKey = shiftKey(lastGridKey, -(totalWeeks * 7 - 1));
 
     const cells = [];
-    for (let i = 0; i < leading; i++) {
-      cells.push({ inRange: false, key: `lead-${i}` });
-    }
-    dailySeries.forEach(d => cells.push({ ...d, inRange: true }));
-    for (let i = 0; i < trailing; i++) {
-      cells.push({ inRange: false, key: `trail-${i}` });
+    let cursor = firstGridKey;
+    while (cursor <= lastGridKey) {
+      let seconds;
+      let status;
+      if (cursor > periodInfo.periodEndKey) {
+        seconds = 0;
+        status = 'future';
+      } else if (cursor >= periodInfo.startKey) {
+        const entries = timesheet[cursor] || [];
+        seconds = entries.reduce((s, e) => s + entrySeconds(e, now), 0);
+        status = 'inRange';
+      } else {
+        const entries = timesheet[cursor] || [];
+        seconds = entries.reduce((s, e) => s + entrySeconds(e, now), 0);
+        status = 'past';
+      }
+      cells.push({
+        key: cursor,
+        date: dateFromKey(cursor),
+        seconds,
+        hours: seconds / 3600,
+        status,
+      });
+      cursor = shiftKey(cursor, 1);
     }
 
     const weeks = [];
@@ -118,18 +251,25 @@ const Reports = () => {
       weeks.push(cells.slice(i, i + 7));
     }
     return { weeks, weekStartsOn };
-  }, [dailySeries, range, weekStart]);
+  }, [periodInfo, range, weekStart, timesheet, now, heatmapCardWidth]);
 
-  const weekdayLabels = useMemo(() => (
-    weekStart === 'monday'
+  // Sun-first weeks visibly label M / W / F (indices 1, 3, 5). Mon-first weeks
+  // shift that pattern to indices 0, 2, 4, 6 → M / W / F / S, so the labels
+  // line up with the same physical weekdays regardless of week-start setting.
+  const weekdayLabels = useMemo(() => {
+    const labels = weekStart === 'monday'
       ? ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-      : ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-  ), [weekStart]);
+      : ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const visible = weekStart === 'monday'
+      ? new Set([0, 2, 4, 6])
+      : new Set([1, 3, 5]);
+    return labels.map((label, idx) => (visible.has(idx) ? label : ''));
+  }, [weekStart]);
 
   const maxHours = Math.max(0.5, ...dailySeries.map(d => d.hours));
   const totalSeconds = dailySeries.reduce((s, d) => s + d.seconds, 0);
   const totalHours = totalSeconds / 3600;
-  const avgPerDay = rangeDef.days > 0 ? totalHours / rangeDef.days : 0;
+  const avgPerDay = dailySeries.length > 0 ? totalHours / dailySeries.length : 0;
 
   // Today only — used by the goal ring card.
   const todayHours = useMemo(() => {
@@ -306,7 +446,7 @@ const Reports = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div ref={heatmapCardRef} className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="w-4 h-4 text-gray-500" />
           <h3 className="text-sm font-semibold text-gray-900">
@@ -314,7 +454,7 @@ const Reports = () => {
           </h3>
         </div>
 
-        {totalSeconds === 0 ? (
+        {range === 'week' && totalSeconds === 0 ? (
           <div className="text-sm text-gray-500 py-12 text-center">
             No tracked time in this range yet.
           </div>
@@ -361,8 +501,30 @@ const Reports = () => {
             const isMonth = range === 'month';
             const cellSize = isMonth ? 'w-6 h-6' : 'w-3.5 h-3.5';
             const labelSize = isMonth ? 'h-6' : 'h-3.5';
+
+            const handleCellEnter = (e, cell) => {
+              const container = heatmapAreaRef.current;
+              if (!container) return;
+              const cellRect = e.currentTarget.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const hoursLabel = cell.status === 'future'
+                ? 'No data yet'
+                : `${(cell.hours || 0).toFixed(2)}h tracked`;
+              setTooltip({
+                left: cellRect.left - containerRect.left + cellRect.width / 2,
+                top: cellRect.top - containerRect.top,
+                hoursLabel,
+                dateLabel: format(cell.date, 'EEE, MMM d, yyyy'),
+              });
+            };
+
             return (
-              <div className="space-y-3" role="img" aria-label="Daily activity heatmap">
+              <div
+                ref={heatmapAreaRef}
+                className="relative"
+                role="img"
+                aria-label="Daily activity heatmap"
+              >
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   <div className="flex flex-col gap-1 text-[10px] text-gray-500 shrink-0">
                     {weekdayLabels.map((label, idx) => (
@@ -370,7 +532,7 @@ const Reports = () => {
                         key={idx}
                         className={`${labelSize} flex items-center leading-none`}
                       >
-                        {idx % 2 === 1 ? label : ''}
+                        {label}
                       </div>
                     ))}
                   </div>
@@ -378,23 +540,21 @@ const Reports = () => {
                     {heatmapData.weeks.map((week, wIdx) => (
                       <div key={wIdx} className="flex flex-col gap-1">
                         {week.map((cell, dIdx) => {
-                          const cls = heatmapClass(
-                            cell.hours || 0,
-                            dailyHourGoal,
-                            cell.inRange
-                          );
-                          const isToday = cell.inRange && cell.key === todayKey;
+                          const isInRange = cell.status === 'inRange';
+                          const isFuture = cell.status === 'future';
+                          const cls = isFuture
+                            ? 'bg-gray-100'
+                            : heatmapClass(cell.hours || 0, dailyHourGoal, true);
+                          const isToday = isInRange && cell.key === todayKey;
+                          const dimClass = isInRange ? '' : 'opacity-40';
                           return (
                             <div
                               key={`${wIdx}-${dIdx}-${cell.key}`}
-                              className={`${cellSize} rounded-sm ${cls} ${
+                              className={`${cellSize} rounded-sm ${cls} ${dimClass} ${
                                 isToday ? 'ring-2 ring-blue-600 ring-offset-1' : ''
                               }`}
-                              title={
-                                cell.inRange
-                                  ? `${format(cell.date, 'EEE MMM d')}: ${(cell.hours || 0).toFixed(2)}h`
-                                  : ''
-                              }
+                              onMouseEnter={(e) => handleCellEnter(e, cell)}
+                              onMouseLeave={() => setTooltip(null)}
                             />
                           );
                         })}
@@ -403,7 +563,18 @@ const Reports = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-1.5 text-[10px] text-gray-500">
+                {tooltip && (
+                  <div
+                    className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full px-2 py-1 rounded-md bg-gray-900 text-white text-[11px] shadow-lg whitespace-nowrap"
+                    style={{ left: tooltip.left, top: tooltip.top - 6 }}
+                  >
+                    <div className="font-medium">{tooltip.hoursLabel}</div>
+                    <div className="text-gray-300">{tooltip.dateLabel}</div>
+                    <div className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
+                  </div>
+                )}
+
+                <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-gray-500">
                   <span>Less</span>
                   <div className="w-3 h-3 rounded-sm bg-gray-200" />
                   <div className="w-3 h-3 rounded-sm bg-blue-200" />
