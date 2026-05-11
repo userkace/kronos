@@ -23,6 +23,16 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.2.2',
+    date: '2026-05-12',
+    title: 'PWA support — install Kronos as a standalone app',
+    changes: [
+      { type: 'added', description: 'Kronos is now a Progressive Web App. You can install it from your browser\'s address bar (desktop) or "Add to Home Screen" (mobile) and run it as a standalone app with no browser chrome.' },
+      { type: 'added', description: 'A service worker caches all app assets on first load, so Kronos loads instantly on repeat visits and continues to work offline — your localStorage data is always available.' },
+      { type: 'added', description: 'App updates are downloaded silently in the background and applied the next time you open Kronos, so you always get the latest version without any manual action.' },
+    ],
+  },
+  {
     version: '0.2.1',
     date: '2026-05-11',
     title: 'Reports heatmap redesign: calendar periods, floating tooltips & full context',
