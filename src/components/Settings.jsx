@@ -9,10 +9,11 @@ import {
   getQuarantineRaw,
   restoreFromQuarantine,
   discardQuarantine,
+  DEFAULT_HEATMAP_COLORS,
 } from '../utils/storage';
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
-  AlertTriangle, Download, RefreshCcw, X
+  AlertTriangle, Download, RefreshCcw, X, BarChart2, Plus,
 } from 'lucide-react';
 
 const formatBytes = (n) => {
@@ -27,7 +28,8 @@ const Settings = ({ onCorruptionResolved }) => {
     weekStart, changeWeekStart,
     clockFormat, changeClockFormat,
     dailyHourGoal, changeDailyHourGoal,
-    weekendDays, changeWeekendDays
+    weekendDays, changeWeekendDays,
+    heatmapColors, changeHeatmapColors,
   } = useUserPreferences();
   const { success, error, warning } = useToast();
   const [backups, setBackups] = useState(() => getCorruptionBackupsDetailed());
@@ -88,6 +90,9 @@ const Settings = ({ onCorruptionResolved }) => {
   const [clockFormatValue, setClockFormatValue] = useState(clockFormat);
   const [dailyHourGoalValue, setDailyHourGoalValue] = useState(String(dailyHourGoal));
   const [weekendDaysValue, setWeekendDaysValue] = useState(weekendDays);
+  const [heatmapColorsEdit, setHeatmapColorsEdit] = useState(() =>
+    JSON.parse(JSON.stringify(heatmapColors))
+  );
   const [isResetting, setIsResetting] = useState(false);
   const reloadTimeoutRef = useRef(null);
 
@@ -188,7 +193,8 @@ const Settings = ({ onCorruptionResolved }) => {
   }, []);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 m-6">
+    <div className="p-6 max-w-4xl mx-auto">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Settings</h3>
 
       <div className="space-y-6">
@@ -381,6 +387,168 @@ const Settings = ({ onCorruptionResolved }) => {
           </div>
         </div>
 
+        {/* Heatmap Colors */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <BarChart2 className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Heatmap Colors</h4>
+          </div>
+
+          <div className="space-y-4">
+            {/* Live preview */}
+            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+              <span>Less</span>
+              <div className="w-4 h-4 rounded-sm border border-gray-200" style={{ backgroundColor: heatmapColorsEdit.emptyColor }} />
+              {[...heatmapColorsEdit.stops].sort((a, b) => a.upTo - b.upTo).map((stop, i) => (
+                <div key={i} className="w-4 h-4 rounded-sm" style={{ backgroundColor: stop.color }} />
+              ))}
+              <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: heatmapColorsEdit.completionColor }} />
+              <span>Goal met</span>
+            </div>
+
+            {/* Color stops */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Progress Stops</p>
+              <div className="space-y-2">
+                {(() => {
+                  const sorted = [...heatmapColorsEdit.stops].sort((a, b) => a.upTo - b.upTo);
+                  return sorted.map((stop, i) => {
+                    const prevUpTo = i === 0 ? 0 : sorted[i - 1].upTo;
+                    const nextUpTo = i < sorted.length - 1 ? sorted[i + 1].upTo : 101;
+                    const isLast = i === sorted.length - 1;
+
+                    const updateStop = (patch) => {
+                      const newStops = sorted.map((s, j) => j === i ? { ...s, ...patch } : s);
+                      const updated = { ...heatmapColorsEdit, stops: newStops };
+                      setHeatmapColorsEdit(updated);
+                      changeHeatmapColors(updated);
+                    };
+
+                    const removeStop = () => {
+                      const newStops = sorted.filter((_, j) => j !== i);
+                      const updated = { ...heatmapColorsEdit, stops: newStops };
+                      setHeatmapColorsEdit(updated);
+                      changeHeatmapColors(updated);
+                    };
+
+                    return (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={stop.color}
+                          onChange={(e) => updateStop({ color: e.target.value })}
+                          className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                          title="Pick color"
+                        />
+                        <span className="text-xs text-gray-400 w-7 text-right shrink-0">{prevUpTo}%</span>
+                        <span className="text-xs text-gray-300 shrink-0">–</span>
+                        {isLast ? (
+                          <span className="text-xs text-gray-500">100% <span className="text-gray-400">(below goal)</span></span>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min={prevUpTo + 1}
+                              max={nextUpTo - 1}
+                              value={stop.upTo}
+                              onChange={(e) => {
+                                const v = parseInt(e.target.value);
+                                if (Number.isInteger(v) && v > prevUpTo && v < nextUpTo) {
+                                  updateStop({ upTo: v });
+                                }
+                              }}
+                              className="w-14 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-gray-500">%</span>
+                          </div>
+                        )}
+                        {!isLast && (
+                          <button
+                            onClick={removeStop}
+                            className="ml-auto text-gray-300 hover:text-red-400 transition-colors"
+                            title="Remove stop"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              <button
+                onClick={() => {
+                  const sorted = [...heatmapColorsEdit.stops].sort((a, b) => a.upTo - b.upTo);
+                  const last = sorted[sorted.length - 1];
+                  const prev = sorted.length >= 2 ? sorted[sorted.length - 2] : { upTo: 0 };
+                  const newUpTo = Math.floor((prev.upTo + 100) / 2);
+                  const newStop = { upTo: newUpTo, color: last.color };
+                  const newStops = [...sorted.slice(0, -1), newStop, last];
+                  const updated = { ...heatmapColorsEdit, stops: newStops };
+                  setHeatmapColorsEdit(updated);
+                  changeHeatmapColors(updated);
+                }}
+                className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add stop
+              </button>
+            </div>
+
+            {/* Completion & empty colors */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1.5">Goal met (≥ 100%)</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={heatmapColorsEdit.completionColor}
+                    onChange={(e) => {
+                      const updated = { ...heatmapColorsEdit, completionColor: e.target.value };
+                      setHeatmapColorsEdit(updated);
+                      changeHeatmapColors(updated);
+                    }}
+                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                  />
+                  <span className="text-xs text-gray-500 font-mono">{heatmapColorsEdit.completionColor}</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1.5">No time tracked</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={heatmapColorsEdit.emptyColor}
+                    onChange={(e) => {
+                      const updated = { ...heatmapColorsEdit, emptyColor: e.target.value };
+                      setHeatmapColorsEdit(updated);
+                      changeHeatmapColors(updated);
+                    }}
+                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                  />
+                  <span className="text-xs text-gray-500 font-mono">{heatmapColorsEdit.emptyColor}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+              <p className="text-xs text-gray-400">Changes apply immediately to the Reports view.</p>
+              <button
+                onClick={() => {
+                  const defaults = JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
+                  setHeatmapColorsEdit(defaults);
+                  changeHeatmapColors(defaults);
+                }}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset to default
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Save Settings Button */}
         <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
           <div className="flex items-center justify-between">
@@ -442,6 +610,7 @@ const Settings = ({ onCorruptionResolved }) => {
           </div>
 
       </div>
+    </div>
     </div>
   );
 };

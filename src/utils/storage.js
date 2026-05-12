@@ -14,12 +14,37 @@ const STORAGE_KEYS = {
   INVOICE_SETTINGS: 'kronos_invoice_settings',
   CHANGELOG_LAST_SEEN: 'kronos_changelog_last_seen_version',
   DAILY_HOUR_GOAL: 'kronos_daily_hour_goal',
-  WEEKEND_DAYS: 'kronos_weekend_days'
+  WEEKEND_DAYS: 'kronos_weekend_days',
+  HEATMAP_COLORS: 'kronos_heatmap_colors',
 };
 
 const DEFAULT_DAILY_HOUR_GOAL = 8;
 // Day-of-week numbers (0=Sun..6=Sat) that don't break the streak when zero.
 const DEFAULT_WEEKEND_DAYS = [0, 6];
+
+export const DEFAULT_HEATMAP_COLORS = {
+  emptyColor: '#e5e7eb',
+  stops: [
+    { upTo: 33, color: '#bfdbfe' },
+    { upTo: 66, color: '#60a5fa' },
+    { upTo: 100, color: '#2563eb' },
+  ],
+  completionColor: '#1e40af',
+};
+
+const isValidColor = (c) => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c);
+
+const isValidHeatmapColors = (obj) => {
+  if (!obj || typeof obj !== 'object') return false;
+  if (!isValidColor(obj.emptyColor) || !isValidColor(obj.completionColor)) return false;
+  if (!Array.isArray(obj.stops) || obj.stops.length === 0) return false;
+  const sorted = [...obj.stops].sort((a, b) => a.upTo - b.upTo);
+  if (sorted[sorted.length - 1].upTo !== 100) return false;
+  return sorted.every(
+    s => typeof s.upTo === 'number' && Number.isInteger(s.upTo) &&
+         s.upTo >= 1 && s.upTo <= 100 && isValidColor(s.color)
+  );
+};
 
 const sanitizeWeekendDays = (days) => Array.from(new Set(
   (Array.isArray(days) ? days : [])
@@ -439,6 +464,28 @@ export const loadWeekendDays = () => {
   } catch (error) {
     console.error('Error loading weekend days:', error);
     return [...DEFAULT_WEEKEND_DAYS];
+  }
+};
+
+export const saveHeatmapColors = (colors) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.HEATMAP_COLORS, JSON.stringify(colors));
+  } catch (error) {
+    console.error('Error saving heatmap colors:', error);
+  }
+};
+
+export const loadHeatmapColors = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.HEATMAP_COLORS);
+    if (stored == null) return JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
+    const parsed = JSON.parse(stored);
+    return isValidHeatmapColors(parsed)
+      ? parsed
+      : JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
+  } catch (error) {
+    console.error('Error loading heatmap colors:', error);
+    return JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
   }
 };
 

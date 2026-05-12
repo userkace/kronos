@@ -64,23 +64,21 @@ const daysBetweenKeys = (k1, k2) => {
   );
 };
 
-// Tailwind class for a heatmap cell. Buckets are tied to the daily hour goal
+// Inline style for a heatmap cell. Buckets are tied to the daily hour goal
 // so the colors mean "how close did I get to my target today" rather than
 // "vs the busiest day in the range" (which would penalize consistent days).
-const heatmapClass = (hours, goal, inRange) => {
-  if (!inRange) return 'invisible';
-  if (!Number.isFinite(hours) || hours <= 0) return 'bg-gray-200';
-  if (!Number.isFinite(goal) || goal <= 0) return 'bg-blue-500';
-  const ratio = hours / goal;
-  if (ratio >= 1) return 'bg-blue-800';
-  if (ratio > 2 / 3) return 'bg-blue-600';
-  if (ratio > 1 / 3) return 'bg-blue-400';
-  return 'bg-blue-200';
+const getHeatmapStyle = (hours, goal, heatmapColors) => {
+  if (!Number.isFinite(hours) || hours <= 0) return { backgroundColor: heatmapColors.emptyColor };
+  if (!Number.isFinite(goal) || goal <= 0) return { backgroundColor: heatmapColors.completionColor };
+  const pct = (hours / goal) * 100;
+  if (pct >= 100) return { backgroundColor: heatmapColors.completionColor };
+  const stop = heatmapColors.stops.find(s => pct <= s.upTo);
+  return { backgroundColor: stop ? stop.color : heatmapColors.completionColor };
 };
 
 const Reports = () => {
   const { selectedTimezone: timezone, isInitialized: timezoneInitialized } = useTimezone();
-  const { dailyHourGoal, weekStart, weekendDays } = useUserPreferences();
+  const { dailyHourGoal, weekStart, weekendDays, heatmapColors } = useUserPreferences();
   const [range, setRange] = useState('week');
   const [timesheet, setTimesheet] = useState(() => loadTimesheetData());
   const [now, setNow] = useState(() => new Date());
@@ -542,17 +540,18 @@ const Reports = () => {
                         {week.map((cell, dIdx) => {
                           const isInRange = cell.status === 'inRange';
                           const isFuture = cell.status === 'future';
-                          const cls = isFuture
-                            ? 'bg-gray-100'
-                            : heatmapClass(cell.hours || 0, dailyHourGoal, true);
+                          const bgStyle = isFuture
+                            ? { backgroundColor: '#f3f4f6' }
+                            : getHeatmapStyle(cell.hours || 0, dailyHourGoal, heatmapColors);
                           const isToday = isInRange && cell.key === todayKey;
                           const dimClass = isInRange ? '' : 'opacity-40';
                           return (
                             <div
                               key={`${wIdx}-${dIdx}-${cell.key}`}
-                              className={`${cellSize} rounded-sm ${cls} ${dimClass} ${
+                              className={`${cellSize} rounded-sm ${dimClass} ${
                                 isToday ? 'ring-2 ring-blue-600 ring-offset-1' : ''
                               }`}
+                              style={bgStyle}
                               onMouseEnter={(e) => handleCellEnter(e, cell)}
                               onMouseLeave={() => setTooltip(null)}
                             />
@@ -576,11 +575,11 @@ const Reports = () => {
 
                 <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-gray-500">
                   <span>Less</span>
-                  <div className="w-3 h-3 rounded-sm bg-gray-200" />
-                  <div className="w-3 h-3 rounded-sm bg-blue-200" />
-                  <div className="w-3 h-3 rounded-sm bg-blue-400" />
-                  <div className="w-3 h-3 rounded-sm bg-blue-600" />
-                  <div className="w-3 h-3 rounded-sm bg-blue-800" />
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: heatmapColors.emptyColor }} />
+                  {[...heatmapColors.stops].sort((a, b) => a.upTo - b.upTo).map((stop, i) => (
+                    <div key={i} className="w-3 h-3 rounded-sm" style={{ backgroundColor: stop.color }} />
+                  ))}
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: heatmapColors.completionColor }} />
                   <span>More</span>
                   <span className="ml-2 text-gray-400">
                     Goal: {dailyHourGoal}h/day

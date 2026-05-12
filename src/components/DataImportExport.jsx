@@ -246,6 +246,7 @@ const DataImportExport = ({ onImportSuccess }) => {
   };
 
   return (
+    <div className="max-w-4xl mx-auto">
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Management</h3>
 
@@ -586,6 +587,7 @@ const DataImportExport = ({ onImportSuccess }) => {
           </ul>
         </div>
       </div>
+    </div>
     </div>
   );
 };
