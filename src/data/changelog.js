@@ -23,7 +23,16 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
-    version: '0.2.2',
+    version: '0.3.1',
+    date: '2026-05-12',
+    title: 'Customizable heatmap colors',
+    changes: [
+      { type: 'added', description: 'Heatmap colors are now fully customizable in Settings. Set the color for each progress stop, define the percentage thresholds where colors change, and pick separate colors for "goal met" and "no time tracked" days.' },
+      { type: 'added', description: 'Add or remove color stops to create as many or as few color bands as you like. A Reset to Default button restores the original blue scheme at any time.' },
+    ],
+  },
+  {
+    version: '0.3.0',
     date: '2026-05-12',
     title: 'PWA support — install Kronos as a standalone app',
     changes: [

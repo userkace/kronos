@@ -11,7 +11,10 @@ import {
   loadDailyHourGoal,
   saveDailyHourGoal,
   loadWeekendDays,
-  saveWeekendDays
+  saveWeekendDays,
+  loadHeatmapColors,
+  saveHeatmapColors,
+  DEFAULT_HEATMAP_COLORS,
 } from '../utils/storage';
 
 const UserPreferencesContext = createContext();
@@ -31,6 +34,7 @@ export const UserPreferencesProvider = ({ children }) => {
   const [showBreaks, setShowBreaks] = useState(true);
   const [dailyHourGoal, setDailyHourGoal] = useState(8);
   const [weekendDays, setWeekendDays] = useState([0, 6]);
+  const [heatmapColors, setHeatmapColors] = useState(DEFAULT_HEATMAP_COLORS);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load preferences from localStorage on mount
@@ -41,6 +45,7 @@ export const UserPreferencesProvider = ({ children }) => {
     setShowBreaks(loadShowBreaks());
     setDailyHourGoal(loadDailyHourGoal());
     setWeekendDays(loadWeekendDays());
+    setHeatmapColors(loadHeatmapColors());
     setIsInitialized(true);
   }, []);
 
@@ -74,6 +79,11 @@ export const UserPreferencesProvider = ({ children }) => {
     if (isInitialized) saveWeekendDays(weekendDays);
   }, [weekendDays, isInitialized]);
 
+  // Save heatmap colors to localStorage whenever they change (but not on initial load)
+  useEffect(() => {
+    if (isInitialized) saveHeatmapColors(heatmapColors);
+  }, [heatmapColors, isInitialized]);
+
   const changeWeekStart = (newWeekStart) => setWeekStart(newWeekStart);
   const changeClockFormat = (newClockFormat) => setClockFormat(newClockFormat);
   const changeSortOrder = (newSortOrder) => setSortOrder(newSortOrder);
@@ -82,6 +92,8 @@ export const UserPreferencesProvider = ({ children }) => {
     const n = Number(hours);
     if (Number.isFinite(n) && n > 0) setDailyHourGoal(n);
   };
+  const changeHeatmapColors = (colors) => setHeatmapColors(colors);
+
   const changeWeekendDays = (days) => {
     if (!Array.isArray(days)) return;
     const cleaned = Array.from(new Set(
@@ -105,6 +117,8 @@ export const UserPreferencesProvider = ({ children }) => {
     changeDailyHourGoal,
     weekendDays,
     changeWeekendDays,
+    heatmapColors,
+    changeHeatmapColors,
   };
 
   return (
