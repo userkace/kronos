@@ -4,6 +4,8 @@ import {
   saveWeekStart,
   loadClockFormat,
   saveClockFormat,
+  loadDateFormat,
+  saveDateFormat,
   loadSortOrder,
   saveSortOrder,
   loadShowBreaks,
@@ -15,6 +17,9 @@ import {
   loadHeatmapColors,
   saveHeatmapColors,
   DEFAULT_HEATMAP_COLORS,
+  loadGoalRingColors,
+  saveGoalRingColors,
+  DEFAULT_GOAL_RING_COLORS,
 } from '../utils/storage';
 
 const UserPreferencesContext = createContext();
@@ -30,22 +35,26 @@ export const useUserPreferences = () => {
 export const UserPreferencesProvider = ({ children }) => {
   const [weekStart, setWeekStart] = useState('sunday');
   const [clockFormat, setClockFormat] = useState('12hour');
+  const [dateFormat, setDateFormat] = useState('short');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showBreaks, setShowBreaks] = useState(true);
   const [dailyHourGoal, setDailyHourGoal] = useState(8);
   const [weekendDays, setWeekendDays] = useState([0, 6]);
   const [heatmapColors, setHeatmapColors] = useState(DEFAULT_HEATMAP_COLORS);
+  const [goalRingColors, setGoalRingColors] = useState(DEFAULT_GOAL_RING_COLORS);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load preferences from localStorage on mount
   useEffect(() => {
     setWeekStart(loadWeekStart());
     setClockFormat(loadClockFormat());
+    setDateFormat(loadDateFormat());
     setSortOrder(loadSortOrder());
     setShowBreaks(loadShowBreaks());
     setDailyHourGoal(loadDailyHourGoal());
     setWeekendDays(loadWeekendDays());
     setHeatmapColors(loadHeatmapColors());
+    setGoalRingColors(loadGoalRingColors());
     setIsInitialized(true);
   }, []);
 
@@ -58,6 +67,10 @@ export const UserPreferencesProvider = ({ children }) => {
   useEffect(() => {
     if (isInitialized) saveClockFormat(clockFormat);
   }, [clockFormat, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) saveDateFormat(dateFormat);
+  }, [dateFormat, isInitialized]);
 
   // Save sort order to localStorage whenever it changes (but not on initial load)
   useEffect(() => {
@@ -84,8 +97,13 @@ export const UserPreferencesProvider = ({ children }) => {
     if (isInitialized) saveHeatmapColors(heatmapColors);
   }, [heatmapColors, isInitialized]);
 
+  useEffect(() => {
+    if (isInitialized) saveGoalRingColors(goalRingColors);
+  }, [goalRingColors, isInitialized]);
+
   const changeWeekStart = (newWeekStart) => setWeekStart(newWeekStart);
   const changeClockFormat = (newClockFormat) => setClockFormat(newClockFormat);
+  const changeDateFormat = (newDateFormat) => setDateFormat(newDateFormat);
   const changeSortOrder = (newSortOrder) => setSortOrder(newSortOrder);
   const toggleShowBreaks = () => setShowBreaks(prev => !prev);
   const changeDailyHourGoal = (hours) => {
@@ -93,6 +111,7 @@ export const UserPreferencesProvider = ({ children }) => {
     if (Number.isFinite(n) && n > 0) setDailyHourGoal(n);
   };
   const changeHeatmapColors = (colors) => setHeatmapColors(colors);
+  const changeGoalRingColors = (colors) => setGoalRingColors(colors);
 
   const changeWeekendDays = (days) => {
     if (!Array.isArray(days)) return;
@@ -109,6 +128,8 @@ export const UserPreferencesProvider = ({ children }) => {
     changeWeekStart,
     clockFormat,
     changeClockFormat,
+    dateFormat,
+    changeDateFormat,
     sortOrder,
     changeSortOrder,
     showBreaks,
@@ -119,6 +140,8 @@ export const UserPreferencesProvider = ({ children }) => {
     changeWeekendDays,
     heatmapColors,
     changeHeatmapColors,
+    goalRingColors,
+    changeGoalRingColors,
   };
 
   return (

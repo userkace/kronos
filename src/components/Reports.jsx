@@ -78,7 +78,7 @@ const getHeatmapStyle = (hours, goal, heatmapColors) => {
 
 const Reports = () => {
   const { selectedTimezone: timezone, isInitialized: timezoneInitialized } = useTimezone();
-  const { dailyHourGoal, weekStart, weekendDays, heatmapColors } = useUserPreferences();
+  const { dailyHourGoal, weekStart, weekendDays, heatmapColors, goalRingColors } = useUserPreferences();
   const [range, setRange] = useState('week');
   const [timesheet, setTimesheet] = useState(() => loadTimesheetData());
   const [now, setNow] = useState(() => new Date());
@@ -402,7 +402,7 @@ const Reports = () => {
                 cy={ringSize / 2}
                 r={ringRadius}
                 fill="none"
-                stroke={goalProgress >= 1 ? '#16a34a' : '#2563eb'}
+                stroke={goalProgress >= 1 ? goalRingColors.completionColor : goalRingColors.progressColor}
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={ringCircumference}
