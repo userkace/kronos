@@ -16,11 +16,18 @@ const STORAGE_KEYS = {
   DAILY_HOUR_GOAL: 'kronos_daily_hour_goal',
   WEEKEND_DAYS: 'kronos_weekend_days',
   HEATMAP_COLORS: 'kronos_heatmap_colors',
+  GOAL_RING_COLORS: 'kronos_goal_ring_colors',
+  DATE_FORMAT: 'kronos_date_format',
 };
 
 const DEFAULT_DAILY_HOUR_GOAL = 8;
 // Day-of-week numbers (0=Sun..6=Sat) that don't break the streak when zero.
 const DEFAULT_WEEKEND_DAYS = [0, 6];
+
+export const DEFAULT_GOAL_RING_COLORS = {
+  progressColor: '#2563eb',
+  completionColor: '#16a34a',
+};
 
 export const DEFAULT_HEATMAP_COLORS = {
   emptyColor: '#e5e7eb',
@@ -347,6 +354,23 @@ export const loadOnboardingCompleted = () => {
   }
 };
 
+export const saveDateFormat = (dateFormat) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DATE_FORMAT, dateFormat);
+  } catch (error) {
+    console.error('Error saving date format:', error);
+  }
+};
+
+export const loadDateFormat = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.DATE_FORMAT) || 'short';
+  } catch (error) {
+    console.error('Error loading date format:', error);
+    return 'short';
+  }
+};
+
 // Save clock format preference to LocalStorage
 export const saveClockFormat = (clockFormat) => {
   try {
@@ -486,6 +510,31 @@ export const loadHeatmapColors = () => {
   } catch (error) {
     console.error('Error loading heatmap colors:', error);
     return JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
+  }
+};
+
+export const saveGoalRingColors = (colors) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.GOAL_RING_COLORS, JSON.stringify(colors));
+  } catch (error) {
+    console.error('Error saving goal ring colors:', error);
+  }
+};
+
+export const loadGoalRingColors = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.GOAL_RING_COLORS);
+    if (stored == null) return { ...DEFAULT_GOAL_RING_COLORS };
+    const parsed = JSON.parse(stored);
+    if (
+      parsed && typeof parsed === 'object' &&
+      isValidColor(parsed.progressColor) &&
+      isValidColor(parsed.completionColor)
+    ) return parsed;
+    return { ...DEFAULT_GOAL_RING_COLORS };
+  } catch (error) {
+    console.error('Error loading goal ring colors:', error);
+    return { ...DEFAULT_GOAL_RING_COLORS };
   }
 };
 

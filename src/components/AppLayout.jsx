@@ -11,7 +11,7 @@ import DailyTrackerProgressBar from './atoms/DailyTrackerProgressBar';
 const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUnseenChangelog }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
   const { selectedTimezone, changeTimezone } = useTimezone();
-  const { clockFormat } = useUserPreferences();
+  const { clockFormat, dateFormat } = useUserPreferences();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Save sidebar state to localStorage whenever it changes
@@ -28,46 +28,53 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
     return () => clearInterval(timer);
   }, []);
 
-  // Format time in 12-hour AM/PM format with timezone
-  const formatTimeInTimezone = (date, timezone, format) => {
+  const formatNavDateTime = (date, timezone, clockFmt, dateFmt) => {
+    const dateOptions = {
+      short:         { month: 'short', day: 'numeric', year: 'numeric' },
+      long:          { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
+      numeric:       { month: 'numeric', day: 'numeric', year: 'numeric' },
+      dmy:           { day: 'numeric', month: 'numeric', year: 'numeric' },
+      weekday:       { weekday: 'short', month: 'short', day: 'numeric' },
+      'weekday-year':{ weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' },
+      'short-no-year': { month: 'short', day: 'numeric' },
+      iso:           null, // handled manually below
+      none:          null,
+    };
+
+    const timeOpts = clockFmt === '24hour'
+      ? { hour: '2-digit', minute: '2-digit', hour12: false }
+      : { hour: 'numeric', minute: '2-digit', hour12: true };
+
+    const tz = { timeZone: timezone };
+
+    const formatDatePart = (d, fmt, tzOpt) => {
+      if (fmt === 'none') return null;
+      if (fmt === 'iso') {
+        // YYYY-MM-DD in the user's timezone
+        const parts = new Intl.DateTimeFormat('en-CA', { ...tzOpt, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+        return parts; // en-CA gives YYYY-MM-DD natively
+      }
+      if (fmt === 'dmy') {
+        // DD/MM/YYYY
+        const p = new Intl.DateTimeFormat('en-GB', { ...tzOpt, day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+        return p; // en-GB gives DD/MM/YYYY natively
+      }
+      const opts = dateOptions[fmt];
+      if (!opts) return null;
+      return new Intl.DateTimeFormat('en-US', { ...tzOpt, ...opts }).format(d);
+    };
+
     try {
-      const formatOptions = {
-        timeZone: timezone,
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      };
-
-      if (format === '12hour') {
-        formatOptions.hour = 'numeric';
-        formatOptions.minute = '2-digit';
-        formatOptions.hour12 = true;
-      } else if (format === '24hour') {
-        formatOptions.hour = '2-digit';
-        formatOptions.minute = '2-digit';
-        formatOptions.hour12 = false;
-      }
-
-      return new Intl.DateTimeFormat('en-US', formatOptions).format(date);
-    } catch (error) {
-      // Fallback to local time if timezone is invalid
-      const formatOptions = {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      };
-
-      if (format === '12hour') {
-        formatOptions.hour = 'numeric';
-        formatOptions.minute = '2-digit';
-        formatOptions.hour12 = true;
-      } else if (format === '24hour') {
-        formatOptions.hour = '2-digit';
-        formatOptions.minute = '2-digit';
-        formatOptions.hour12 = false;
-      }
-
-      return date.toLocaleString('en-US', formatOptions);
+      const time = new Intl.DateTimeFormat('en-US', { ...tz, ...timeOpts }).format(date);
+      const datePart = formatDatePart(date, dateFmt, tz);
+      return datePart ? `${datePart}, ${time}` : time;
+    } catch {
+      const time = date.toLocaleString('en-US', timeOpts);
+      if (dateFmt === 'none' || dateFmt === 'iso') return time;
+      const opts = dateOptions[dateFmt];
+      if (!opts) return time;
+      const datePart = date.toLocaleString('en-US', opts);
+      return `${datePart}, ${time}`;
     }
   };
 
@@ -282,7 +289,7 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
               <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
                 <Clock className="w-4 h-4" />
                 <span className="font-medium">
-                  {formatTimeInTimezone(currentTime, selectedTimezone, clockFormat)}
+                  {formatNavDateTime(currentTime, selectedTimezone, clockFormat, dateFormat)}
                 </span>
               </div>
             </div>

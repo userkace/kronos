@@ -23,6 +23,19 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.3.2',
+    date: '2026-05-13',
+    title: 'Brand refresh & settings improvements',
+    changes: [
+      { type: 'added', description: 'Goal ring colors: customize the in-progress and completion colors for the daily goal ring in Reports, with a "Copy from heatmap" shortcut.' },
+      { type: 'added', description: 'Settings now shows a persistent toast when you have unsaved changes, with Save and Revert buttons directly in the notification.' },
+      { type: 'added', description: 'Date format setting in Settings → Clock Format: choose from 8 formats for the date shown alongside the clock in the navigation bar — including full weekday, no-year, DMY, ISO, and time-only.' },
+      { type: 'changed', description: 'Clock Format setting moved above Work Schedule in Settings.' },
+      { type: 'changed', description: 'Replaced clock icon with Kronos logo in sidebar header for better brand identity.' },
+      { type: 'changed', description: 'Updated sidebar tagline to "Own your time." for a more empowering message.' },
+    ],
+  },
+  {
     version: '0.3.1',
     date: '2026-05-12',
     title: 'Customizable heatmap colors',

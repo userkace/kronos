@@ -19,10 +19,10 @@ export const ToastProvider = ({ children }) => {
   // component body — and is also collision-free for rapid-fire toasts.
   const nextIdRef = useRef(0);
 
-  const addToast = (message, type = 'info', duration = 3000, action = null) => {
+  const addToast = (message, type = 'info', duration = 3000, action = null, actions = null) => {
     nextIdRef.current += 1;
     const id = nextIdRef.current;
-    const newToast = { id, message, type, action };
+    const newToast = { id, message, type, action, actions };
 
     setToasts(prev => [...prev, newToast]);
 
@@ -97,17 +97,18 @@ export const ToastProvider = ({ children }) => {
               <span className="text-sm font-medium">{toast.message}</span>
             </div>
             <div className="flex items-center ml-4 space-x-1">
-              {toast.action && (
+              {(toast.actions ?? (toast.action ? [toast.action] : [])).map((act, i) => (
                 <button
+                  key={i}
                   onClick={() => {
-                    try { toast.action.onClick(); } catch (err) { console.error('Toast action error:', err); }
-                    removeToast(toast.id);
+                    try { act.onClick(); } catch (err) { console.error('Toast action error:', err); }
+                    if (act.dismissOnClick !== false) removeToast(toast.id);
                   }}
                   className="px-2 py-1 text-sm font-semibold rounded hover:bg-white/20 transition-colors"
                 >
-                  {toast.action.label}
+                  {act.label}
                 </button>
-              )}
+              ))}
               <button
                 onClick={() => removeToast(toast.id)}
                 className="text-white hover:text-gray-200 transition-colors p-1"

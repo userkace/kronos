@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import TimezoneSelect from './TimezoneSelect';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -10,6 +10,7 @@ import {
   restoreFromQuarantine,
   discardQuarantine,
   DEFAULT_HEATMAP_COLORS,
+  DEFAULT_GOAL_RING_COLORS,
 } from '../utils/storage';
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
@@ -27,11 +28,13 @@ const Settings = ({ onCorruptionResolved }) => {
   const {
     weekStart, changeWeekStart,
     clockFormat, changeClockFormat,
+    dateFormat, changeDateFormat,
     dailyHourGoal, changeDailyHourGoal,
     weekendDays, changeWeekendDays,
     heatmapColors, changeHeatmapColors,
+    goalRingColors, changeGoalRingColors,
   } = useUserPreferences();
-  const { success, error, warning } = useToast();
+  const { success, error, warning, addToast, removeToast } = useToast();
   const [backups, setBackups] = useState(() => getCorruptionBackupsDetailed());
 
   const refreshBackups = () => {
@@ -88,13 +91,18 @@ const Settings = ({ onCorruptionResolved }) => {
   const [timezone, setTimezone] = useState(selectedTimezone);
   const [weekStartValue, setWeekStartValue] = useState(weekStart);
   const [clockFormatValue, setClockFormatValue] = useState(clockFormat);
+  const [dateFormatValue, setDateFormatValue] = useState(dateFormat);
   const [dailyHourGoalValue, setDailyHourGoalValue] = useState(String(dailyHourGoal));
   const [weekendDaysValue, setWeekendDaysValue] = useState(weekendDays);
   const [heatmapColorsEdit, setHeatmapColorsEdit] = useState(() =>
     JSON.parse(JSON.stringify(heatmapColors))
   );
+  const [goalRingColorsEdit, setGoalRingColorsEdit] = useState(() => ({ ...goalRingColors }));
   const [isResetting, setIsResetting] = useState(false);
   const reloadTimeoutRef = useRef(null);
+  const unsavedToastIdRef = useRef(null);
+  const saveCallbackRef = useRef(null);
+  const revertCallbackRef = useRef(null);
 
   // Pull updates from context (e.g. when an outside save changes the goal)
   // so the local input doesn't go stale.
@@ -105,6 +113,23 @@ const Settings = ({ onCorruptionResolved }) => {
   useEffect(() => {
     setWeekendDaysValue(weekendDays);
   }, [weekendDays]);
+
+  const hasUnsaved =
+    timezone !== selectedTimezone ||
+    weekStartValue !== weekStart ||
+    clockFormatValue !== clockFormat ||
+    dateFormatValue !== dateFormat ||
+    dailyHourGoalValue !== String(dailyHourGoal) ||
+    JSON.stringify(weekendDaysValue) !== JSON.stringify(weekendDays);
+
+  const handleRevert = () => {
+    setTimezone(selectedTimezone);
+    setWeekStartValue(weekStart);
+    setClockFormatValue(clockFormat);
+    setDateFormatValue(dateFormat);
+    setDailyHourGoalValue(String(dailyHourGoal));
+    setWeekendDaysValue(weekendDays);
+  };
 
   const toggleWeekendDay = (idx) => {
     setWeekendDaysValue(prev =>
@@ -135,6 +160,7 @@ const Settings = ({ onCorruptionResolved }) => {
       changeTimezone(timezone);
       changeWeekStart(weekStartValue);
       changeClockFormat(clockFormatValue);
+      changeDateFormat(dateFormatValue);
       const parsedGoal = Number(dailyHourGoalValue);
       if (!Number.isFinite(parsedGoal) || parsedGoal <= 0 || parsedGoal > 24) {
         error('Daily hour goal must be between 0 and 24');
@@ -147,6 +173,26 @@ const Settings = ({ onCorruptionResolved }) => {
       error('Failed to save settings');
     }
   };
+
+  // Keep refs pointing at the latest callbacks so the toast buttons never
+  // close over stale state.
+  saveCallbackRef.current = handleSaveSettings;
+  revertCallbackRef.current = handleRevert;
+
+  useEffect(() => {
+    if (hasUnsaved) {
+      if (unsavedToastIdRef.current !== null) return;
+      const id = addToast('You have unsaved settings changes', 'warning', 0, null, [
+        { label: 'Save', dismissOnClick: true, onClick: () => saveCallbackRef.current() },
+        { label: 'Revert', dismissOnClick: true, onClick: () => revertCallbackRef.current() },
+      ]);
+      unsavedToastIdRef.current = id;
+    } else {
+      if (unsavedToastIdRef.current === null) return;
+      removeToast(unsavedToastIdRef.current);
+      unsavedToastIdRef.current = null;
+    }
+  }, [hasUnsaved]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleResetOnboarding = () => {
     if (window.confirm('Are you sure you want to reset onboarding? This will show the setup screen again next time you start the app.')) {
@@ -183,14 +229,13 @@ const Settings = ({ onCorruptionResolved }) => {
     }
   };
 
-  // Cleanup timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (reloadTimeoutRef.current) {
-        clearTimeout(reloadTimeoutRef.current);
-      }
+      if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
+      if (unsavedToastIdRef.current !== null) removeToast(unsavedToastIdRef.current);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -283,6 +328,56 @@ const Settings = ({ onCorruptionResolved }) => {
           </div>
         </div>
 
+        {/* Clock Format Settings */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <Clock className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Clock Format</h4>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="clockFormat" className="block text-sm font-medium text-gray-700 mb-2">
+                Clock Display Format
+              </label>
+              <select
+                id="clockFormat"
+                value={clockFormatValue}
+                onChange={(e) => handleClockFormatChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="12hour">12-hour (AM/PM)</option>
+                <option value="24hour">24-hour</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 mb-2">
+                Date Display Format
+              </label>
+              <select
+                id="dateFormat"
+                value={dateFormatValue}
+                onChange={(e) => setDateFormatValue(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="short">May 13, 2026</option>
+                <option value="long">Tuesday, May 13, 2026</option>
+                <option value="short-no-year">May 13</option>
+                <option value="weekday">Tue, May 13</option>
+                <option value="weekday-year">Tue, May 13, 2026</option>
+                <option value="numeric">5/13/2026</option>
+                <option value="dmy">13/05/2026</option>
+                <option value="iso">2026-05-13</option>
+                <option value="none">Time only</option>
+              </select>
+              <p className="mt-1 text-sm text-gray-500">
+                Choose how the date is shown alongside the clock in the navigation bar
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Work Schedule — week start, non-work days, and daily hour goal */}
         <div className="border border-gray-200 rounded-lg p-4">
           <div className="flex items-center space-x-3 mb-4">
@@ -354,34 +449,6 @@ const Settings = ({ onCorruptionResolved }) => {
               />
               <p className="mt-1 text-sm text-gray-500">
                 Target tracked hours per day. Drives the goal ring on the Reports view.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Clock Format Settings */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Clock Format</h4>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="clockFormat" className="block text-sm font-medium text-gray-700 mb-2">
-                Clock Display Format
-              </label>
-              <select
-                id="clockFormat"
-                value={clockFormatValue}
-                onChange={(e) => handleClockFormatChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="12hour">12-hour (AM/PM)</option>
-                <option value="24hour">24-hour</option>
-              </select>
-              <p className="mt-1 text-sm text-gray-500">
-                Choose how time is displayed in the navigation bar
               </p>
             </div>
           </div>
@@ -539,6 +606,92 @@ const Settings = ({ onCorruptionResolved }) => {
                   const defaults = JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
                   setHeatmapColorsEdit(defaults);
                   changeHeatmapColors(defaults);
+                }}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset to default
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Goal Ring Colors */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <BarChart2 className="w-5 h-5 text-blue-600" />
+            <h4 className="font-medium text-gray-900">Goal Ring Colors</h4>
+          </div>
+
+          <div className="space-y-4">
+            {/* Live preview */}
+            <div className="flex items-center gap-3">
+              <svg width="48" height="48" className="-rotate-90">
+                <circle cx="24" cy="24" r="18" fill="none" stroke="#e5e7eb" strokeWidth="5" />
+                <circle cx="24" cy="24" r="18" fill="none" stroke={goalRingColorsEdit.progressColor} strokeWidth="5" strokeLinecap="round" strokeDasharray={2 * Math.PI * 18} strokeDashoffset={2 * Math.PI * 18 * 0.35} />
+              </svg>
+              <svg width="48" height="48" className="-rotate-90">
+                <circle cx="24" cy="24" r="18" fill="none" stroke="#e5e7eb" strokeWidth="5" />
+                <circle cx="24" cy="24" r="18" fill="none" stroke={goalRingColorsEdit.completionColor} strokeWidth="5" strokeLinecap="round" strokeDasharray={2 * Math.PI * 18} strokeDashoffset={0} />
+              </svg>
+              <span className="text-xs text-gray-400">In progress · Complete</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1.5">In progress</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={goalRingColorsEdit.progressColor}
+                    onChange={(e) => {
+                      const updated = { ...goalRingColorsEdit, progressColor: e.target.value };
+                      setGoalRingColorsEdit(updated);
+                      changeGoalRingColors(updated);
+                    }}
+                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                  />
+                  <span className="text-xs text-gray-500 font-mono">{goalRingColorsEdit.progressColor}</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1.5">Goal met (≥ 100%)</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={goalRingColorsEdit.completionColor}
+                    onChange={(e) => {
+                      const updated = { ...goalRingColorsEdit, completionColor: e.target.value };
+                      setGoalRingColorsEdit(updated);
+                      changeGoalRingColors(updated);
+                    }}
+                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                  />
+                  <span className="text-xs text-gray-500 font-mono">{goalRingColorsEdit.completionColor}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+              <button
+                onClick={() => {
+                  const updated = {
+                    progressColor: heatmapColorsEdit.stops[heatmapColorsEdit.stops.length - 1]?.color ?? heatmapColorsEdit.completionColor,
+                    completionColor: heatmapColorsEdit.completionColor,
+                  };
+                  setGoalRingColorsEdit(updated);
+                  changeGoalRingColors(updated);
+                }}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Copy from heatmap
+              </button>
+              <button
+                onClick={() => {
+                  const defaults = { ...DEFAULT_GOAL_RING_COLORS };
+                  setGoalRingColorsEdit(defaults);
+                  changeGoalRingColors(defaults);
                 }}
                 className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
               >
