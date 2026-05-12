@@ -89,7 +89,7 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
       id: 'pomodoro',
       label: 'Pomodoro',
       icon: Timer,
-      description: 'Focus with time management'
+      description: 'Boost focus with intervals'
     },
     {
       id: 'timesheet',
