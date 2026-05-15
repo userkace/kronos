@@ -341,9 +341,10 @@ const Reports = () => {
     return { items, total };
   }, [dailySeries, timesheet, now]);
 
-  // Goal ring geometry.
-  const goalProgress = dailyHourGoal > 0 ? Math.min(1, todayHours / dailyHourGoal) : 0;
-  const ringOffset = RING_CIRCUMFERENCE * (1 - goalProgress);
+  const { goalProgress, ringOffset } = useMemo(() => {
+    const goalProgress = dailyHourGoal > 0 ? Math.min(1, todayHours / dailyHourGoal) : 0;
+    return { goalProgress, ringOffset: RING_CIRCUMFERENCE * (1 - goalProgress) };
+  }, [todayHours, dailyHourGoal]);
 
   if (!timezoneInitialized) {
     return (
