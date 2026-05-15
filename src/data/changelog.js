@@ -25,10 +25,13 @@ export const CHANGELOG = [
   {
     version: '0.3.3',
     date: '2026-05-15',
-    title: 'Reports average excludes non-work days',
+    title: 'Reports — Average now excludes non-work days',
     changes: [
       { type: 'fixed', description: 'Average per day in the Range Total card now divides by work days only, matching your Non-Work Days setting — weekends no longer drag the average down.' },
-      { type: 'changed', description: 'Reports performance: range stats (total, average, max) are now memoized and only recompute when data changes, not on every tooltip hover.' },
+      { type: 'changed', description: 'Range stats (total, average, max) are now memoized and only recompute when data changes, not on every tooltip hover.' },
+      { type: 'changed', description: 'Goal ring progress and dash offset are memoized, recomputing only when today\'s hours or the daily goal changes.' },
+      { type: 'changed', description: 'Ring geometry constants (size, radius, circumference) moved to module level — no longer re-evaluated on every render.' },
+      { type: 'changed', description: 'Streak calculation reuses the memoized weekend day set instead of allocating a redundant Set on each recalculation.' },
     ],
   },
   {
