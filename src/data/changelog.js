@@ -28,6 +28,7 @@ export const CHANGELOG = [
     title: 'Reports average excludes non-work days',
     changes: [
       { type: 'fixed', description: 'Average per day in the Range Total card now divides by work days only, matching your Non-Work Days setting — weekends no longer drag the average down.' },
+      { type: 'changed', description: 'Reports performance: range stats (total, average, max) are now memoized and only recompute when data changes, not on every tooltip hover.' },
     ],
   },
   {
