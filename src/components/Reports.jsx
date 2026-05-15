@@ -76,6 +76,10 @@ const getHeatmapStyle = (hours, goal, heatmapColors) => {
   return { backgroundColor: stop ? stop.color : heatmapColors.completionColor };
 };
 
+const RING_SIZE = 80;
+const RING_RADIUS = 32;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
 const Reports = () => {
   const { selectedTimezone: timezone, isInitialized: timezoneInitialized } = useTimezone();
   const { dailyHourGoal, weekStart, weekendDays, heatmapColors, goalRingColors } = useUserPreferences();
@@ -339,10 +343,7 @@ const Reports = () => {
 
   // Goal ring geometry.
   const goalProgress = dailyHourGoal > 0 ? Math.min(1, todayHours / dailyHourGoal) : 0;
-  const ringSize = 80;
-  const ringRadius = 32;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const ringOffset = ringCircumference * (1 - goalProgress);
+  const ringOffset = RING_CIRCUMFERENCE * (1 - goalProgress);
 
   if (!timezoneInitialized) {
     return (
@@ -395,25 +396,25 @@ const Reports = () => {
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-          <div className="relative shrink-0" style={{ width: ringSize, height: ringSize }}>
-            <svg width={ringSize} height={ringSize} className="-rotate-90">
+          <div className="relative shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
+            <svg width={RING_SIZE} height={RING_SIZE} className="-rotate-90">
               <circle
-                cx={ringSize / 2}
-                cy={ringSize / 2}
-                r={ringRadius}
+                cx={RING_SIZE / 2}
+                cy={RING_SIZE / 2}
+                r={RING_RADIUS}
                 fill="none"
                 stroke="#e5e7eb"
                 strokeWidth="8"
               />
               <circle
-                cx={ringSize / 2}
-                cy={ringSize / 2}
-                r={ringRadius}
+                cx={RING_SIZE / 2}
+                cy={RING_SIZE / 2}
+                r={RING_RADIUS}
                 fill="none"
                 stroke={goalProgress >= 1 ? goalRingColors.completionColor : goalRingColors.progressColor}
                 strokeWidth="8"
                 strokeLinecap="round"
-                strokeDasharray={ringCircumference}
+                strokeDasharray={RING_CIRCUMFERENCE}
                 strokeDashoffset={ringOffset}
                 style={{ transition: 'stroke-dashoffset 400ms ease, stroke 200ms ease' }}
               />
