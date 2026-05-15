@@ -286,7 +286,6 @@ const Reports = () => {
   // So Sunday-no-work doesn't add, Sunday-with-work does.
   const streak = useMemo(() => {
     if (!todayKey) return 0;
-    const weekendSet = new Set(weekendDays);
     let count = 0;
     let cursor = now;
     let allowZeroToday = true;
@@ -310,7 +309,7 @@ const Reports = () => {
       }
     }
     return count;
-  }, [timesheet, now, timezone, todayKey, weekendDays]);
+  }, [timesheet, now, timezone, todayKey, weekendSet]);
 
   // Time-by-task breakdown over the full range.
   const taskBreakdown = useMemo(() => {
