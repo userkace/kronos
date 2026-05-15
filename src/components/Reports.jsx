@@ -267,7 +267,9 @@ const Reports = () => {
   const maxHours = Math.max(0.5, ...dailySeries.map(d => d.hours));
   const totalSeconds = dailySeries.reduce((s, d) => s + d.seconds, 0);
   const totalHours = totalSeconds / 3600;
-  const avgPerDay = dailySeries.length > 0 ? totalHours / dailySeries.length : 0;
+  const weekendSet = useMemo(() => new Set(weekendDays), [weekendDays]);
+  const workDayCount = dailySeries.filter(d => !weekendSet.has(dowFromKey(d.key))).length;
+  const avgPerDay = workDayCount > 0 ? totalHours / workDayCount : 0;
 
   // Today only — used by the goal ring card.
   const todayHours = useMemo(() => {
