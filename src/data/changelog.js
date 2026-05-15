@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.3.3',
+    date: '2026-05-15',
+    title: 'Reports average excludes non-work days',
+    changes: [
+      { type: 'fixed', description: 'Average per day in the Range Total card now divides by work days only, matching your Non-Work Days setting — weekends no longer drag the average down.' },
+    ],
+  },
+  {
     version: '0.3.2',
     date: '2026-05-13',
     title: 'Brand refresh & settings improvements',
