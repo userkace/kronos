@@ -18,7 +18,8 @@ const DataImportExport = ({ onImportSuccess }) => {
   const { weekStart } = useUserPreferences();
   const [isImporting, setIsImporting] = useState(false);
   const [importInfo, setImportInfo] = useState(null);
-  const [showRevertOption, setShowRevertOption] = useState(hasImportBackup());
+  const [showRevertOption, setShowRevertOption] = useState(false);
+  useEffect(() => { hasImportBackup().then(setShowRevertOption); }, []);
 
   // Advanced export states
   const [exportMode, setExportMode] = useState('all'); // 'all', 'days', 'weeks'
@@ -227,10 +228,10 @@ const DataImportExport = ({ onImportSuccess }) => {
     }
   };
 
-  const handleRevert = () => {
+  const handleRevert = async () => {
     if (window.confirm('Are you sure you want to revert the last import? This will restore all data to its previous state and cannot be undone.')) {
-      const success = revertImport();
-      if (success) {
+      const reverted = await revertImport();
+      if (reverted) {
         success('Data reverted to previous state');
         setShowRevertOption(false);
         setImportInfo(null);

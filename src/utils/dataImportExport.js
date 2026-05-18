@@ -1,4 +1,13 @@
 // Export/Import utilities for timesheet data
+import {
+  loadTimesheetData,
+  saveTimesheetData,
+  loadWeeklyTimesheet,
+  saveWeeklyTimesheet,
+} from './storage';
+import { idbGet, idbSet, idbDelete } from './timesheetDB';
+
+const BACKUP_KEY = 'timesheetImportBackup';
 
 // Validation helpers — applied before any import write so a malformed backup
 // can't seed the app with data that crashes downstream parseISO calls (which
@@ -65,23 +74,20 @@ const validateImportShape = (importData) => {
   if (!importData.version) {
     return 'Backup is missing the version field';
   }
-  const dailyError = validateDailyData(importData.dailyData);
+  // Treat absent fields as empty — older exports may omit one or both
+  const dailyError = validateDailyData(importData.dailyData ?? {});
   if (dailyError) return dailyError;
-  const weeklyError = validateWeeklyData(importData.weeklyData);
+  const weeklyError = validateWeeklyData(importData.weeklyData ?? {});
   if (weeklyError) return weeklyError;
   return null;
 };
 
 export const exportTimesheetData = () => {
   try {
-    // Get all data from localStorage using correct keys
-    const dailyData = localStorage.getItem('kronos_timesheet_data');
-    const weeklyData = localStorage.getItem('kronos_weekly_timesheet');
     const timezone = localStorage.getItem('kronos_selected_timezone');
-    
     const exportData = {
-      dailyData: dailyData ? JSON.parse(dailyData) : {},
-      weeklyData: weeklyData ? JSON.parse(weeklyData) : {},
+      dailyData: loadTimesheetData(),
+      weeklyData: loadWeeklyTimesheet(),
       timezone: timezone || 'UTC',
       exportDate: new Date().toISOString(),
       version: '1.0'
@@ -111,59 +117,54 @@ export const importTimesheetDataSelective = (file, importMode) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const importData = JSON.parse(e.target.result);
-        
+
         // Deep-validate the backup shape so malformed entries can't slip
         // through and produce silent zeros via Invalid Date downstream.
         const shapeError = validateImportShape(importData);
         if (shapeError) {
           throw new Error('Invalid backup: ' + shapeError);
         }
-        
-        // Backup current data before import
-        const currentBackup = {
-          dailyData: localStorage.getItem('kronos_timesheet_data'),
-          weeklyData: localStorage.getItem('kronos_weekly_timesheet'),
+
+        // Backup current data to IDB before import
+        await idbSet(BACKUP_KEY, {
+          dailyData: loadTimesheetData(),
+          weeklyData: loadWeeklyTimesheet(),
           timezone: localStorage.getItem('kronos_selected_timezone'),
-          backupDate: new Date().toISOString()
-        };
-        
-        // Store backup in case user wants to revert
-        localStorage.setItem('timesheetImportBackup', JSON.stringify(currentBackup));
-        
+          backupDate: new Date().toISOString(),
+        });
+
         // Import based on mode
         if (importMode === 'all') {
-          localStorage.setItem('kronos_timesheet_data', JSON.stringify(importData.dailyData));
-          localStorage.setItem('kronos_weekly_timesheet', JSON.stringify(importData.weeklyData));
+          saveTimesheetData(importData.dailyData ?? {});
+          saveWeeklyTimesheet(importData.weeklyData ?? {});
           if (importData.timezone) {
             localStorage.setItem('kronos_selected_timezone', importData.timezone);
           }
         } else if (importMode === 'days') {
-          localStorage.setItem('kronos_timesheet_data', JSON.stringify(importData.dailyData));
-          // Don't import weekly data
+          saveTimesheetData(importData.dailyData ?? {});
         } else if (importMode === 'weeks') {
-          localStorage.setItem('kronos_weekly_timesheet', JSON.stringify(importData.weeklyData));
-          // Don't import daily data
+          saveWeeklyTimesheet(importData.weeklyData ?? {});
         }
-        
+
         resolve({
           success: true,
           message: 'Data imported successfully',
           imported: {
-            dailyEntries: Object.keys(importData.dailyData).length,
-            weeklyEntries: Object.keys(importData.weeklyData).length,
+            dailyEntries: Object.keys(importData.dailyData ?? {}).length,
+            weeklyEntries: Object.keys(importData.weeklyData ?? {}).length,
             timezone: importData.timezone,
             exportDate: importData.exportDate,
-            importMode
+            importMode,
           }
         });
       } catch (error) {
         reject(new Error('Failed to parse backup file: ' + error.message));
       }
     };
-    
+
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsText(file);
   });
@@ -172,11 +173,11 @@ export const importTimesheetDataSelective = (file, importMode) => {
 export const importTimesheetData = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
-    reader.onload = (e) => {
+
+    reader.onload = async (e) => {
       try {
         const importData = JSON.parse(e.target.result);
-        
+
         // Deep-validate the backup shape so malformed entries can't slip
         // through and produce silent zeros via Invalid Date downstream.
         const shapeError = validateImportShape(importData);
@@ -184,67 +185,55 @@ export const importTimesheetData = (file) => {
           throw new Error('Invalid backup: ' + shapeError);
         }
         
-        // Backup current data before import
-        const currentBackup = {
-          dailyData: localStorage.getItem('kronos_timesheet_data'),
-          weeklyData: localStorage.getItem('kronos_weekly_timesheet'),
+        // Backup current data to IDB before import
+        await idbSet(BACKUP_KEY, {
+          dailyData: loadTimesheetData(),
+          weeklyData: loadWeeklyTimesheet(),
           timezone: localStorage.getItem('kronos_selected_timezone'),
-          backupDate: new Date().toISOString()
-        };
-        
-        // Store backup in case user wants to revert
-        localStorage.setItem('timesheetImportBackup', JSON.stringify(currentBackup));
-        
+          backupDate: new Date().toISOString(),
+        });
+
         // Import new data
-        localStorage.setItem('kronos_timesheet_data', JSON.stringify(importData.dailyData));
-        localStorage.setItem('kronos_weekly_timesheet', JSON.stringify(importData.weeklyData));
+        saveTimesheetData(importData.dailyData ?? {});
+        saveWeeklyTimesheet(importData.weeklyData ?? {});
         if (importData.timezone) {
           localStorage.setItem('kronos_selected_timezone', importData.timezone);
         }
-        
+
         resolve({
           success: true,
           message: 'Data imported successfully',
           imported: {
-            dailyEntries: Object.keys(importData.dailyData).length,
-            weeklyEntries: Object.keys(importData.weeklyData).length,
+            dailyEntries: Object.keys(importData.dailyData ?? {}).length,
+            weeklyEntries: Object.keys(importData.weeklyData ?? {}).length,
             timezone: importData.timezone,
-            exportDate: importData.exportDate
+            exportDate: importData.exportDate,
           }
         });
       } catch (error) {
         reject(new Error('Failed to parse backup file: ' + error.message));
       }
     };
-    
+
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsText(file);
   });
 };
 
-export const revertImport = () => {
+export const revertImport = async () => {
   try {
-    const backup = localStorage.getItem('timesheetImportBackup');
-    if (!backup) {
+    const backupData = await idbGet(BACKUP_KEY);
+    if (!backupData) {
       throw new Error('No backup found to revert');
     }
-    
-    const backupData = JSON.parse(backup);
-    
-    // Restore previous data
-    if (backupData.dailyData) {
-      localStorage.setItem('kronos_timesheet_data', backupData.dailyData);
-    }
-    if (backupData.weeklyData) {
-      localStorage.setItem('kronos_weekly_timesheet', backupData.weeklyData);
-    }
+
+    if (backupData.dailyData) saveTimesheetData(backupData.dailyData);
+    if (backupData.weeklyData) saveWeeklyTimesheet(backupData.weeklyData);
     if (backupData.timezone) {
       localStorage.setItem('kronos_selected_timezone', backupData.timezone);
     }
-    
-    // Remove backup after successful revert
-    localStorage.removeItem('timesheetImportBackup');
-    
+
+    await idbDelete(BACKUP_KEY);
     return true;
   } catch (error) {
     console.error('Revert failed:', error);
@@ -252,17 +241,18 @@ export const revertImport = () => {
   }
 };
 
-export const hasImportBackup = () => {
-  return localStorage.getItem('timesheetImportBackup') !== null;
+export const hasImportBackup = async () => {
+  const backup = await idbGet(BACKUP_KEY);
+  return backup != null;
 };
 
 export const clearAllData = () => {
   try {
-    // Clear all timesheet-related data
-    localStorage.removeItem('kronos_timesheet_data');
-    localStorage.removeItem('kronos_weekly_timesheet');
-    localStorage.removeItem('timesheetImportBackup');
-    
+    idbDelete(BACKUP_KEY).catch(err =>
+      console.error('IDB delete failed for import backup:', err)
+    );
+    saveTimesheetData({});
+    saveWeeklyTimesheet({});
     return true;
   } catch (error) {
     console.error('Clear data failed:', error);
