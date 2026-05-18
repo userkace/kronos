@@ -23,6 +23,16 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.3.4',
+    date: '2026-05-18',
+    title: 'Interactive map for timezone selection',
+    changes: [
+      { type: 'added', description: 'Leaflet world map with city markers added to TimezoneSelect component used in Settings and Onboarding.' },
+      { type: 'added', description: 'Notice for timezone usage for remote workers in Settings and Onboarding.' },
+      { type: 'changed', description: 'Timezone selection in Settings and Onboarding now shows an interactive Leaflet world map — click a city marker to pick your timezone, or use the dropdown below the map.' },
+    ],
+  },
+  {
     version: '0.3.3',
     date: '2026-05-15',
     title: 'Reports — Average now excludes non-work days',

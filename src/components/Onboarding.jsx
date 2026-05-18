@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import TimezoneSelect from './TimezoneSelect';
-import { Clock, Calendar, Globe, ArrowRight, CheckCircle, Settings as SettingsIcon } from 'lucide-react';
+import { Clock, Calendar, Globe, ArrowRight, CheckCircle, Settings as SettingsIcon, Building2 } from 'lucide-react';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -168,9 +168,12 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                     timezone={selectedTimezone}
                     onTimezoneChange={setSelectedTimezone}
                   />
-                  <p className="text-sm text-gray-600">
-                    Choose your local timezone to ensure all time entries are recorded correctly.
-                  </p>
+                  <div className="flex gap-2.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+                    <Building2 className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      <span className="font-semibold">Working remotely?</span> If your company is in a different timezone, you can set this to their location so your tracked hours align with their business hours instead of your local time.
+                    </p>
+                  </div>
                 </div>
               </div>
 

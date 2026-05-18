@@ -14,7 +14,7 @@ import {
 } from '../utils/storage';
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
-  AlertTriangle, Download, RefreshCcw, X, BarChart2, Plus,
+  AlertTriangle, Download, RefreshCcw, X, BarChart2, Plus, Building2,
 } from 'lucide-react';
 
 const formatBytes = (n) => {
@@ -321,9 +321,12 @@ const Settings = ({ onCorruptionResolved }) => {
                 timezone={timezone}
                 onTimezoneChange={handleTimezoneChange}
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Select your local timezone for accurate time tracking
-              </p>
+              <div className="mt-3 flex gap-2.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+                <Building2 className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  <span className="font-semibold">Working remotely?</span> If your company is in a different timezone, you can set this to their location so your tracked hours align with their business hours instead of your local time.
+                </p>
+              </div>
             </div>
           </div>
         </div>
