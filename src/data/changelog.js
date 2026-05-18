@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.3.5',
+    date: '2026-05-19',
+    title: 'Timesheet data moved to IndexedDB',
+    changes: [
+      { type: 'changed', description: 'Time entries and weekly timesheet data are now stored in IndexedDB instead of localStorage, removing the 5–10 MB storage limit. Existing data is migrated automatically on first load.' },
+    ],
+  },
+  {
     version: '0.3.4',
     date: '2026-05-18',
     title: 'Interactive map for timezone selection',

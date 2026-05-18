@@ -1,4 +1,56 @@
 // LocalStorage utility functions for the Time Tracking Application
+// Timesheet data (kronos_timesheet_data, kronos_weekly_timesheet) is stored in
+// IndexedDB via a write-behind in-memory cache. All other keys remain in localStorage.
+
+import { idbGet, idbSet, idbDelete } from './timesheetDB';
+import storageEventSystem from './storageEvents';
+
+// In-memory cache for IDB-backed keys. Populated once by initTimesheetStorage()
+// before first read; all load functions read from here, all save functions
+// update here synchronously then flush to IDB asynchronously.
+let _timesheetCache = null;
+let _weeklyCache = null;
+let _initPromise = null;
+// Last-emitted JSON snapshots — used to suppress re-emits when a save produces
+// identical content (e.g. the save→subscribe→loadData→setState→save cycle in
+// DailyTracker). Matches the de-duplication the old localStorage path got for
+// free from storageEvents.detectChanges(oldString, newString).
+let _timesheetLastEmittedJson = null;
+let _weeklyLastEmittedJson = null;
+
+// Use string literals here so this function can run before STORAGE_KEYS is declared.
+const IDB_KEY_TIMESHEET = 'kronos_timesheet_data';
+const IDB_KEY_WEEKLY    = 'kronos_weekly_timesheet';
+
+const _doInitTimesheetStorage = async () => {
+  const migrateKey = async (lsKey) => {
+    const raw = localStorage.getItem(lsKey);
+    if (raw != null) {
+      try {
+        const parsed = JSON.parse(raw);
+        await idbSet(lsKey, parsed);
+        localStorage.removeItem(lsKey);
+        return parsed;
+      } catch {
+        // Leave corrupt data in localStorage so the existing quarantine path
+        // picks it up on the next load call.
+      }
+    }
+    const idbVal = await idbGet(lsKey);
+    return idbVal ?? {};
+  };
+
+  _timesheetCache = await migrateKey(IDB_KEY_TIMESHEET);
+  _weeklyCache    = await migrateKey(IDB_KEY_WEEKLY);
+};
+
+export const initTimesheetStorage = () => {
+  if (!_initPromise) _initPromise = _doInitTimesheetStorage();
+  return _initPromise;
+};
+
+// Kick off the IDB open early so it's likely resolved by the time React mounts.
+_initPromise = _doInitTimesheetStorage();
 
 const STORAGE_KEYS = {
   TIMESHEET_DATA: 'kronos_timesheet_data',
@@ -203,7 +255,7 @@ export const discardQuarantine = (backupKey) => {
   }
 };
 
-// Save timesheet data to LocalStorage
+// Save timesheet data to IndexedDB (write-behind cache)
 export const saveTimesheetData = (data) => {
   if (isKeyCorruptPending(STORAGE_KEYS.TIMESHEET_DATA)) {
     console.warn(
@@ -212,27 +264,22 @@ export const saveTimesheetData = (data) => {
     );
     return false;
   }
-  try {
-    localStorage.setItem(STORAGE_KEYS.TIMESHEET_DATA, JSON.stringify(data));
-    return true;
-  } catch (error) {
-    console.error('Error saving timesheet data:', error);
-    return false;
+  _timesheetCache = data;
+  idbSet(STORAGE_KEYS.TIMESHEET_DATA, data).catch(err =>
+    console.error('IDB write failed for timesheet data:', err)
+  );
+  const json = JSON.stringify(data);
+  if (json !== _timesheetLastEmittedJson) {
+    _timesheetLastEmittedJson = json;
+    queueMicrotask(() => storageEventSystem.emit(STORAGE_KEYS.TIMESHEET_DATA, {
+      key: STORAGE_KEYS.TIMESHEET_DATA, oldValue: null, newValue: null,
+    }));
   }
+  return true;
 };
 
-// Load timesheet data from LocalStorage
-export const loadTimesheetData = () => {
-  const stored = localStorage.getItem(STORAGE_KEYS.TIMESHEET_DATA);
-  if (!stored) return {};
-  try {
-    return JSON.parse(stored);
-  } catch (error) {
-    console.error('Error loading timesheet data:', error);
-    quarantineCorruption(STORAGE_KEYS.TIMESHEET_DATA, stored);
-    return {};
-  }
-};
+// Load timesheet data from the in-memory cache (populated by initTimesheetStorage)
+export const loadTimesheetData = () => _timesheetCache ?? {};
 
 // Save selected timezone to LocalStorage
 export const saveTimezone = (timezone) => {
@@ -274,7 +321,7 @@ export const loadSelectedWeek = () => {
   }
 };
 
-// Clear all application data from LocalStorage
+// Clear all application data from localStorage and IndexedDB
 export const clearAllData = () => {
   try {
     Object.values(STORAGE_KEYS).forEach(key => {
@@ -283,9 +330,17 @@ export const clearAllData = () => {
   } catch (error) {
     console.error('Error clearing data:', error);
   }
+  _timesheetCache = {};
+  _weeklyCache = {};
+  idbDelete(STORAGE_KEYS.TIMESHEET_DATA).catch(err =>
+    console.error('IDB delete failed for timesheet data:', err)
+  );
+  idbDelete(STORAGE_KEYS.WEEKLY_TIMESHEET).catch(err =>
+    console.error('IDB delete failed for weekly timesheet:', err)
+  );
 };
 
-// Save weekly timesheet data to LocalStorage
+// Save weekly timesheet data to IndexedDB (write-behind cache)
 export const saveWeeklyTimesheet = (data) => {
   if (isKeyCorruptPending(STORAGE_KEYS.WEEKLY_TIMESHEET)) {
     console.warn(
@@ -294,27 +349,22 @@ export const saveWeeklyTimesheet = (data) => {
     );
     return false;
   }
-  try {
-    localStorage.setItem(STORAGE_KEYS.WEEKLY_TIMESHEET, JSON.stringify(data));
-    return true;
-  } catch (error) {
-    console.error('Error saving weekly timesheet data:', error);
-    return false;
+  _weeklyCache = data;
+  idbSet(STORAGE_KEYS.WEEKLY_TIMESHEET, data).catch(err =>
+    console.error('IDB write failed for weekly timesheet:', err)
+  );
+  const json = JSON.stringify(data);
+  if (json !== _weeklyLastEmittedJson) {
+    _weeklyLastEmittedJson = json;
+    queueMicrotask(() => storageEventSystem.emit(STORAGE_KEYS.WEEKLY_TIMESHEET, {
+      key: STORAGE_KEYS.WEEKLY_TIMESHEET, oldValue: null, newValue: null,
+    }));
   }
+  return true;
 };
 
-// Load weekly timesheet data from LocalStorage
-export const loadWeeklyTimesheet = () => {
-  const data = localStorage.getItem(STORAGE_KEYS.WEEKLY_TIMESHEET);
-  if (!data) return {};
-  try {
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error loading weekly timesheet data:', error);
-    quarantineCorruption(STORAGE_KEYS.WEEKLY_TIMESHEET, data);
-    return {};
-  }
-};
+// Load weekly timesheet data from the in-memory cache (populated by initTimesheetStorage)
+export const loadWeeklyTimesheet = () => _weeklyCache ?? {};
 
 // Save week start preference to LocalStorage
 export const saveWeekStart = (weekStart) => {
