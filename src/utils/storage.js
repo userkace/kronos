@@ -26,18 +26,26 @@ const _doInitTimesheetStorage = async () => {
   const migrateKey = async (lsKey) => {
     const raw = localStorage.getItem(lsKey);
     if (raw != null) {
+      let parsed;
       try {
-        const parsed = JSON.parse(raw);
+        parsed = JSON.parse(raw);
+      } catch {
+        // Corrupt JSON — leave it in localStorage so the quarantine path
+        // picks it up on the next explicit load call.
+        return await idbGet(lsKey) ?? {};
+      }
+      // Parsed successfully — write to IDB. If IDB fails we still return
+      // the parsed value so the session works; localStorage remains as a
+      // retry source on the next reload.
+      try {
         await idbSet(lsKey, parsed);
         localStorage.removeItem(lsKey);
-        return parsed;
-      } catch {
-        // Leave corrupt data in localStorage so the existing quarantine path
-        // picks it up on the next load call.
+      } catch (idbErr) {
+        console.error('IDB migration write failed for', lsKey, idbErr);
       }
+      return parsed;
     }
-    const idbVal = await idbGet(lsKey);
-    return idbVal ?? {};
+    return await idbGet(lsKey) ?? {};
   };
 
   _timesheetCache = await migrateKey(IDB_KEY_TIMESHEET);
@@ -264,11 +272,14 @@ export const saveTimesheetData = (data) => {
     );
     return false;
   }
-  _timesheetCache = data;
-  idbSet(STORAGE_KEYS.TIMESHEET_DATA, data).catch(err =>
+  // Always assign a new object so React subscribers detect the change via
+  // reference inequality (callers often mutate the object they got from
+  // loadTimesheetData() before passing it back here, keeping the same ref).
+  _timesheetCache = data === _timesheetCache ? { ...data } : data;
+  idbSet(STORAGE_KEYS.TIMESHEET_DATA, _timesheetCache).catch(err =>
     console.error('IDB write failed for timesheet data:', err)
   );
-  const json = JSON.stringify(data);
+  const json = JSON.stringify(_timesheetCache);
   if (json !== _timesheetLastEmittedJson) {
     _timesheetLastEmittedJson = json;
     queueMicrotask(() => storageEventSystem.emit(STORAGE_KEYS.TIMESHEET_DATA, {
@@ -332,6 +343,8 @@ export const clearAllData = () => {
   }
   _timesheetCache = {};
   _weeklyCache = {};
+  _timesheetLastEmittedJson = null;
+  _weeklyLastEmittedJson = null;
   idbDelete(STORAGE_KEYS.TIMESHEET_DATA).catch(err =>
     console.error('IDB delete failed for timesheet data:', err)
   );
@@ -349,11 +362,11 @@ export const saveWeeklyTimesheet = (data) => {
     );
     return false;
   }
-  _weeklyCache = data;
-  idbSet(STORAGE_KEYS.WEEKLY_TIMESHEET, data).catch(err =>
+  _weeklyCache = data === _weeklyCache ? { ...data } : data;
+  idbSet(STORAGE_KEYS.WEEKLY_TIMESHEET, _weeklyCache).catch(err =>
     console.error('IDB write failed for weekly timesheet:', err)
   );
-  const json = JSON.stringify(data);
+  const json = JSON.stringify(_weeklyCache);
   if (json !== _weeklyLastEmittedJson) {
     _weeklyLastEmittedJson = json;
     queueMicrotask(() => storageEventSystem.emit(STORAGE_KEYS.WEEKLY_TIMESHEET, {
