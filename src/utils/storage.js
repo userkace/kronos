@@ -30,8 +30,9 @@ const _doInitTimesheetStorage = async () => {
       try {
         parsed = JSON.parse(raw);
       } catch {
-        // Corrupt JSON — leave it in localStorage so the quarantine path
-        // picks it up on the next explicit load call.
+        // Corrupt JSON — quarantine it (blocks saves, surfaces banner) and
+        // fall back to whatever is already in IDB.
+        quarantineCorruption(lsKey, raw);
         return await idbGet(lsKey) ?? {};
       }
       // Parsed successfully — write to IDB. If IDB fails we still return
