@@ -27,7 +27,10 @@ export const CHANGELOG = [
     date: '2026-05-19',
     title: 'Timesheet data moved to IndexedDB',
     changes: [
-      { type: 'changed', description: 'Time entries and weekly timesheet data are now stored in IndexedDB instead of localStorage, removing the 5–10 MB storage limit. Existing data is migrated automatically on first load.' },
+      { type: 'changed', description: 'Time entries and weekly timesheet data are now stored in IndexedDB instead of localStorage. This removes the 5–10 MB browser storage cap, so years of history no longer risk hitting the limit.' },
+      { type: 'changed', description: 'Existing data is migrated automatically on first load — nothing to do on your end. Your entries will appear exactly as before.' },
+      { type: 'added', description: 'Import/export and revert-import now use IndexedDB for backup storage as well, keeping all timesheet data out of the limited localStorage space.' },
+      { type: 'fixed', description: 'Corrupt localStorage data detected during migration is now properly quarantined and surfaced in Data Recovery, consistent with how other storage errors are handled.' },
     ],
   },
   {
