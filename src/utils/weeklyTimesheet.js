@@ -65,7 +65,7 @@ export const writeWeeklyTimesheetForDates = (targetDates, timezone) => {
     try {
       const entriesForDate = allData[dateString] || [];
       const completedEntries = entriesForDate.filter(
-        entry => !entry.isActive && entry.endTime
+        entry => !entry.isActive && entry.startTime && entry.endTime
       );
       const dateObj = parse(dateString, 'yyyy-MM-dd', new Date());
 
