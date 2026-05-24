@@ -188,3 +188,13 @@ export const getChangesSince = (lastSeen) => {
   }
   return entries;
 };
+
+if (import.meta.env.DEV) {
+  const seen = new Set();
+  for (const entry of CHANGELOG) {
+    if (seen.has(entry.version)) {
+      throw new Error(`[changelog] Duplicate version string: "${entry.version}"`);
+    }
+    seen.add(entry.version);
+  }
+}
