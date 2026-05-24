@@ -23,7 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
-    version: '0.3.5',
+    version: '0.4.1',
+    date: '2026-05-24',
+    title: 'Code quality improvements',
+    changes: [
+      { type: 'changed', description: 'Pomodoro timer defaults (work, short break, long break, sessions) and the daily hour goal are now defined in a single constants file, making future adjustments easier and more consistent.' },
+    ],
+  },
+  {
+    version: '0.4.0',
     date: '2026-05-19',
     title: 'Timesheet data moved to IndexedDB',
     changes: [

@@ -6,6 +6,13 @@ import { format, addSeconds, differenceInSeconds } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { useToast } from './ToastContext';
 import { useTimezone } from './TimezoneContext';
+import {
+  DEFAULT_WORK_DURATION,
+  DEFAULT_SHORT_BREAK,
+  DEFAULT_LONG_BREAK,
+  DEFAULT_TOTAL_SETS,
+  STALE_TIMER_THRESHOLD_SECONDS,
+} from '../constants/defaults';
 
 const PomodoroContext = createContext();
 
@@ -40,27 +47,26 @@ export const PomodoroProvider = ({ children }) => {
   // elapsed wall-clock time. Anything beyond this threshold is treated as
   // "tab abandoned" and triggers a reset (see mount effect below) rather than
   // silently inventing minutes/hours of work.
-  const STALE_TIMER_THRESHOLD_SECONDS = 5 * 60;
 
   // Settings state
   const [workDuration, setWorkDuration] = useState(() => {
     const saved = localStorage.getItem('kronos_pomodoro_work_duration');
-    return saved ? parseInt(saved) : 25;
+    return saved ? parseInt(saved) : DEFAULT_WORK_DURATION;
   });
-  
+
   const [shortBreakDuration, setShortBreakDuration] = useState(() => {
     const saved = localStorage.getItem('kronos_pomodoro_short_break_duration');
-    return saved ? parseInt(saved) : 5;
+    return saved ? parseInt(saved) : DEFAULT_SHORT_BREAK;
   });
-  
+
   const [longBreakDuration, setLongBreakDuration] = useState(() => {
     const saved = localStorage.getItem('kronos_pomodoro_long_break_duration');
-    return saved ? parseInt(saved) : 15;
+    return saved ? parseInt(saved) : DEFAULT_LONG_BREAK;
   });
-  
+
   const [totalSets, setTotalSets] = useState(() => {
     const saved = localStorage.getItem('kronos_pomodoro_total_sets');
-    return saved ? parseInt(saved) : 4;
+    return saved ? parseInt(saved) : DEFAULT_TOTAL_SETS;
   });
   
   const [autoStartBreaks, setAutoStartBreaks] = useState(() => {
@@ -91,7 +97,7 @@ export const PomodoroProvider = ({ children }) => {
   
   const [timeLeft, setTimeLeft] = useState(() => {
     const saved = localStorage.getItem('kronos_pomodoro_time_left');
-    const baseValue = saved ? parseInt(saved) : 25 * 60;
+    const baseValue = saved ? parseInt(saved) : DEFAULT_WORK_DURATION * 60;
 
     // If a timer was actively running when the tab last closed, decrement by
     // the wall-clock time spent away. The mount effect below will hard-reset
