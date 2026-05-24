@@ -4,6 +4,7 @@
 
 import { idbGet, idbSet, idbDelete } from './timesheetDB';
 import storageEventSystem from './storageEvents';
+import { DEFAULT_DAILY_HOUR_GOAL } from '../constants/defaults';
 
 // In-memory cache for IDB-backed keys. Populated once by initTimesheetStorage()
 // before first read; all load functions read from here, all save functions
@@ -80,7 +81,6 @@ const STORAGE_KEYS = {
   DATE_FORMAT: 'kronos_date_format',
 };
 
-const DEFAULT_DAILY_HOUR_GOAL = 8;
 // Day-of-week numbers (0=Sun..6=Sat) that don't break the streak when zero.
 const DEFAULT_WEEKEND_DAYS = [0, 6];
 

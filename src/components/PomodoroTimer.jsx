@@ -4,6 +4,12 @@ import { useToast } from '../contexts/ToastContext';
 import { usePomodoro } from '../contexts/PomodoroContext';
 import { loadTimesheetData } from '../utils/storage';
 import storageEventSystem from '../utils/storageEvents';
+import {
+  DEFAULT_WORK_DURATION,
+  DEFAULT_SHORT_BREAK,
+  DEFAULT_LONG_BREAK,
+  DEFAULT_TOTAL_SETS,
+} from '../constants/defaults';
 
 const PomodoroTimer = () => {
   const { success, error } = useToast();
@@ -201,7 +207,7 @@ const PomodoroTimer = () => {
                   min="1"
                   max="60"
                   value={workDuration}
-                  onChange={(e) => setWorkDuration(parseInt(e.target.value) || 25)}
+                  onChange={(e) => setWorkDuration(parseInt(e.target.value) || DEFAULT_WORK_DURATION)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={isRunning}
                 />
@@ -215,7 +221,7 @@ const PomodoroTimer = () => {
                   min="1"
                   max="30"
                   value={shortBreakDuration}
-                  onChange={(e) => setShortBreakDuration(parseInt(e.target.value) || 5)}
+                  onChange={(e) => setShortBreakDuration(parseInt(e.target.value) || DEFAULT_SHORT_BREAK)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={isRunning}
                 />
@@ -229,7 +235,7 @@ const PomodoroTimer = () => {
                   min="1"
                   max="60"
                   value={longBreakDuration}
-                  onChange={(e) => setLongBreakDuration(parseInt(e.target.value) || 15)}
+                  onChange={(e) => setLongBreakDuration(parseInt(e.target.value) || DEFAULT_LONG_BREAK)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={isRunning}
                 />
@@ -243,7 +249,7 @@ const PomodoroTimer = () => {
                   min="1"
                   max="10"
                   value={totalSets}
-                  onChange={(e) => setTotalSets(parseInt(e.target.value) || 4)}
+                  onChange={(e) => setTotalSets(parseInt(e.target.value) || DEFAULT_TOTAL_SETS)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={isRunning}
                 />
