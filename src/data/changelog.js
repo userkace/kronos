@@ -28,6 +28,7 @@ export const CHANGELOG = [
     title: 'Code quality improvements',
     changes: [
       { type: 'changed', description: 'Pomodoro timer defaults (work, short break, long break, sessions) and the daily hour goal are now defined in a single constants file, making future adjustments easier and more consistent.' },
+      { type: 'fixed', description: 'App no longer appears frozen on first load — a spinner is shown while time entry data is being read from storage.' },
     ],
   },
   {
