@@ -15,8 +15,8 @@
 
 export const CHANGE_TYPES = {
   added: { label: 'New', tone: 'green' },
-  fixed: { label: 'Fixed', tone: 'blue' },
   changed: { label: 'Changed', tone: 'amber' },
+  fixed: { label: 'Fixed', tone: 'blue' },
   removed: { label: 'Removed', tone: 'red' },
 };
 
@@ -25,8 +25,10 @@ export const CHANGELOG = [
   {
     version: '0.4.2',
     date: '2026-06-05',
-    title: 'Sidebar polish',
+    title: 'UI polish & empty states',
     changes: [
+      { type: 'added', description: 'Reports now shows an icon and helpful message when no time or tasks have been tracked in the selected range.' },
+      { type: 'added', description: 'Timesheet shows a notice banner when no hours have been logged for the current week.' },
       { type: 'changed', description: 'Sidebar timezone display now shows a friendly city name and UTC offset instead of the raw IANA timezone code.' },
       { type: 'changed', description: 'Removed the left-border highlight from the active sidebar tab for a cleaner look.' },
     ],

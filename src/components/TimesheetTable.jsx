@@ -10,7 +10,7 @@ import {
   isValid
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -529,6 +529,14 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
         </tbody>
       </table>
     </div>
+
+      {/* Empty-week notice */}
+      {weekDays.length > 0 && calculateGrandTotal() === 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500 mt-4">
+          <Calendar className="w-4 h-4 shrink-0 text-gray-400" />
+          <span>No hours logged for this week yet — fill in your time above.</span>
+        </div>
+      )}
     </div>
   );
 };
