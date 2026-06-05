@@ -173,7 +173,7 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
                     }}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
+                        ? 'bg-blue-50 text-blue-600'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
