@@ -8,6 +8,18 @@ import DataImportExport from './DataImportExport';
 import PomodoroProgressBar from './atoms/PomodoroProgressBar';
 import DailyTrackerProgressBar from './atoms/DailyTrackerProgressBar';
 
+const formatTimezoneDisplay = (tz) => {
+  const city = tz.split('/').pop().replace(/_/g, ' ');
+  try {
+    const offset = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' })
+      .formatToParts(new Date())
+      .find(p => p.type === 'timeZoneName')?.value ?? '';
+    return { city, offset };
+  } catch {
+    return { city, offset: '' };
+  }
+};
+
 const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUnseenChangelog }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
   const { selectedTimezone, changeTimezone } = useTimezone();
@@ -198,8 +210,10 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
           <div className="p-4 border-t border-gray-200">
             {/* Timezone Display */}
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Globe className="w-4 h-4" />
-              <span className="truncate">{selectedTimezone}</span>
+              <Globe className="w-4 h-4 shrink-0" />
+              {(() => { const { city, offset } = formatTimezoneDisplay(selectedTimezone); return (
+                <span className="truncate">{city}{offset ? ` · ${offset}` : ''}</span>
+              ); })()}
             </div>
           </div>
         </div>
