@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const ToastContext = createContext();
 
@@ -76,12 +77,17 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={{ addToast, removeToast, success, error, info, warning, actionToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 space-y-2">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        <AnimatePresence initial={false}>
         {toasts.map(toast => (
-          <div
+          <motion.div
             key={toast.id}
+            initial={{ opacity: 0, x: 48, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 48, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             className={`
-              flex items-center justify-between p-4 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out
+              flex items-center justify-between p-4 rounded-lg shadow-lg
               min-w-[300px] max-w-md
               ${toast.type === 'success' ? 'bg-green-500 text-white' : ''}
               ${toast.type === 'error' ? 'bg-red-500 text-white' : ''}
@@ -117,8 +123,9 @@ export const ToastProvider = ({ children }) => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );
