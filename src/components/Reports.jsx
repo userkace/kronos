@@ -463,8 +463,10 @@ const Reports = () => {
         </div>
 
         {range === 'week' && totalSeconds === 0 ? (
-          <div className="text-sm text-gray-500 py-12 text-center">
-            No tracked time in this range yet.
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <BarChart3 className="w-10 h-10 text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-500">No tracked time this week</p>
+            <p className="text-xs text-gray-400 mt-1">Head to the Daily Tracker to start logging hours.</p>
           </div>
         ) : range === 'week' ? (
           <div
@@ -607,8 +609,10 @@ const Reports = () => {
           <h3 className="text-sm font-semibold text-gray-900">Time by task</h3>
         </div>
         {taskBreakdown.items.length === 0 ? (
-          <div className="text-sm text-gray-500 py-6 text-center">
-            No tasks tracked in this range.
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <ListChecks className="w-10 h-10 text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-500">No tasks tracked in this range</p>
+            <p className="text-xs text-gray-400 mt-1">Tasks you log will appear here with a time breakdown.</p>
           </div>
         ) : (
           <div className="space-y-3">
