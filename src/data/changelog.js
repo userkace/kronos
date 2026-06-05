@@ -31,6 +31,7 @@ export const CHANGELOG = [
       { type: 'added', description: 'Timesheet shows a notice banner when no hours have been logged for the current week.' },
       { type: 'changed', description: 'Sidebar timezone display now shows a friendly city name and UTC offset instead of the raw IANA timezone code.' },
       { type: 'changed', description: 'Removed the left-border highlight from the active sidebar tab for a cleaner look.' },
+      { type: 'changed', description: 'Toasts now animate in and out with a slide and fade instead of appearing instantly.' },
     ],
   },
   {
