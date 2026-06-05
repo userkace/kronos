@@ -23,6 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.4.2',
+    date: '2026-06-05',
+    title: 'Sidebar polish',
+    changes: [
+      { type: 'changed', description: 'Sidebar timezone display now shows a friendly city name and UTC offset instead of the raw IANA timezone code.' },
+      { type: 'changed', description: 'Removed the left-border highlight from the active sidebar tab for a cleaner look.' },
+    ],
+  },
+  {
     version: '0.4.1',
     date: '2026-05-24',
     title: 'Stability & load fixes',
