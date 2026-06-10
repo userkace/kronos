@@ -1739,12 +1739,12 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               <button
                 onClick={handleStart}
                 disabled={pomodoroIsRunning}
-                className={`p-3 rounded-full font-semibold flex items-center gap-2 shadow-xs transition-colors duration-150 ${
+                className={`p-3 rounded-full transition-colors duration-150 ${
                   pomodoroIsRunning
-                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
                     : activeEntry
-                      ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white'
-                      : 'bg-green-600 hover:bg-green-700 active:bg-green-800 text-white'
+                      ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                      : 'text-green-600 bg-green-50 hover:bg-green-100'
                 }`}
                 title={pomodoroIsRunning ? 'Cannot start timer while Pomodoro is active' : ''}
               >
@@ -1757,7 +1757,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               {activeEntry && (
                 <button
                   onClick={handleStop}
-                  className="p-3 rounded-lg font-semibold flex items-center gap-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs transition-colors duration-150"
+                  className="p-3 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition-colors duration-150"
                 >
                   <Square className="w-5 h-5" />
                 </button>
@@ -1863,7 +1863,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                               <button
                                 onClick={handleStop}
-                                className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white p-3 rounded-lg shadow-xs flex items-center gap-2 transition-colors duration-150"
+                                className="p-2.5 rounded-lg text-green-800 hover:text-white bg-white hover:bg-red-400 border-white shadow-xs transition-colors duration-150"
                                 aria-label="Pause timer"
                               >
                                 <Pause className="w-4 h-4" />
@@ -1923,8 +1923,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                       layoutId={`entry-${entry.id}`}
                     >
                       <div className="group bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5 hover:bg-gray-50/70 transition-colors duration-150">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
                             {inlineEdit?.entryId === entry.id && inlineEdit.field === 'description' ? (
                               <textarea
                                 autoFocus
@@ -1941,11 +1941,11 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                   width: `${inlineEdit.dims.width}px`,
                                   height: `${inlineEdit.dims.height}px`,
                                 } : undefined}
-                                className="font-semibold text-gray-900 bg-blue-50 border border-blue-300 rounded-md px-2 py-0.5 outline-none focus:ring-2 focus:ring-blue-500/20 resize leading-snug box-border"
+                                className="font-semibold text-gray-900 bg-blue-50/60 rounded outline-none ring-2 ring-blue-400/50 resize leading-normal p-0"
                               />
                             ) : (
                               <h3
-                                className="font-semibold text-gray-900 cursor-text hover:bg-gray-100 rounded-md px-2 py-0.5 -mx-2 inline-block whitespace-pre-wrap wrap-break-word box-border transition-colors duration-150"
+                                className="font-semibold text-gray-900 cursor-text rounded hover:ring-1 hover:ring-gray-200 hover:bg-gray-50/80 inline-block whitespace-pre-wrap wrap-break-word transition-colors duration-150"
                                 onClick={(e) => {
                                   const rect = e.currentTarget.getBoundingClientRect();
                                   startInlineEdit(entry, 'description', {
@@ -1976,13 +1976,13 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                       else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
                                     }}
                                     aria-label="Edit start time"
-                                    className="text-sm tabular-nums border border-blue-300 bg-blue-50 rounded-md px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-500/20"
+                                    className="text-sm tabular-nums bg-blue-50/60 rounded outline-none ring-2 ring-blue-400/50"
                                   />
                                 ) : (
                                   <button
                                     type="button"
                                     onClick={() => startInlineEdit(entry, 'startTime')}
-                                    className="cursor-text hover:bg-gray-100 rounded-md px-1 -mx-1 transition-colors duration-150"
+                                    className="cursor-text rounded hover:ring-1 hover:ring-gray-200 hover:bg-gray-50/80 transition-colors duration-150"
                                     title="Click to edit"
                                   >
                                     {formatInTimezone(parseISO(entry.startTime), 'h:mm a')}
@@ -2002,13 +2002,13 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                       else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
                                     }}
                                     aria-label="Edit end time"
-                                    className="text-sm tabular-nums border border-blue-300 bg-blue-50 rounded-md px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-500/20"
+                                    className="text-sm tabular-nums bg-blue-50/60 rounded outline-none ring-2 ring-blue-400/50"
                                   />
                                 ) : (
                                   <button
                                     type="button"
                                     onClick={() => startInlineEdit(entry, 'endTime')}
-                                    className="cursor-text hover:bg-gray-100 rounded-md px-1 -mx-1 transition-colors duration-150"
+                                    className="cursor-text rounded hover:ring-1 hover:ring-gray-200 hover:bg-gray-50/80 transition-colors duration-150"
                                     title="Click to edit"
                                   >
                                     {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
@@ -2020,35 +2020,36 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 pt-0.5">
                             <button
                               onClick={() => handleContinue(entry)}
                               disabled={pomodoroIsRunning}
-                              className={`p-3 rounded-full flex items-center gap-1 shadow-xs transition-colors duration-150 ${
+                              className={`p-1.5 rounded-full transition-colors duration-150 ${
                                 pomodoroIsRunning
-                                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                  : 'bg-green-600 hover:bg-green-700 active:bg-green-800 text-white'
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-green-600 bg-green-50 hover:bg-green-100'
                               }`}
                               aria-label={`Continue task: ${entry.description}`}
                               title={pomodoroIsRunning ? 'Cannot continue while Pomodoro is active' : 'Continue this task'}
                             >
-                              <Play className="w-4 h-4" />
+                              <Play className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleOpenModal('edit', entry)}
-                              className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white p-3 rounded-lg shadow-xs flex items-center gap-1 transition-colors duration-150"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                               aria-label={`Edit task: ${entry.description}`}
+                              title="Edit entry"
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-3.5 h-3.5" />
                             </button>
                             {getDuplicateCount(entry.description) > 1 && (
                               <button
                                 onClick={() => handleMergeEntries(entry.description)}
                                 disabled={shouldDisableMerge(entry.description)}
-                                className={`px-3 py-2 text-sm font-medium rounded-lg shadow-xs flex items-center gap-1.5 transition-colors duration-150 ${
+                                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
                                   shouldDisableMerge(entry.description)
-                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                    : 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white'
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-purple-600 hover:bg-purple-50'
                                 }`}
                                 title={
                                   shouldDisableMerge(entry.description)
@@ -2058,8 +2059,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                     : `Merge ${getDuplicateCount(entry.description)} entries`
                                 }
                               >
-                                <Merge className="w-4 h-4" />
-                                <span>Merge ({getDuplicateCount(entry.description)})</span>
+                                <Merge className="w-3.5 h-3.5" />
+                                <span>{getDuplicateCount(entry.description)}</span>
                               </button>
                             )}
                           </div>

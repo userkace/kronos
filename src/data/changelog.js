@@ -36,6 +36,11 @@ export const CHANGELOG = [
       { type: 'changed', description: 'Every view refreshed to the new look — Tracker, Pomodoro, Timesheet, Reports, Invoice, Data, Settings, onboarding, and the date picker.' },
       { type: 'changed', description: 'Toast notifications redesigned as soft-tinted cards, and the sidebar timer widgets now use slimmer progress bars.' },
       { type: 'changed', description: 'Slimmer scrollbars, softer text selection color, and consistent keyboard focus outlines throughout the app.' },
+      { type: 'changed', description: 'Inline editing no longer shifts text on switch — the textarea now inherits the same line height as the display element.' },
+      { type: 'changed', description: 'Entry action buttons (continue, edit, merge) are smaller and top-aligned, keeping them out of the way of multi-line task names.' },
+      { type: 'changed', description: 'Continue, pause, play, and stop buttons now use a soft tinted-background style (green, red) consistent with the breaks toggle.' },
+      { type: 'changed', description: 'The pause button on an active entry sits on a white pill with a white border, lifting it cleanly off the green card background.' },
+      { type: 'changed', description: 'Play and plus buttons are circular; the stop button is rounded to match the card language.' },
     ],
   },
   {
