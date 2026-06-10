@@ -135,12 +135,14 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
     }
   ];
 
+  const activeNavItem = navigationItems.find((item) => item.id === currentView);
+
   return (
     <div className="flex h-screen bg-gray-50 relative">
       {/* Sidebar Overlay for Mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-[1px] bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -150,26 +152,26 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
         sidebarOpen
           ? 'translate-x-0 w-64'
           : '-translate-x-full lg:translate-x-0 w-0'
-      } transition-all duration-300 ease-in-out h-full bg-white border-r border-gray-200 flex-col lg:flex overflow-hidden`}>
+      } transition-all duration-300 ease-in-out h-full bg-white border-r border-gray-200/80 flex-col lg:flex overflow-hidden`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
+          <div className="px-5 pt-6 pb-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
               <img
                 src="/kronos-192.png"
                 alt="Kronos"
-                className="w-8 h-8 rounded-lg shrink-0"
+                className="w-9 h-9 rounded-xl shrink-0 shadow-xs"
               />
               <div className="flex flex-col justify-center">
-                <h1 className="text-lg font-semibold text-gray-900 leading-4">Kronos</h1>
-                <p className="text-xs text-gray-500 leading-tight">Own your time.</p>
+                <h1 className="text-[15px] font-semibold text-gray-900 leading-5 tracking-tight">Kronos</h1>
+                <p className="text-xs text-gray-400 leading-tight">Own your time.</p>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <div className="space-y-2">
+          <nav className="flex-1 px-3 py-4">
+            <div className="space-y-1">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentView === item.id;
@@ -183,16 +185,16 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
                         setSidebarOpen(false);
                       }
                     }}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 ${
                       isActive
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                     <div className="text-left">
-                      <div className="font-medium">{item.label}</div>
-                      <div className="text-xs opacity-75">{item.description}</div>
+                      <div className="text-sm font-medium leading-5">{item.label}</div>
+                      <div className={`text-xs leading-4 ${isActive ? 'text-blue-600/70' : 'text-gray-400'}`}>{item.description}</div>
                     </div>
                   </button>
                 );
@@ -207,10 +209,10 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
           {currentView !== 'pomodoro' && <PomodoroProgressBar onViewChange={onViewChange} className="mx-4" />}
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="px-5 py-4 border-t border-gray-100">
             {/* Timezone Display */}
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Globe className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 text-[13px] text-gray-500">
+              <Globe className="w-4 h-4 shrink-0 text-gray-400" />
               {(() => { const { city, offset } = formatTimezoneDisplay(selectedTimezone); return (
                 <span className="truncate">{city}{offset ? ` · ${offset}` : ''}</span>
               ); })()}
@@ -221,91 +223,51 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
+        {/* Header — intentionally minimal: the page title only shows when the
+            sidebar is hidden, so it never duplicates the active nav item. */}
+        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200/80 px-4 sm:px-6 h-14 flex items-center justify-between shrink-0">
+          <div className="flex items-center min-w-0">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-150"
+              aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
 
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  {currentView === 'tracker' ? (
-                    <Clock className="w-5 h-5 text-blue-600" />
-                  ) : currentView === 'pomodoro' ? (
-                    <Timer className="w-5 h-5 text-blue-600" />
-                  ) : currentView === 'timesheet' ? (
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                  ) : currentView === 'reports' ? (
-                    <BarChart3 className="w-5 h-5 text-blue-600" />
-                  ) : currentView === 'invoice' ? (
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  ) : currentView === 'settings' ? (
-                    <Settings className="w-5 h-5 text-blue-600" />
-                  ) : (
-                    <Database className="w-5 h-5 text-blue-600" />
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {currentView === 'tracker' ? 'Tracker' :
-                     currentView === 'pomodoro' ? 'Pomodoro' :
-                     currentView === 'timesheet' ? 'Timesheet' :
-                     currentView === 'reports' ? 'Reports' :
-                     currentView === 'invoice' ? 'Invoice' :
-                     currentView === 'settings' ? 'Settings' :
-                     'Data'}
-                  </h2>
-                  <p className="text-sm text-gray-500 hidden sm:block">
-                    {currentView === 'tracker'
-                      ? 'Track your time in real-time'
-                      : currentView === 'pomodoro'
-                      ? 'Stay focused with time management'
-                      : currentView === 'timesheet'
-                      ? 'View your weekly time summary'
-                      : currentView === 'reports'
-                      ? 'Trends, streaks, and daily goals'
-                      : currentView === 'invoice'
-                      ? 'Generate professional PDF invoices'
-                      : currentView === 'settings'
-                      ? 'Manage your app preferences'
-                      : 'Import and export your data'
-                    }
-                  </p>
-                </div>
-              </div>
+            <div className={`flex items-center min-w-0 ${sidebarOpen ? 'lg:hidden' : ''}`}>
+              <div className="h-5 w-px bg-gray-200 mx-3" aria-hidden="true" />
+              <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight truncate">
+                {activeNavItem?.label ?? 'Kronos'}
+              </h2>
             </div>
+          </div>
 
-            <div className="flex items-center space-x-3">
-              {onShowChangelog && (
-                <button
-                  type="button"
-                  onClick={onShowChangelog}
-                  className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  aria-label={hasUnseenChangelog ? "What's new (unread updates)" : "What's new"}
-                  title="What's new"
-                >
-                  <Bell className="w-5 h-5" />
-                  {hasUnseenChangelog && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"
-                    />
-                  )}
-                </button>
-              )}
+          <div className="flex items-center gap-2">
+            {onShowChangelog && (
+              <button
+                type="button"
+                onClick={onShowChangelog}
+                className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-150"
+                aria-label={hasUnseenChangelog ? "What's new (unread updates)" : "What's new"}
+                title="What's new"
+              >
+                <Bell className="w-5 h-5" />
+                {hasUnseenChangelog && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"
+                  />
+                )}
+              </button>
+            )}
 
-              {/* Current Time Display */}
-              <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-                <Clock className="w-4 h-4" />
-                <span className="font-medium">
-                  {formatNavDateTime(currentTime, selectedTimezone, clockFormat, dateFormat)}
-                </span>
-              </div>
+            {/* Current Time Display */}
+            <div className="flex items-center gap-2 text-[13px] text-gray-600 bg-gray-50 border border-gray-200/70 px-3.5 py-2 rounded-full">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span className="font-medium tabular-nums">
+                {formatNavDateTime(currentTime, selectedTimezone, clockFormat, dateFormat)}
+              </span>
             </div>
           </div>
         </header>

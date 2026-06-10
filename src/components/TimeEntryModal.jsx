@@ -315,37 +315,37 @@ const TimeEntryModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 bg-opacity-50 backdrop-blur-[1px]"
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
         onClick={handleClose}
       />
-      
+
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200/60 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
               {mode === 'edit' ? 'Edit Time Entry' : 'New Time Entry'}
             </h2>
             {mode === 'add' && selectedDate && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-[13px] text-gray-500 mt-1">
                 for {format(toZonedTime(selectedDate, timezone), 'MMM d, yyyy')}
               </p>
             )}
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-1">
             {mode === 'edit' && (
               <button
                 onClick={handleDelete}
-                className="text-red-600 hover:text-red-700 transition-colors"
+                className="p-2 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-150"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
             )}
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
             >
               <X className="w-5 h-5" />
             </button>
@@ -365,7 +365,7 @@ const TimeEntryModal = ({
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="What are you working on?"
-              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
 
@@ -378,7 +378,7 @@ const TimeEntryModal = ({
             <select
               value={formData.task}
               onChange={(e) => handleInputChange('task', e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">Select a task...</option>
               {tasks.map(task => (
@@ -396,7 +396,7 @@ const TimeEntryModal = ({
             <select
               value={formData.project}
               onChange={(e) => handleInputChange('project', e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">Select a project...</option>
               {projects.map(project => (
@@ -414,7 +414,7 @@ const TimeEntryModal = ({
             <select
               value={formData.tags}
               onChange={(e) => handleInputChange('tags', e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="">Select tags...</option>
               {availableTags.map(tag => (
@@ -431,7 +431,7 @@ const TimeEntryModal = ({
             </label>
             
             {/* Mode Selection */}
-            <div className="flex space-x-4">
+            <div className="flex gap-4">
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -467,7 +467,7 @@ const TimeEntryModal = ({
                 <select
                   value={entryTimezone}
                   onChange={(e) => setEntryTimezone(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                 >
                   {commonTimezones.map(tz => (
                     <option key={tz} value={tz}>{tz}</option>
@@ -483,7 +483,7 @@ const TimeEntryModal = ({
           {/* Time & Date Section */}
           <div className="space-y-3">
             {/* Time Row */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <div className="flex-1">
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
                   <Clock className="w-4 h-4 mr-2" />
@@ -494,7 +494,7 @@ const TimeEntryModal = ({
                   value={formData.startTime}
                   onChange={(e) => handleInputChange('startTime', e.target.value)}
                   step="1"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tabular-nums shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               
@@ -512,7 +512,7 @@ const TimeEntryModal = ({
                   value={formData.endTime}
                   onChange={(e) => handleInputChange('endTime', e.target.value)}
                   step="1"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tabular-nums shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               
@@ -526,7 +526,7 @@ const TimeEntryModal = ({
                   value={formData.duration}
                   onChange={(e) => handleInputChange('duration', e.target.value)}
                   placeholder="e.g., 1 h 30 min"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tabular-nums placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
             </div>
@@ -547,16 +547,16 @@ const TimeEntryModal = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-100">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium px-4 py-2 rounded-lg shadow-xs transition-colors duration-150"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-xs transition-colors duration-150"
           >
             Save
           </button>

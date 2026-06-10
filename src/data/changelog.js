@@ -23,6 +23,22 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.5.0',
+    date: '2026-06-10',
+    title: 'Modern design refresh',
+    changes: [
+      { type: 'changed', description: 'New typography: the app now uses the Inter variable font with refined sizes, weights, and tighter heading spacing for a crisper, more modern look.' },
+      { type: 'changed', description: 'Cards, modals, and panels redesigned with softer rounded corners, subtle layered shadows, and lighter borders across every view.' },
+      { type: 'changed', description: 'Buttons, inputs, and dropdowns restyled with consistent sizing, gentler focus rings, and smoother hover transitions.' },
+      { type: 'changed', description: 'Sidebar navigation and header refreshed with cleaner spacing, a rounded time pill, and better visual hierarchy.' },
+      { type: 'changed', description: 'Header simplified: it no longer repeats the active sidebar item — the page title now only appears when the sidebar is collapsed.' },
+      { type: 'changed', description: 'Tables, timers, and totals now use tabular numerals so digits align and no longer shift as values update.' },
+      { type: 'changed', description: 'Every view refreshed to the new look — Tracker, Pomodoro, Timesheet, Reports, Invoice, Data, Settings, onboarding, and the date picker.' },
+      { type: 'changed', description: 'Toast notifications redesigned as soft-tinted cards, and the sidebar timer widgets now use slimmer progress bars.' },
+      { type: 'changed', description: 'Slimmer scrollbars, softer text selection color, and consistent keyboard focus outlines throughout the app.' },
+    ],
+  },
+  {
     version: '0.4.2',
     date: '2026-06-05',
     title: 'UI polish & empty states',

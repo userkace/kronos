@@ -87,22 +87,22 @@ export const ToastProvider = ({ children }) => {
             exit={{ opacity: 0, x: 48, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className={`
-              flex items-center justify-between p-4 rounded-lg shadow-lg
+              flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-lg border
               min-w-[300px] max-w-md
-              ${toast.type === 'success' ? 'bg-green-500 text-white' : ''}
-              ${toast.type === 'error' ? 'bg-red-500 text-white' : ''}
-              ${toast.type === 'warning' ? 'bg-yellow-500 text-white' : ''}
-              ${toast.type === 'info' ? 'bg-blue-500 text-white' : ''}
+              ${toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : ''}
+              ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : ''}
+              ${toast.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-800' : ''}
+              ${toast.type === 'info' ? 'bg-blue-50 border-blue-200 text-blue-800' : ''}
             `}
           >
-            <div className="flex items-center space-x-3">
-              {toast.type === 'success' && <CheckCircle className="w-5 h-5" />}
-              {toast.type === 'error' && <AlertCircle className="w-5 h-5" />}
-              {toast.type === 'warning' && <AlertCircle className="w-5 h-5" />}
-              {toast.type === 'info' && <Info className="w-5 h-5" />}
+            <div className="flex items-center gap-3 min-w-0">
+              {toast.type === 'success' && <CheckCircle className="w-5 h-5 shrink-0 text-green-500" />}
+              {toast.type === 'error' && <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />}
+              {toast.type === 'warning' && <AlertCircle className="w-5 h-5 shrink-0 text-amber-500" />}
+              {toast.type === 'info' && <Info className="w-5 h-5 shrink-0 text-blue-500" />}
               <span className="text-sm font-medium">{toast.message}</span>
             </div>
-            <div className="flex items-center ml-4 space-x-1">
+            <div className="flex items-center gap-1 shrink-0">
               {(toast.actions ?? (toast.action ? [toast.action] : [])).map((act, i) => (
                 <button
                   key={i}
@@ -110,14 +110,20 @@ export const ToastProvider = ({ children }) => {
                     try { act.onClick(); } catch (err) { console.error('Toast action error:', err); }
                     if (act.dismissOnClick !== false) removeToast(toast.id);
                   }}
-                  className="px-2 py-1 text-sm font-semibold rounded hover:bg-white/20 transition-colors"
+                  className="px-2.5 py-1 text-sm font-semibold rounded-lg hover:bg-black/5 transition-colors duration-150"
                 >
                   {act.label}
                 </button>
               ))}
               <button
                 onClick={() => removeToast(toast.id)}
-                className="text-white hover:text-gray-200 transition-colors p-1"
+                className={`
+                  p-1.5 rounded-lg transition-colors duration-150
+                  ${toast.type === 'success' ? 'text-green-500 hover:text-green-700 hover:bg-green-100' : ''}
+                  ${toast.type === 'error' ? 'text-red-500 hover:text-red-700 hover:bg-red-100' : ''}
+                  ${toast.type === 'warning' ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-100' : ''}
+                  ${toast.type === 'info' ? 'text-blue-500 hover:text-blue-700 hover:bg-blue-100' : ''}
+                `}
                 aria-label="Dismiss"
               >
                 <X className="w-4 h-4" />

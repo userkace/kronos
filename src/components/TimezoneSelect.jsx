@@ -57,8 +57,8 @@ function makeIcon(tz, isSelected) {
           font-size: ${labelSize};
           font-weight: ${fontWeight};
           font-family: system-ui, sans-serif;
-          padding: 2px 5px;
-          border-radius: 4px;
+          padding: 2px 6px;
+          border-radius: 6px;
           white-space: nowrap;
           line-height: 1.3;
           box-shadow: ${shadow};
@@ -144,11 +144,10 @@ const TimezoneSelect = ({ timezone, onTimezoneChange }) => {
     <div className="space-y-3">
       <div
         ref={mapRef}
-        className="rounded-xl overflow-hidden"
+        className="rounded-xl overflow-hidden border border-gray-200/80 shadow-xs"
         style={{
           height: '240px',
           width: '100%',
-          border: '1px solid #E2E8F0',
           background: '#d4dadc',
           isolation: 'isolate',
         }}
@@ -161,7 +160,7 @@ const TimezoneSelect = ({ timezone, onTimezoneChange }) => {
           id="timezone"
           value={timezone}
           onChange={handleDropdownChange}
-          className="flex-1 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm text-gray-800"
+          className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
         >
           {TIMEZONES.map((tz) => (
             <option key={tz.value} value={tz.value}>

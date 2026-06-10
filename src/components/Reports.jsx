@@ -198,11 +198,11 @@ const Reports = () => {
     const weekStartsOn = weekStart === 'monday' ? 1 : 0;
 
     // Pixel sizing of one week column. Tailwind w-6 = 24px, w-3.5 = 14px;
-    // gap-1 between columns adds 4px. Card has p-4 (32px total) + a label
+    // gap-1 between columns adds 4px. Card has p-5 (40px total) + a label
     // column (cell-sized) + gap-2 (8px) between label and grid.
     const cellPx = range === 'month' ? 24 : 14;
     const colPx = cellPx + 4;
-    const reservedPx = 32 /* p-4 */ + cellPx + 8 /* label col + gap */;
+    const reservedPx = 40 /* p-5 */ + cellPx + 8 /* label col + gap */;
     const availablePx = Math.max(0, heatmapCardWidth - reservedPx);
     const weeksThatFit = Math.floor(availablePx / colPx);
 
@@ -356,10 +356,10 @@ const Reports = () => {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Reports</h2>
-          <p className="text-sm text-gray-500">Time tracked over the selected range.</p>
+          <h2 className="text-xl font-semibold text-gray-900 tracking-tight">Reports</h2>
+          <p className="text-[13px] text-gray-500">Time tracked over the selected range.</p>
         </div>
-        <div role="tablist" aria-label="Range" className="inline-flex bg-gray-100 rounded-lg p-1">
+        <div role="tablist" aria-label="Range" className="inline-flex bg-gray-100 rounded-xl p-1">
           {RANGES.map(r => (
             <button
               key={r.id}
@@ -367,9 +367,9 @@ const Reports = () => {
               role="tab"
               aria-selected={range === r.id}
               onClick={() => setRange(r.id)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors duration-150 ${
                 range === r.id
-                  ? 'bg-white text-gray-900 shadow-sm'
+                  ? 'bg-white text-gray-900 shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -380,13 +380,13 @@ const Reports = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
             <Flame className="w-6 h-6 text-orange-600" />
           </div>
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wide text-gray-500">Current streak</div>
-            <div className="text-2xl font-semibold text-gray-900">
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Current streak</div>
+            <div className="text-2xl font-semibold text-gray-900 tracking-tight tabular-nums">
               {streak}
               <span className="text-sm font-normal text-gray-500">
                 {' '}{streak === 1 ? 'day' : 'days'}
@@ -396,7 +396,7 @@ const Reports = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5 flex items-center gap-4">
           <div className="relative shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
             <svg width={RING_SIZE} height={RING_SIZE} className="-rotate-90">
               <circle
@@ -420,21 +420,21 @@ const Reports = () => {
                 style={{ transition: 'stroke-dashoffset 400ms ease, stroke 200ms ease' }}
               />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-900">
+            <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-900 tabular-nums">
               {Math.round(goalProgress * 100)}%
             </div>
           </div>
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wide text-gray-500 flex items-center gap-1">
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center gap-1">
               <Target className="w-3.5 h-3.5" /> Today's goal
             </div>
-            <div className="text-2xl font-semibold text-gray-900">
+            <div className="text-2xl font-semibold text-gray-900 tracking-tight tabular-nums">
               {todayHours.toFixed(1)}h
               <span className="text-sm font-normal text-gray-500">
                 {' '}/ {dailyHourGoal}h
               </span>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 tabular-nums">
               {goalProgress >= 1
                 ? 'Goal hit — nice work.'
                 : `${Math.max(0, dailyHourGoal - todayHours).toFixed(1)}h to go`}
@@ -442,22 +442,22 @@ const Reports = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
             <TrendingUp className="w-6 h-6 text-blue-600" />
           </div>
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wide text-gray-500">Range total</div>
-            <div className="text-2xl font-semibold text-gray-900">{totalHours.toFixed(1)}h</div>
-            <div className="text-xs text-gray-500">{avgPerDay.toFixed(1)}h average per day</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Range total</div>
+            <div className="text-2xl font-semibold text-gray-900 tracking-tight tabular-nums">{totalHours.toFixed(1)}h</div>
+            <div className="text-xs text-gray-500 tabular-nums">{avgPerDay.toFixed(1)}h average per day</div>
           </div>
         </div>
       </div>
 
-      <div ref={heatmapCardRef} className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <BarChart3 className="w-4 h-4 text-gray-500" />
-          <h3 className="text-sm font-semibold text-gray-900">
+      <div ref={heatmapCardRef} className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 className="w-5 h-5 text-gray-400" />
+          <h3 className="text-base font-semibold text-gray-900 tracking-tight">
             {range === 'week' ? 'Daily hours' : 'Activity heatmap'}
           </h3>
         </div>
@@ -483,14 +483,14 @@ const Reports = () => {
                   className="flex-1 h-full flex flex-col items-center gap-1 min-w-0"
                 >
                   <div
-                    className="text-[10px] text-gray-700 font-medium"
+                    className="text-[10px] text-gray-700 font-medium tabular-nums"
                     style={{ visibility: b.hours > 0 ? 'visible' : 'hidden' }}
                   >
                     {b.hours.toFixed(1)}
                   </div>
                   <div className="w-full flex-1 flex items-end">
                     <div
-                      className={`w-full rounded-t transition-all ${
+                      className={`w-full rounded-t-md transition-[height] duration-300 ${
                         isToday ? 'bg-blue-600' : 'bg-blue-400'
                       }`}
                       style={{
@@ -576,10 +576,10 @@ const Reports = () => {
 
                 {tooltip && (
                   <div
-                    className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full px-2 py-1 rounded-md bg-gray-900 text-white text-[11px] shadow-lg whitespace-nowrap"
+                    className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full px-2.5 py-1.5 rounded-lg bg-gray-900 text-white text-[11px] shadow-lg whitespace-nowrap"
                     style={{ left: tooltip.left, top: tooltip.top - 6 }}
                   >
-                    <div className="font-medium">{tooltip.hoursLabel}</div>
+                    <div className="font-medium tabular-nums">{tooltip.hoursLabel}</div>
                     <div className="text-gray-300">{tooltip.dateLabel}</div>
                     <div className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
                   </div>
@@ -593,7 +593,7 @@ const Reports = () => {
                   ))}
                   <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: heatmapColors.completionColor }} />
                   <span>More</span>
-                  <span className="ml-2 text-gray-400">
+                  <span className="ml-2 text-gray-400 tabular-nums">
                     Goal: {dailyHourGoal}h/day
                   </span>
                 </div>
@@ -603,10 +603,10 @@ const Reports = () => {
         ) : null}
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <ListChecks className="w-4 h-4 text-gray-500" />
-          <h3 className="text-sm font-semibold text-gray-900">Time by task</h3>
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <ListChecks className="w-5 h-5 text-gray-400" />
+          <h3 className="text-base font-semibold text-gray-900 tracking-tight">Time by task</h3>
         </div>
         {taskBreakdown.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -615,7 +615,7 @@ const Reports = () => {
             <p className="text-xs text-gray-400 mt-1">Tasks you log will appear here with a time breakdown.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {taskBreakdown.items.slice(0, 10).map(item => {
               const pct = taskBreakdown.total > 0
                 ? (item.seconds / taskBreakdown.total) * 100

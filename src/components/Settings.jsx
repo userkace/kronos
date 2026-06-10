@@ -239,16 +239,16 @@ const Settings = ({ onCorruptionResolved }) => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Settings</h3>
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
+      <h3 className="text-lg font-semibold text-gray-900 tracking-tight mb-4">Settings</h3>
 
       <div className="space-y-6">
         {/* Data Recovery — only rendered when there are quarantined backups. */}
         {backups.length > 0 && (
-          <div className="border-2 border-amber-300 rounded-lg p-4 bg-amber-50">
-            <div className="flex items-center space-x-3 mb-2">
+          <div className="border border-amber-200 rounded-xl p-5 bg-amber-50">
+            <div className="flex items-center gap-3 mb-2">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <h4 className="font-semibold text-amber-900">Data Recovery</h4>
+              <h4 className="text-base font-semibold text-amber-900 tracking-tight">Data Recovery</h4>
             </div>
             <p className="text-sm text-amber-800 mb-4">
               The data below could not be parsed on the last load. Saves to these
@@ -261,7 +261,7 @@ const Settings = ({ onCorruptionResolved }) => {
               {backups.map(backup => (
                 <div
                   key={backup.backupKey}
-                  className="bg-white border border-amber-200 rounded-lg p-3"
+                  className="bg-white border border-amber-200 rounded-xl p-4 shadow-xs"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -279,21 +279,21 @@ const Settings = ({ onCorruptionResolved }) => {
                   <div className="flex flex-wrap gap-2 mt-3">
                     <button
                       onClick={() => handleDownloadBackup(backup)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 text-gray-700 rounded-lg shadow-xs transition-colors duration-150"
                     >
                       <Download className="w-4 h-4" />
                       Download
                     </button>
                     <button
                       onClick={() => handleRestoreBackup(backup)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg shadow-xs transition-colors duration-150"
                     >
                       <RefreshCcw className="w-4 h-4" />
                       Restore
                     </button>
                     <button
                       onClick={() => handleDiscardBackup(backup)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-red-50 hover:bg-red-100 text-red-700 rounded-lg shadow-xs transition-colors duration-150"
                     >
                       <X className="w-4 h-4" />
                       Discard
@@ -306,10 +306,10 @@ const Settings = ({ onCorruptionResolved }) => {
         )}
 
         {/* Timezone Settings */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
+        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
+          <div className="flex items-center gap-3 mb-4">
             <Globe className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Timezone Settings</h4>
+            <h4 className="text-base font-semibold text-gray-900 tracking-tight">Timezone Settings</h4>
           </div>
 
           <div className="space-y-3">
@@ -332,10 +332,10 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Clock Format Settings */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
+        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
+          <div className="flex items-center gap-3 mb-4">
             <Clock className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Clock Format</h4>
+            <h4 className="text-base font-semibold text-gray-900 tracking-tight">Clock Format</h4>
           </div>
 
           <div className="space-y-4">
@@ -347,7 +347,7 @@ const Settings = ({ onCorruptionResolved }) => {
                 id="clockFormat"
                 value={clockFormatValue}
                 onChange={(e) => handleClockFormatChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
               >
                 <option value="12hour">12-hour (AM/PM)</option>
                 <option value="24hour">24-hour</option>
@@ -362,7 +362,7 @@ const Settings = ({ onCorruptionResolved }) => {
                 id="dateFormat"
                 value={dateFormatValue}
                 onChange={(e) => setDateFormatValue(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
               >
                 <option value="short">May 13, 2026</option>
                 <option value="long">Tuesday, May 13, 2026</option>
@@ -374,7 +374,7 @@ const Settings = ({ onCorruptionResolved }) => {
                 <option value="iso">2026-05-13</option>
                 <option value="none">Time only</option>
               </select>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1.5 text-[13px] text-gray-500">
                 Choose how the date is shown alongside the clock in the navigation bar
               </p>
             </div>
@@ -382,10 +382,10 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Work Schedule — week start, non-work days, and daily hour goal */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
+        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
+          <div className="flex items-center gap-3 mb-4">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Work Schedule</h4>
+            <h4 className="text-base font-semibold text-gray-900 tracking-tight">Work Schedule</h4>
           </div>
 
           <div className="space-y-5">
@@ -397,12 +397,12 @@ const Settings = ({ onCorruptionResolved }) => {
                 id="weekStart"
                 value={weekStartValue}
                 onChange={(e) => handleWeekStartChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
               >
                 <option value="sunday">Sunday</option>
                 <option value="monday">Monday</option>
               </select>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1.5 text-[13px] text-gray-500">
                 Choose which day your week starts on.
               </p>
             </div>
@@ -420,10 +420,10 @@ const Settings = ({ onCorruptionResolved }) => {
                       type="button"
                       onClick={() => toggleWeekendDay(idx)}
                       aria-pressed={isSelected}
-                      className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                      className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 ${
                         isSelected
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'border-blue-500 bg-blue-50/60 text-blue-700 ring-1 ring-blue-500/30'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
                       {label}
@@ -431,7 +431,7 @@ const Settings = ({ onCorruptionResolved }) => {
                   );
                 })}
               </div>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-[13px] text-gray-500">
                 Days you don't normally work. Skipping these won't break your streak on the Reports view.
               </p>
             </div>
@@ -448,9 +448,9 @@ const Settings = ({ onCorruptionResolved }) => {
                 step="0.5"
                 value={dailyHourGoalValue}
                 onChange={(e) => handleDailyHourGoalChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1.5 text-[13px] text-gray-500">
                 Target tracked hours per day. Drives the goal ring on the Reports view.
               </p>
             </div>
@@ -458,10 +458,10 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Heatmap Colors */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
+        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
+          <div className="flex items-center gap-3 mb-4">
             <BarChart2 className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Heatmap Colors</h4>
+            <h4 className="text-base font-semibold text-gray-900 tracking-tight">Heatmap Colors</h4>
           </div>
 
           <div className="space-y-4">
@@ -507,7 +507,7 @@ const Settings = ({ onCorruptionResolved }) => {
                           type="color"
                           value={stop.color}
                           onChange={(e) => updateStop({ color: e.target.value })}
-                          className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                          className="w-8 h-8 rounded-lg cursor-pointer border border-gray-200 shadow-xs p-0.5 shrink-0"
                           title="Pick color"
                         />
                         <span className="text-xs text-gray-400 w-7 text-right shrink-0">{prevUpTo}%</span>
@@ -527,7 +527,7 @@ const Settings = ({ onCorruptionResolved }) => {
                                   updateStop({ upTo: v });
                                 }
                               }}
-                              className="w-14 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-14 px-2 py-1 text-xs text-gray-900 border border-gray-200 rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                             />
                             <span className="text-xs text-gray-500">%</span>
                           </div>
@@ -535,7 +535,7 @@ const Settings = ({ onCorruptionResolved }) => {
                         {!isLast && (
                           <button
                             onClick={removeStop}
-                            className="ml-auto text-gray-300 hover:text-red-400 transition-colors"
+                            className="ml-auto p-1 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors duration-150"
                             title="Remove stop"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -559,7 +559,7 @@ const Settings = ({ onCorruptionResolved }) => {
                   setHeatmapColorsEdit(updated);
                   changeHeatmapColors(updated);
                 }}
-                className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                className="mt-2 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors duration-150"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add stop
@@ -579,7 +579,7 @@ const Settings = ({ onCorruptionResolved }) => {
                       setHeatmapColorsEdit(updated);
                       changeHeatmapColors(updated);
                     }}
-                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                    className="w-8 h-8 rounded-lg cursor-pointer border border-gray-200 shadow-xs p-0.5 shrink-0"
                   />
                   <span className="text-xs text-gray-500 font-mono">{heatmapColorsEdit.completionColor}</span>
                 </div>
@@ -595,14 +595,14 @@ const Settings = ({ onCorruptionResolved }) => {
                       setHeatmapColorsEdit(updated);
                       changeHeatmapColors(updated);
                     }}
-                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                    className="w-8 h-8 rounded-lg cursor-pointer border border-gray-200 shadow-xs p-0.5 shrink-0"
                   />
                   <span className="text-xs text-gray-500 font-mono">{heatmapColorsEdit.emptyColor}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <p className="text-xs text-gray-400">Changes apply immediately to the Reports view.</p>
               <button
                 onClick={() => {
@@ -610,7 +610,7 @@ const Settings = ({ onCorruptionResolved }) => {
                   setHeatmapColorsEdit(defaults);
                   changeHeatmapColors(defaults);
                 }}
-                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-150"
               >
                 <RotateCcw className="w-3 h-3" />
                 Reset to default
@@ -620,10 +620,10 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Goal Ring Colors */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3 mb-4">
+        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
+          <div className="flex items-center gap-3 mb-4">
             <BarChart2 className="w-5 h-5 text-blue-600" />
-            <h4 className="font-medium text-gray-900">Goal Ring Colors</h4>
+            <h4 className="text-base font-semibold text-gray-900 tracking-tight">Goal Ring Colors</h4>
           </div>
 
           <div className="space-y-4">
@@ -652,7 +652,7 @@ const Settings = ({ onCorruptionResolved }) => {
                       setGoalRingColorsEdit(updated);
                       changeGoalRingColors(updated);
                     }}
-                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                    className="w-8 h-8 rounded-lg cursor-pointer border border-gray-200 shadow-xs p-0.5 shrink-0"
                   />
                   <span className="text-xs text-gray-500 font-mono">{goalRingColorsEdit.progressColor}</span>
                 </div>
@@ -668,14 +668,14 @@ const Settings = ({ onCorruptionResolved }) => {
                       setGoalRingColorsEdit(updated);
                       changeGoalRingColors(updated);
                     }}
-                    className="w-8 h-8 rounded cursor-pointer border border-gray-300 p-0.5 shrink-0"
+                    className="w-8 h-8 rounded-lg cursor-pointer border border-gray-200 shadow-xs p-0.5 shrink-0"
                   />
                   <span className="text-xs text-gray-500 font-mono">{goalRingColorsEdit.completionColor}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <button
                 onClick={() => {
                   const updated = {
@@ -685,7 +685,7 @@ const Settings = ({ onCorruptionResolved }) => {
                   setGoalRingColorsEdit(updated);
                   changeGoalRingColors(updated);
                 }}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors duration-150"
               >
                 <RotateCcw className="w-3 h-3" />
                 Copy from heatmap
@@ -696,7 +696,7 @@ const Settings = ({ onCorruptionResolved }) => {
                   setGoalRingColorsEdit(defaults);
                   changeGoalRingColors(defaults);
                 }}
-                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-150"
               >
                 <RotateCcw className="w-3 h-3" />
                 Reset to default
@@ -706,18 +706,18 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Save Settings Button */}
-        <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+        <div className="border border-blue-200/80 rounded-xl p-5 bg-blue-50/60">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3">
               <SettingsIcon className="w-5 h-5 text-blue-600" />
               <div>
-                <h4 className="font-medium text-blue-900">Save Changes</h4>
-                <p className="text-sm text-blue-700">Apply your updated settings</p>
+                <h4 className="text-base font-semibold text-blue-900 tracking-tight">Save Changes</h4>
+                <p className="text-[13px] text-blue-700">Apply your updated settings</p>
               </div>
             </div>
             <button
               onClick={handleSaveSettings}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-xs hover:bg-blue-700 active:bg-blue-800 transition-colors duration-150 flex items-center gap-2"
             >
               <SettingsIcon className="w-4 h-4" />
               <span>Save Settings</span>
@@ -729,35 +729,35 @@ const Settings = ({ onCorruptionResolved }) => {
 
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <RotateCcw className="w-5 h-5 text-yellow-600" />
+            <div className="flex items-center justify-between p-5 bg-amber-50 border border-amber-200/80 rounded-xl">
+              <div className="flex items-center gap-3">
+                <RotateCcw className="w-5 h-5 text-amber-600" />
                 <div>
-                  <h5 className="font-medium text-yellow-900">Reset Onboarding</h5>
-                  <p className="text-sm text-yellow-700">Show the setup screen again on next app start</p>
+                  <h5 className="font-medium text-amber-900">Reset Onboarding</h5>
+                  <p className="text-[13px] text-amber-700">Show the setup screen again on next app start</p>
                 </div>
               </div>
               <button
                 onClick={handleResetOnboarding}
-                className="px-4 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2"
+                className="px-4 py-2 bg-amber-600/80 text-white text-sm font-medium rounded-lg shadow-xs hover:bg-amber-700 transition-colors duration-150 flex items-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Reset</span>
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-between p-5 bg-red-50 border border-red-200/80 rounded-xl">
+              <div className="flex items-center gap-3">
                 <Trash2 className="w-5 h-5 text-red-600" />
                 <div>
                   <h5 className="font-medium text-red-900">Clear All Data</h5>
-                  <p className="text-sm text-red-700">Delete all timesheet entries and reset app</p>
+                  <p className="text-[13px] text-red-700">Delete all timesheet entries and reset app</p>
                 </div>
               </div>
               <button
                 onClick={handleClearAllData}
                 disabled={isResetting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg shadow-xs hover:bg-red-700 active:bg-red-800 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>{isResetting ? 'Clearing...' : 'Clear All'}</span>

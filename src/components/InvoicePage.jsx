@@ -615,29 +615,29 @@ const InvoicePage = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Invoice Generator</h1>
-        <p className="text-gray-600">Convert your timesheet data into professional PDF invoices</p>
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Invoice Generator</h1>
+        <p className="text-gray-500">Convert your timesheet data into professional PDF invoices</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Settings and Income Summary */}
         <div className="lg:col-span-1 space-y-6">
           {/* Settings Panel */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <User className="w-5 h-5 mr-2" />
+          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
+            <h2 className="text-lg font-semibold text-gray-900 tracking-tight mb-4 flex items-center gap-2">
+              <User className="w-5 h-5" />
               Invoice Settings
             </h2>
 
             {/* User/Business Information Section */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-                <Globe className="w-4 h-4 mr-2" />
+              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <Globe className="w-4 h-4" />
                 Your Business Information
               </h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Business/Legal Name
                   </label>
                   <input
@@ -646,13 +646,13 @@ const InvoicePage = () => {
                     onChange={(e) => setSettings(prev => ({ ...prev, userName: e.target.value }))}
                     onFocus={handleFieldFocus}
                     onBlur={handleFieldBlur}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="Your Business or Legal Name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Business Address
                   </label>
                   <textarea
@@ -660,14 +660,14 @@ const InvoicePage = () => {
                     onChange={(e) => setSettings(prev => ({ ...prev, userAddress: e.target.value }))}
                     onFocus={handleFieldFocus}
                     onBlur={handleFieldBlur}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     rows={2}
                     placeholder="123 Business Street, City, State 12345"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Email
                   </label>
                   <input
@@ -676,7 +676,7 @@ const InvoicePage = () => {
                     onChange={(e) => setSettings(prev => ({ ...prev, userEmail: e.target.value }))}
                     onFocus={handleFieldFocus}
                     onBlur={handleFieldBlur}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="contact@yourbusiness.com"
                   />
                 </div>
@@ -685,12 +685,12 @@ const InvoicePage = () => {
 
             {/* Client Information Section */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-                <User className="w-4 h-4 mr-2" />
+              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <User className="w-4 h-4" />
                 Client Information
               </h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Client Name
                 </label>
                 <input
@@ -699,13 +699,13 @@ const InvoicePage = () => {
                   onChange={(e) => setSettings(prev => ({ ...prev, clientName: e.target.value }))}
                   onFocus={handleFieldFocus}
                   onBlur={handleFieldBlur}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   placeholder="Enter client name"
                 />
               </div>
 
               <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Client Address
                 </label>
                 <textarea
@@ -713,7 +713,7 @@ const InvoicePage = () => {
                   onChange={(e) => setSettings(prev => ({ ...prev, clientAddress: e.target.value }))}
                   onFocus={handleFieldFocus}
                   onBlur={handleFieldBlur}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   rows={3}
                   placeholder="Enter client address"
                 />
@@ -722,13 +722,13 @@ const InvoicePage = () => {
 
             {/* Invoice Details Section */}
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
+              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
                 Invoice Details
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Invoice Number
                   </label>
                   <input
@@ -737,14 +737,14 @@ const InvoicePage = () => {
                     onChange={(e) => setSettings(prev => ({ ...prev, invoiceNumber: e.target.value }))}
                     onFocus={handleFieldFocus}
                     onBlur={handleFieldBlur}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="INV-001"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Start Date
                     </label>
                     <input
@@ -757,12 +757,12 @@ const InvoicePage = () => {
                       }}
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       End Date
                     </label>
                     <input
@@ -775,14 +775,14 @@ const InvoicePage = () => {
                       }}
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Hourly Rate
                     </label>
                     <div className="relative">
@@ -793,7 +793,7 @@ const InvoicePage = () => {
                         onChange={(e) => setSettings(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }))}
                         onFocus={handleFieldFocus}
                         onBlur={handleFieldBlur}
-                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                         min="0"
                         step="0.01"
                       />
@@ -801,7 +801,7 @@ const InvoicePage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Currency
                     </label>
                     <select
@@ -809,7 +809,7 @@ const InvoicePage = () => {
                       onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
                       onFocus={handleFieldFocus}
                       onBlur={handleFieldBlur}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     >
                       <option value="USD">USD</option>
                       <option value="EUR">EUR</option>
@@ -823,7 +823,7 @@ const InvoicePage = () => {
                     <div key={index} className="grid grid-cols-2 gap-4">
                       <div>
                         {index === 0 && (
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
                             Additionals Amount
                           </label>
                         )}
@@ -839,7 +839,7 @@ const InvoicePage = () => {
                             }}
                             onFocus={handleFieldFocus}
                             onBlur={handleFieldBlur}
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                             min="0"
                             step="0.01"
                             placeholder="0.00"
@@ -849,7 +849,7 @@ const InvoicePage = () => {
                       <div className="flex gap-2">
                         <div className="flex-1">
                           {index === 0 && (
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
                               Additionals Name
                             </label>
                           )}
@@ -863,7 +863,7 @@ const InvoicePage = () => {
                             }}
                             onFocus={handleFieldFocus}
                             onBlur={handleFieldBlur}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                             placeholder="e.g. Bonus, Services, Task"
                             maxLength={30}
                           />
@@ -875,7 +875,7 @@ const InvoicePage = () => {
                               const newList = settings.additionalsList.filter((_, i) => i !== index);
                               setSettings(prev => ({ ...prev, additionalsList: newList }));
                             }}
-                            className={`${index === 0 ? 'mt-6' : ''} px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors`}
+                            className={`${index === 0 ? 'mt-6' : ''} px-3 py-2 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors duration-150`}
                             title="Remove additionals"
                           >
                             <X className="w-5 h-5" />
@@ -891,7 +891,7 @@ const InvoicePage = () => {
                       const newList = [...(settings.additionalsList || []), { name: '', amount: 0 }];
                       setSettings(prev => ({ ...prev, additionalsList: newList }));
                     }}
-                    className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 hover:text-green-600 hover:border-green-400 hover:bg-green-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full py-2 border-2 border-dashed border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-400 hover:bg-green-50 rounded-lg transition-colors duration-150 flex items-center justify-center gap-2"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -901,48 +901,48 @@ const InvoicePage = () => {
           </div>
 
           {/* Income Preview Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <DollarSign className="w-5 h-5 mr-2" />
+          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
+            <h3 className="text-lg font-semibold text-gray-900 tracking-tight mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
               Income Summary
             </h3>
 
             <div className="space-y-4">
-              <div className="bg-blue-50 rounded-lg p-4">
+              <div className="bg-blue-50 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-blue-900">Total Hours</span>
-                  <span className="text-lg font-bold text-blue-900">{totals.totalHours}</span>
+                  <span className="text-lg font-bold text-blue-900 tabular-nums">{totals.totalHours}</span>
                 </div>
               </div>
 
               {(settings.additionalsList && settings.additionalsList.some(a => a.amount > 0)) && (
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">Subtotal</span>
-                    <span className="text-lg font-bold text-gray-900">{totals.subtotal}</span>
+                    <span className="text-lg font-bold text-gray-900 tabular-nums">{totals.subtotal}</span>
                   </div>
                 </div>
               )}
 
               {totals.additionalsList && totals.additionalsList.map((additional, index) => (
                 parseFloat(additional.amount.replace(/[^0-9.-]/g, '')) > 0 && (
-                  <div key={index} className="bg-green-50 rounded-lg p-4">
+                  <div key={index} className="bg-green-50 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-green-900">{additional.name}</span>
-                      <span className="text-lg font-bold text-green-900">{additional.amount}</span>
+                      <span className="text-lg font-bold text-green-900 tabular-nums">{additional.amount}</span>
                     </div>
                   </div>
                 )
               ))}
 
-              <div className="bg-green-50 rounded-lg p-4">
+              <div className="bg-green-50 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-green-900">Total Amount</span>
-                  <span className="text-lg font-bold text-green-900">{totals.total}</span>
+                  <span className="text-lg font-bold text-green-900 tabular-nums">{totals.total}</span>
                 </div>
               </div>
 
-              <div className="text-xs text-gray-500 text-center">
+              <div className="text-xs text-gray-500 text-center tabular-nums">
                 Based on {settings.currency} {settings.hourlyRate}/hour
                 {settings.additionalsList && settings.additionalsList.some(a => a.amount > 0) && 
                   ` + ${settings.currency} ${settings.additionalsList.reduce((sum, a) => sum + (a.amount || 0), 0).toFixed(2)} additionals`
@@ -954,10 +954,10 @@ const InvoicePage = () => {
 
         {/* Right Column - Preview */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                <FileText className="w-5 h-5 mr-2" />
+              <h2 className="text-lg font-semibold text-gray-900 tracking-tight flex items-center gap-2">
+                <FileText className="w-5 h-5" />
                 Invoice Preview
               </h2>
 
@@ -971,11 +971,11 @@ const InvoicePage = () => {
                     />
                   }
                   fileName={generateFileName()}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150"
                 >
                   {({ loading }) => (
                     <>
-                      <Download className="w-4 h-4 mr-2" />
+                      <Download className="w-4 h-4" />
                       {loading ? 'Generating...' : 'Download PDF'}
                     </>
                   )}
@@ -983,8 +983,8 @@ const InvoicePage = () => {
               )}
 
               {isAnyFieldFocused && (
-                <div className="inline-flex items-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed" title="Deselect any input field to continue">
-                  <Download className="w-4 h-4 mr-2" />
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-300 text-white text-sm font-medium rounded-lg shadow-xs cursor-not-allowed" title="Deselect any input field to continue">
+                  <Download className="w-4 h-4" />
                   Finish editing...
                 </div>
               )}
@@ -992,28 +992,28 @@ const InvoicePage = () => {
 
             {filterEntries.length === 0 ? (
               <div className="text-center py-12">
-                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No time entries found for the selected date range.</p>
                 <p className="text-sm text-gray-400 mt-2">Try adjusting the date range or check your timesheet data.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Description</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Hours</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Subtotal</th>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Description</th>
+                      <th className="text-right px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Hours</th>
+                      <th className="text-right px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Subtotal</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filterEntries.map((entry, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-sm text-gray-900">{entry.date}</td>
-                        <td className="py-3 px-4 text-sm text-gray-900">{entry.description}</td>
-                        <td className="py-3 px-4 text-sm text-gray-900 text-right">{entry.hours}</td>
-                        <td className="py-3 px-4 text-sm text-gray-900 text-right">
+                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50/70 transition-colors duration-150">
+                        <td className="px-4 py-3 text-sm text-gray-900">{entry.date}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{entry.description}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 text-right tabular-nums">{entry.hours}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 text-right tabular-nums">
                           {formatCurrency(parseFloat(entry.hours) * settings.hourlyRate, settings.currency)}
                         </td>
                       </tr>
@@ -1022,10 +1022,10 @@ const InvoicePage = () => {
                   <tfoot>
                     {(settings.additionalsList && settings.additionalsList.some(a => a.amount > 0)) && (
                       <tr className="bg-gray-50">
-                        <td colSpan={2} className="py-3 px-4 text-sm font-medium text-gray-700">
+                        <td colSpan={2} className="px-4 py-3 text-sm font-medium text-gray-700">
                           Subtotal ({totals.totalHours} hours)
                         </td>
-                        <td colSpan={2} className="py-3 px-4 text-sm font-bold text-gray-900 text-right">
+                        <td colSpan={2} className="px-4 py-3 text-sm font-bold text-gray-900 text-right tabular-nums">
                           {totals.subtotal}
                         </td>
                       </tr>
@@ -1033,20 +1033,20 @@ const InvoicePage = () => {
                     {totals.additionalsList && totals.additionalsList.map((additional, index) => (
                       parseFloat(additional.amount.replace(/[^0-9.-]/g, '')) > 0 && (
                         <tr key={index} className="bg-green-50">
-                          <td colSpan={2} className="py-3 px-4 text-sm font-medium text-green-700">
+                          <td colSpan={2} className="px-4 py-3 text-sm font-medium text-green-700">
                             {additional.name}
                           </td>
-                          <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
+                          <td colSpan={2} className="px-4 py-3 text-sm font-bold text-green-900 text-right tabular-nums">
                             {additional.amount}
                           </td>
                         </tr>
                       )
                     ))}
                     <tr className="bg-green-100">
-                      <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900">
+                      <td colSpan={2} className="px-4 py-3 text-sm font-bold text-green-900">
                         Total Amount
                       </td>
-                      <td colSpan={2} className="py-3 px-4 text-sm font-bold text-green-900 text-right">
+                      <td colSpan={2} className="px-4 py-3 text-sm font-bold text-green-900 text-right tabular-nums">
                         {totals.total}
                       </td>
                     </tr>

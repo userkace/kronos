@@ -175,13 +175,13 @@ const PomodoroTimer = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">Pomodoro Timer</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pomodoro Timer</h1>
               <p className="text-gray-600 mt-2">Boost productivity with focused work sessions</p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                 title="Timer Settings"
                 aria-label="Timer settings"
               >
@@ -191,12 +191,12 @@ const PomodoroTimer = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">Timer Settings</h3>
+          <div className="mb-6 p-5 bg-gray-50 rounded-xl border border-gray-100">
+            <h3 className="text-base font-semibold mb-4 text-gray-900 tracking-tight">Timer Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -208,7 +208,7 @@ const PomodoroTimer = () => {
                   max="60"
                   value={workDuration}
                   onChange={(e) => setWorkDuration(parseInt(e.target.value) || DEFAULT_WORK_DURATION)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tabular-nums shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   disabled={isRunning}
                 />
               </div>
@@ -222,7 +222,7 @@ const PomodoroTimer = () => {
                   max="30"
                   value={shortBreakDuration}
                   onChange={(e) => setShortBreakDuration(parseInt(e.target.value) || DEFAULT_SHORT_BREAK)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tabular-nums shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   disabled={isRunning}
                 />
               </div>
@@ -236,7 +236,7 @@ const PomodoroTimer = () => {
                   max="60"
                   value={longBreakDuration}
                   onChange={(e) => setLongBreakDuration(parseInt(e.target.value) || DEFAULT_LONG_BREAK)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tabular-nums shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   disabled={isRunning}
                 />
               </div>
@@ -250,27 +250,27 @@ const PomodoroTimer = () => {
                   max="10"
                   value={totalSets}
                   onChange={(e) => setTotalSets(parseInt(e.target.value) || DEFAULT_TOTAL_SETS)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 tabular-nums shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   disabled={isRunning}
                 />
               </div>
             </div>
             <div className="mt-4 space-y-2">
-              <label className="flex items-center">
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={autoStartBreaks}
                   onChange={(e) => setAutoStartBreaks(e.target.checked)}
-                  className="mr-2"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500/20"
                 />
                 <span className="text-sm text-gray-700">Auto-start breaks</span>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={autoStartWork}
                   onChange={(e) => setAutoStartWork(e.target.checked)}
-                  className="mr-2"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500/20"
                 />
                 <span className="text-sm text-gray-700">Auto-start work sessions</span>
               </label>
@@ -286,7 +286,7 @@ const PomodoroTimer = () => {
                 value={currentTask}
                 onChange={(e) => setCurrentTask(e.target.value)}
                 placeholder="What are you working on?"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                 disabled={isRunning}
             />
             </div>
@@ -294,8 +294,8 @@ const PomodoroTimer = () => {
 
         {/* Status Information */}
         {isTrackingTask && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 text-blue-800">
+          <div className="bg-blue-50 border border-blue-200/70 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-2 text-blue-800">
               <Timer className="w-5 h-5" />
               <span className="font-medium">Tracking time for: {currentTask}</span>
             </div>
@@ -307,14 +307,14 @@ const PomodoroTimer = () => {
           <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full ${getPhaseColor()} text-white mb-4`}>
             {getPhaseIcon()}
           </div>
-          <div className="text-6xl font-bold text-gray-900 mb-2">
+          <div className="text-6xl font-semibold tracking-tight tabular-nums text-gray-900 mb-2">
             {formatTime(timeLeft)}
           </div>
           <div className="text-lg text-gray-600 capitalize">
             {currentPhase === 'work' ? 'Work Session' :
              currentPhase === 'shortBreak' ? 'Short Break' : 'Long Break'}
           </div>
-          <div className="text-sm text-gray-500 mt-2">
+          <div className="text-sm text-gray-500 mt-2 tabular-nums">
             Set {currentSet} of {totalSets}
           </div>
         </div>
@@ -323,7 +323,7 @@ const PomodoroTimer = () => {
         <div className="mb-6">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`h-2 rounded-full transition-all duration-1000 ${getPhaseColor()}`}
+              className={`h-2 rounded-full transition-[width] duration-1000 ${getPhaseColor()}`}
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -332,11 +332,11 @@ const PomodoroTimer = () => {
 )}
 
         {/* Control Buttons */}
-        <div className="flex justify-center space-x-4">
+        <div className="flex justify-center gap-3">
           {!isRunning ? (
             <button
               onClick={handleStartTimer}
-              className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-lg transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${
                 (currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry
                   ? 'text-gray-400 cursor-not-allowed'
                   : 'text-green-600 hover:text-green-700 hover:bg-green-50'
@@ -356,7 +356,7 @@ const PomodoroTimer = () => {
           ) : isPaused ? (
             <button
               onClick={resumeTimer}
-              className="flex items-center space-x-2 px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors duration-150"
             >
               <Play className="w-4 h-4" />
               <span>Resume</span>
@@ -364,7 +364,7 @@ const PomodoroTimer = () => {
           ) : (
             <button
               onClick={pauseTimer}
-              className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150"
             >
               <Pause className="w-4 h-4" />
               <span>Pause</span>
@@ -373,7 +373,7 @@ const PomodoroTimer = () => {
 
           <button
             onClick={resetTimer}
-            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-150"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Reset</span>
@@ -381,7 +381,7 @@ const PomodoroTimer = () => {
 
           <button
             onClick={skipPhase}
-            className="flex items-center space-x-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors duration-150"
           >
             <SkipForward className="w-4 h-4" />
             <span>Skip</span>
@@ -389,7 +389,7 @@ const PomodoroTimer = () => {
 
           <button
             onClick={resetAll}
-            className="px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150"
           >
             Reset All
           </button>

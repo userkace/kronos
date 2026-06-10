@@ -1512,29 +1512,29 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
   }, [unifiedDisplay, validateUnifiedDisplay, error]);
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           {/* Date Navigation */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3">
                 <div className="relative">
-                  <h1 className="text-3xl font-bold text-gray-900">
+                  <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
                     <span className="sm:hidden">{formatInTimezone(selectedDate, 'MMM. d, yyyy')}</span>
                     <span className="hidden sm:inline">{formatInTimezone(selectedDate, 'MMMM d, yyyy')}</span>
                   </h1>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-                <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${isToday() ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+            <div className="flex items-center gap-3">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${isToday() ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                   {isToday() ? 'Today' : formatInTimezone(selectedDate, 'EEEE')}
                 </span>
               <button
                 onClick={handlePreviousDay}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                 title="Previous Day"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -1542,10 +1542,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
               <button
                 onClick={handleToday}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-lg transition-colors duration-150 ${
                   isToday()
                     ? 'cursor-not-allowed'
-                    : 'hover:bg-gray-200'
+                    : 'hover:bg-gray-100'
                 }`}
                 title={isToday() ? "Current day" : "Back to Today"}
                 disabled={isToday()}
@@ -1555,10 +1555,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
               <button
                 onClick={handleNextDay}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-lg transition-colors duration-150 ${
                   isToday()
                     ? 'cursor-not-allowed text-gray-400'
-                    : 'hover:bg-gray-200'
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                 }`}
                 title={isToday() ? "Current day" : "Next Day"}
                 disabled={isToday()}
@@ -1577,11 +1577,11 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
             const goalMet = goalSeconds > 0 && dailyTotalSeconds >= goalSeconds;
             return (
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-baseline space-x-2 text-gray-600">
+            <div className="flex items-center gap-3">
+              <div className="flex items-baseline gap-2 text-gray-600">
                 {goalMet ? (
                 <motion.div
-                  className="flex items-baseline space-x-2"
+                  className="flex items-baseline gap-2"
                   animate={{
                     // amber-600 ↔ amber-300 — same pulse cadence as the active
                     // green shine, swapped to a gold palette for goal-hit.
@@ -1600,13 +1600,13 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                   title={`Daily goal of ${dailyHourGoal}h reached`}
                 >
                   <Clock className="w-5 h-5 self-center mt-1" />
-                  <span className="text-2xl font-semibold">
+                  <span className="text-2xl font-semibold tracking-tight tabular-nums">
                     {calculateDailyTotal()}
                   </span>
                 </motion.div>
               ) : activeEntry && isToday() ? (
                 <motion.div
-                  className="flex items-baseline space-x-2"
+                  className="flex items-baseline gap-2"
                   animate={{
                     color: ["#16a34a", "#000000", "#16a34a"] // green-600 to black to green-600
                   }}
@@ -1617,14 +1617,14 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                   }}
                 >
                   <Clock className="w-5 h-5 self-center mt-1" />
-                  <span className="text-2xl font-semibold">
+                  <span className="text-2xl font-semibold tracking-tight tabular-nums">
                     {calculateDailyTotal()}
                   </span>
                 </motion.div>
               ) : (
-                <div className="flex items-baseline space-x-2 text-gray-600">
+                <div className="flex items-baseline gap-2 text-gray-600">
                   <Clock className="w-5 h-5 self-center mt-1" />
-                  <span className="text-2xl font-semibold text-gray-900">
+                  <span className="text-2xl font-semibold tracking-tight tabular-nums text-gray-900">
                     {calculateDailyTotal()}
                   </span>
                 </div>
@@ -1638,18 +1638,18 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                     animate={animations.scale.animate}
                     exit={animations.scale.exit}
                     transition={getTransition({ duration: 0.3, ease: "easeInOut" })}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-600"
+                    className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium tabular-nums bg-orange-50 text-orange-600"
                   >
-                    <Coffee className="w-4 h-4 mr-2" />
+                    <Coffee className="w-4 h-4 mr-1.5" />
                     {dailyBreakTotal}
                   </motion.span>
                 )}
               </AnimatePresence>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => changeSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                 title={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
                 aria-label={`Sort ${sortOrder === 'asc' ? 'Newest first' : 'Oldest first'}`}
               >
@@ -1661,10 +1661,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               </button>
               <button
                 onClick={toggleShowBreaks}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-lg transition-colors duration-150 ${
                   showBreaks
                     ? 'text-orange-600 bg-orange-50 hover:bg-orange-100'
-                    : 'text-gray-500 hover:bg-gray-200'
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                 }`}
                 title={showBreaks ? 'Hide break times' : 'Show break times'}
                 aria-label={showBreaks ? 'Hide break times' : 'Show break times'}
@@ -1694,8 +1694,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
         {/* Input Bar - Only show on current date */}
         {isToday() && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex items-start space-x-3 mb-3">
+          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5 mb-6">
+            <div className="flex items-start gap-3 mb-3">
               <div className="flex-1 relative task-input-container">
                 <input
                   type="text"
@@ -1708,10 +1708,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                     }
                   }}
                   placeholder="What are you doing now?"
-                  className={`w-full bg-white text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-offset-0 focus:ring-offset-white relative z-20 placeholder-gray-400 ${
+                  className={`w-full bg-white text-gray-900 px-4 py-3 border border-gray-200 rounded-lg shadow-xs focus:outline-none focus:ring-2 relative z-20 placeholder:text-gray-400 ${
                     activeEntry
-                      ? 'focus:ring-blue-500 focus:border-blue-500'
-                      : 'focus:ring-green-500 focus:border-green-500'
+                      ? 'focus:ring-blue-500/20 focus:border-blue-400'
+                      : 'focus:ring-green-500/20 focus:border-green-400'
                   }`}
                 disabled={false}
                 autoComplete="off"
@@ -1719,12 +1719,12 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
                 {/* Custom Dropdown */}
                 {showDropdown && filteredSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1.5 bg-white border border-gray-200/60 rounded-xl shadow-lg max-h-60 overflow-y-auto py-1">
                     {filteredSuggestions.map((suggestion, index) => (
                       <div
                         key={suggestion}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className={`px-4 py-2 cursor-pointer transition-colors ${
+                        className={`px-4 py-2 text-sm cursor-pointer transition-colors duration-150 ${
                           index === selectedSuggestionIndex
                             ? 'bg-blue-50 text-blue-900'
                             : 'hover:bg-gray-50'
@@ -1739,12 +1739,12 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               <button
                 onClick={handleStart}
                 disabled={pomodoroIsRunning}
-                className={`p-3 rounded-full font-semibold flex items-center space-x-2 transition-colors ${
+                className={`p-3 rounded-full font-semibold flex items-center gap-2 shadow-xs transition-colors duration-150 ${
                   pomodoroIsRunning
                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                     : activeEntry
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-green-600 hover:bg-green-700 text-white'
+                      ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white'
+                      : 'bg-green-600 hover:bg-green-700 active:bg-green-800 text-white'
                 }`}
                 title={pomodoroIsRunning ? 'Cannot start timer while Pomodoro is active' : ''}
               >
@@ -1757,7 +1757,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               {activeEntry && (
                 <button
                   onClick={handleStop}
-                  className="p-3 rounded-lg font-semibold flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white transition-colors"
+                  className="p-3 rounded-lg font-semibold flex items-center gap-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs transition-colors duration-150"
                 >
                   <Square className="w-5 h-5" />
                 </button>
@@ -1765,11 +1765,11 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
             </div>
 
             {/* Add Manual Entry Button */}
-            <div className="flex justify-center space-x-4">
+            <div className="flex justify-center gap-4">
               <button
                 onClick={() => handleOpenModal('add')}
                 disabled={pomodoroIsRunning}
-                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${
                   pomodoroIsRunning
                     ? 'text-gray-400 cursor-not-allowed'
                     : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
@@ -1780,7 +1780,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               </button>
               <button
                 onClick={saveToWeeklyTimesheet}
-                className="px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors duration-150"
               >
                 Save to Weekly Timesheet
               </button>
@@ -1790,12 +1790,12 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
         {/* Manual Entry Button - Show for all dates */}
         {!isToday() && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex justify-center space-x-4">
+          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5 mb-6">
+            <div className="flex justify-center gap-4">
               <button
                 onClick={() => handleOpenModal('add')}
                 disabled={pomodoroIsRunning}
-                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${
                   pomodoroIsRunning
                     ? 'text-gray-400 cursor-not-allowed'
                     : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
@@ -1807,7 +1807,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               {selectedDateEntries.length > 0 && (
                 <button
                   onClick={saveToWeeklyTimesheet}
-                  className="px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors duration-150"
                 >
                   Save to Weekly Timesheet
                 </button>
@@ -1832,18 +1832,18 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                       transition={getTransition({ duration: 0.3, ease: "easeOut" })}
                       layoutId={`entry-${item.data.id}`}
                     >
-                      <div className="group bg-green-50 border border-green-200 rounded-lg p-4 hover:bg-green-100 transition-all">
+                      <div className="group bg-green-50 border border-green-200/80 rounded-2xl shadow-xs p-5 hover:bg-green-100 transition-colors duration-150">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <h3 className="font-semibold text-gray-900 text-lg">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-gray-900 text-lg tracking-tight">
                                 {item.data.description}
                               </h3>
                             </div>
                             <p className="text-green-700 text-sm mb-2">
                               {item.data.project || ''}
                             </p>
-                            <div className="flex items-center space-x-4 text-green-600">
+                            <div className="flex items-center gap-4 text-green-600">
                               {!isToday() && (
                                 <>
                                   <span className="text-sm font-medium">
@@ -1851,19 +1851,19 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                   </span>
                                 </>
                               )}
-                              <span className="text-sm">
+                              <span className="text-sm tabular-nums">
                                 {formatInTimezone(parseISO(item.data.startTime), 'h:mm a')} - now
                               </span>
-                              <span className="font-mono font-semibold">
+                              <span className="font-semibold tracking-tight tabular-nums">
                                 {getActiveDuration(item.data)}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="opacity-0 group-hover:opacity-100 transition-all">
+                          <div className="flex items-center gap-2">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                               <button
                                 onClick={handleStop}
-                                className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg flex items-center space-x-2"
+                                className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white p-3 rounded-lg shadow-xs flex items-center gap-2 transition-colors duration-150"
                                 aria-label="Pause timer"
                               >
                                 <Pause className="w-4 h-4" />
@@ -1872,7 +1872,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                             {!isToday() && (
                               <button
                                 onClick={handleToday}
-                                className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors cursor-pointer flex items-center space-x-2"
+                                className="px-4 py-2.5 text-sm font-medium bg-green-100 text-green-800 rounded-lg group-hover:bg-green-200 hover:bg-green-300/60 transition-colors duration-150 cursor-pointer flex items-center gap-2"
                                 title="Back to Today"
                               >
                                 <Calendar className="w-4 h-4" />
@@ -1897,11 +1897,11 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                       className="text-center py-2"
                     >
                       <div
-                        className="inline-flex items-center space-x-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm"
+                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 bg-orange-50 text-orange-600 text-xs font-medium"
                       >
                         <span className="font-medium">Break</span>
                         <span>•</span>
-                        <span>{formatBreakDuration(item.data)}</span>
+                        <span className="tabular-nums">{formatBreakDuration(item.data)}</span>
                       </div>
                     </motion.div>
                   );
@@ -1922,7 +1922,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                       transition={getTransition({ duration: 0.3, ease: "easeOut" })}
                       layoutId={`entry-${entry.id}`}
                     >
-                      <div className="group bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:bg-gray-50 transition-all">
+                      <div className="group bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5 hover:bg-gray-50/70 transition-colors duration-150">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             {inlineEdit?.entryId === entry.id && inlineEdit.field === 'description' ? (
@@ -1941,11 +1941,11 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                   width: `${inlineEdit.dims.width}px`,
                                   height: `${inlineEdit.dims.height}px`,
                                 } : undefined}
-                                className="font-semibold text-gray-900 bg-blue-50 border border-blue-300 rounded px-2 py-0.5 outline-none focus:ring-2 focus:ring-blue-300 resize leading-snug box-border"
+                                className="font-semibold text-gray-900 bg-blue-50 border border-blue-300 rounded-md px-2 py-0.5 outline-none focus:ring-2 focus:ring-blue-500/20 resize leading-snug box-border"
                               />
                             ) : (
                               <h3
-                                className="font-semibold text-gray-900 cursor-text hover:bg-gray-100 rounded px-2 py-0.5 -mx-2 inline-block whitespace-pre-wrap wrap-break-word box-border"
+                                className="font-semibold text-gray-900 cursor-text hover:bg-gray-100 rounded-md px-2 py-0.5 -mx-2 inline-block whitespace-pre-wrap wrap-break-word box-border transition-colors duration-150"
                                 onClick={(e) => {
                                   const rect = e.currentTarget.getBoundingClientRect();
                                   startInlineEdit(entry, 'description', {
@@ -1961,8 +1961,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                             <p className="text-gray-600 text-sm mb-2">
                               {entry.project || ''}
                             </p>
-                            <div className="flex items-center space-x-4 text-gray-500">
-                              <span className="text-sm flex items-center gap-1 flex-wrap">
+                            <div className="flex items-center gap-4 text-gray-500">
+                              <span className="text-sm tabular-nums flex items-center gap-1 flex-wrap">
                                 {inlineEdit?.entryId === entry.id && inlineEdit.field === 'startTime' ? (
                                   <input
                                     type="time"
@@ -1976,13 +1976,13 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                       else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
                                     }}
                                     aria-label="Edit start time"
-                                    className="text-sm border border-blue-300 bg-blue-50 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-300"
+                                    className="text-sm tabular-nums border border-blue-300 bg-blue-50 rounded-md px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-500/20"
                                   />
                                 ) : (
                                   <button
                                     type="button"
                                     onClick={() => startInlineEdit(entry, 'startTime')}
-                                    className="cursor-text hover:bg-gray-100 rounded px-1 -mx-1"
+                                    className="cursor-text hover:bg-gray-100 rounded-md px-1 -mx-1 transition-colors duration-150"
                                     title="Click to edit"
                                   >
                                     {formatInTimezone(parseISO(entry.startTime), 'h:mm a')}
@@ -2002,32 +2002,32 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                       else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
                                     }}
                                     aria-label="Edit end time"
-                                    className="text-sm border border-blue-300 bg-blue-50 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-300"
+                                    className="text-sm tabular-nums border border-blue-300 bg-blue-50 rounded-md px-1 py-0.5 outline-none focus:ring-2 focus:ring-blue-500/20"
                                   />
                                 ) : (
                                   <button
                                     type="button"
                                     onClick={() => startInlineEdit(entry, 'endTime')}
-                                    className="cursor-text hover:bg-gray-100 rounded px-1 -mx-1"
+                                    className="cursor-text hover:bg-gray-100 rounded-md px-1 -mx-1 transition-colors duration-150"
                                     title="Click to edit"
                                   >
                                     {formatInTimezone(parseISO(entry.endTime), 'h:mm a')}
                                   </button>
                                 )}
                               </span>
-                              <span className="font-mono">
+                              <span className="text-sm font-medium tabular-nums">
                                 {formatDisplayDuration(duration)}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                             <button
                               onClick={() => handleContinue(entry)}
                               disabled={pomodoroIsRunning}
-                              className={`p-3 rounded-full flex items-center space-x-1 ${
+                              className={`p-3 rounded-full flex items-center gap-1 shadow-xs transition-colors duration-150 ${
                                 pomodoroIsRunning
                                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                  : 'bg-green-600 hover:bg-green-700 text-white'
+                                  : 'bg-green-600 hover:bg-green-700 active:bg-green-800 text-white'
                               }`}
                               aria-label={`Continue task: ${entry.description}`}
                               title={pomodoroIsRunning ? 'Cannot continue while Pomodoro is active' : 'Continue this task'}
@@ -2036,7 +2036,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                             </button>
                             <button
                               onClick={() => handleOpenModal('edit', entry)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center space-x-1"
+                              className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white p-3 rounded-lg shadow-xs flex items-center gap-1 transition-colors duration-150"
                               aria-label={`Edit task: ${entry.description}`}
                             >
                               <Edit className="w-4 h-4" />
@@ -2045,10 +2045,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                               <button
                                 onClick={() => handleMergeEntries(entry.description)}
                                 disabled={shouldDisableMerge(entry.description)}
-                                className={`px-3 py-2 rounded-lg flex items-center space-x-1 ${
+                                className={`px-3 py-2 text-sm font-medium rounded-lg shadow-xs flex items-center gap-1.5 transition-colors duration-150 ${
                                   shouldDisableMerge(entry.description)
                                     ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                                    : 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white'
                                 }`}
                                 title={
                                   shouldDisableMerge(entry.description)
@@ -2083,7 +2083,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
             <div className="text-gray-400 mb-4">
               <Clock className="w-16 h-16 mx-auto mb-4" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-500 mb-2">
+            <h3 className="text-xl font-semibold text-gray-500 tracking-tight mb-2">
               {isToday()
                 ? "No time entries yet"
                 : "No time entries for this date"
