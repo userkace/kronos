@@ -187,9 +187,9 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       {/* Week Navigation Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex-1">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
             <div className="relative">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
                 <span className="sm:hidden">
                   {weekDays[0] && weekDays[6] ? 
                     `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d')}` : 
@@ -212,13 +212,13 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
             </div>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${isCurrentWeek() ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${isCurrentWeek() ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
             {isCurrentWeek() ? 'Current' : 'Overview'}
           </span>
           <button
             onClick={handlePreviousWeek}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
             title="Previous Week"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -226,10 +226,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
 
           <button
             onClick={handleCurrentWeek}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-2 rounded-lg transition-colors duration-150 ${
               isCurrentWeek()
                 ? 'cursor-not-allowed'
-                : 'hover:bg-gray-200'
+                : 'hover:bg-gray-100'
             }`}
             title={isCurrentWeek() ? "Current week" : "Back to Current Week"}
             disabled={isCurrentWeek()}
@@ -239,10 +239,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
 
           <button
             onClick={handleNextWeek}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-2 rounded-lg transition-colors duration-150 ${
               isCurrentWeek()
-                ? 'cursor-not-allowed text-gray-400'
-                : 'hover:bg-gray-200'
+                ? 'cursor-not-allowed text-gray-300'
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
             }`}
             title={isCurrentWeek() ? "Current week" : "Next Week"}
             disabled={isCurrentWeek()}
@@ -272,11 +272,11 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
           return (
             <div
               key={dayKey}
-              className={`rounded-lg border border-gray-200 shadow-sm ${
-                isWeekend ? 'bg-gray-50' : 'bg-white'
+              className={`rounded-2xl border border-gray-200/80 shadow-xs ${
+                isWeekend ? 'bg-gray-50/70' : 'bg-white'
               }`}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <div className="text-sm font-semibold text-gray-900">
                   {dayNames[index]}, {format(day, 'MMM d')}
                 </div>
@@ -287,7 +287,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
 
               <div className="p-4 space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">
                     Tasks
                   </label>
                   <input
@@ -295,12 +295,12 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     value={dayData.tasks || ''}
                     onChange={(e) => handleInputChange(dayKey, 'tasks', e.target.value)}
                     placeholder="Enter tasks..."
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 bg-white rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">
                     Work Details
                   </label>
                   <input
@@ -309,10 +309,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     onChange={(e) => handleInputChange(dayKey, 'workDetails', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.workDetails, `${dayKey}-workDetails`)}
                     placeholder="Describe work done..."
-                    className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                    className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                       copiedField === `${dayKey}-workDetails`
                         ? 'bg-green-100 border-green-400'
-                        : 'border-gray-300'
+                        : 'border-gray-200 bg-white'
                     }`}
                     title="Click to copy"
                   />
@@ -320,7 +320,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">
                       Time In
                     </label>
                     <input
@@ -329,16 +329,16 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                       value={dayData.timeIn || ''}
                       onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
                       onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
-                      className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                         copiedField === `${dayKey}-timeIn`
                           ? 'bg-green-100 border-green-400'
-                          : 'border-gray-300'
+                          : 'border-gray-200 bg-white'
                       }`}
                       title="Click to copy"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">
                       Time Out
                     </label>
                     <input
@@ -347,10 +347,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                       value={dayData.timeOut || ''}
                       onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
                       onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
-                      className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                      className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                         copiedField === `${dayKey}-timeOut`
                           ? 'bg-green-100 border-green-400'
-                          : 'border-gray-300'
+                          : 'border-gray-200 bg-white'
                       }`}
                       title="Click to copy"
                     />
@@ -358,7 +358,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">
                     Break Hours
                   </label>
                   <input
@@ -369,10 +369,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     min="0"
                     max="24"
                     step="0.5"
-                    className={`w-full px-2 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                    className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                       copiedField === `${dayKey}-breakHours`
                         ? 'bg-green-100 border-green-400'
-                        : 'border-gray-300'
+                        : 'border-gray-200 bg-white'
                     }`}
                     title="Click to copy"
                   />
@@ -382,7 +382,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
           );
         })}
 
-        <div className="rounded-lg border border-gray-200 shadow-sm bg-gray-100 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-2xl border border-gray-200/80 shadow-xs bg-gray-50 px-4 py-3 flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-900">Grand Total</span>
           <span className="text-sm font-mono font-semibold text-gray-900 tabular-nums">
             {calculateGrandTotal().toFixed(2)} h
@@ -391,34 +391,34 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       </div>
 
       {/* Desktop / tablet: original wide table */}
-      <div className="hidden sm:block overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+      <div className="hidden sm:block overflow-x-auto bg-white rounded-2xl border border-gray-200/80 shadow-xs">
       <table className="min-w-full bg-white overflow-hidden">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-gray-50 border-b border-gray-100">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Date
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Tasks
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Work Details
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Time In
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Time Out
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Break Hours
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Total Hours
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-100">
           {weekDays.map((day, index) => {
             const dayKey = getStorageDateKey(day);
             const dayData = localData[dayKey] || {};
@@ -436,7 +436,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
             return (
               <tr
                 key={dayKey}
-                className={isWeekend ? 'bg-gray-50' : 'hover:bg-gray-50'}
+                className={`transition-colors duration-150 ${isWeekend ? 'bg-gray-50/70' : 'hover:bg-gray-50/70'}`}
               >
                 <td className="px-4 py-3 text-sm font-medium text-gray-900 w-32 min-w-32">
                   {dayNames[index]}, {format(day, 'MMM d')}
@@ -447,7 +447,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     value={dayData.tasks || ''}
                     onChange={(e) => handleInputChange(dayKey, 'tasks', e.target.value)}
                     placeholder="Enter tasks..."
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 bg-white rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </td>
                 <td className="px-4 py-3 min-w-32">
@@ -457,10 +457,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     onChange={(e) => handleInputChange(dayKey, 'workDetails', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.workDetails, `${dayKey}-workDetails`)}
                     placeholder="Describe work done..."
-                    className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors ${
+                    className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                       copiedField === `${dayKey}-workDetails` 
                         ? 'bg-green-100 border-green-400' 
-                        : 'border-gray-300 hover:bg-gray-50'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"
                   />
@@ -472,10 +472,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     value={dayData.timeIn || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeIn', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
-                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
+                    className={`px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-timeIn`
                         ? 'bg-green-100 border-green-400'
-                        : 'border-gray-300 hover:bg-gray-50'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"
                   />
@@ -487,10 +487,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     value={dayData.timeOut || ''}
                     onChange={(e) => handleInputChange(dayKey, 'timeOut', e.target.value)}
                     onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
-                    className={`px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
+                    className={`px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-timeOut`
                         ? 'bg-green-100 border-green-400'
-                        : 'border-gray-300 hover:bg-gray-50'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"
                   />
@@ -504,25 +504,25 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     min="0"
                     max="24"
                     step="0.5"
-                    className={`w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-colors [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
+                    className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-breakHours` 
                         ? 'bg-green-100 border-green-400' 
-                        : 'border-gray-300 hover:bg-gray-50'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"
                   />
                 </td>
-                <td className="px-4 py-3 text-sm font-medium text-gray-900 w-24 min-w-20">
+                <td className="px-4 py-3 text-sm font-medium text-gray-900 tabular-nums w-24 min-w-20">
                   {dayTotal.toFixed(2)}
                 </td>
               </tr>
             );
           })}
-          <tr className="bg-gray-100 font-semibold">
+          <tr className="bg-gray-50 font-semibold">
             <td colSpan="6" className="px-4 py-3 text-sm text-gray-900 text-right">
               Grand Total:
             </td>
-            <td className="px-4 py-3 text-sm text-gray-900">
+            <td className="px-4 py-3 text-sm text-gray-900 tabular-nums">
               {calculateGrandTotal().toFixed(2)}
             </td>
           </tr>
@@ -532,7 +532,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
 
       {/* Empty-week notice */}
       {weekDays.length > 0 && calculateGrandTotal() === 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500 mt-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-gray-50 px-4 py-3 text-sm text-gray-500 mt-4">
           <Calendar className="w-4 h-4 shrink-0 text-gray-400" />
           <span>No hours logged for this week yet — fill in your time above.</span>
         </div>

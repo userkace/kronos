@@ -98,25 +98,25 @@ const PomodoroProgressBar = ({ onViewChange, className }) => {
 
   return (
     <div
-      className={`mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${className}`}
+      className={`mb-4 p-3 bg-white rounded-xl border border-gray-200/80 shadow-xs cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${className}`}
       onClick={() => onViewChange && onViewChange('pomodoro')}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          <div className={`p-1 rounded-full text-white ${getPhaseColor()}`}>
+        <div className="flex items-center space-x-2 min-w-0">
+          <div className={`shrink-0 p-1 rounded-full text-white ${getPhaseColor()}`}>
             {getPhaseIcon()}
           </div>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 truncate">
             {getPhaseText()}
           </span>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-mono text-gray-600">
+        <div className="flex items-center space-x-2 shrink-0">
+          <span className="text-sm font-medium text-gray-600 tabular-nums">
             {formatTime(timeLeft)}
           </span>
           {isPaused && (
-            <span className="text-xs text-orange-600 font-medium">
+            <span className="text-xs text-amber-600 font-medium">
               PAUSED
             </span>
           )}
@@ -124,15 +124,15 @@ const PomodoroProgressBar = ({ onViewChange, className }) => {
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-        <div 
-          className={`h-2 rounded-full transition-all duration-1000 ${getPhaseColor()}`}
+      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+        <div
+          className={`h-1.5 rounded-full transition-[width] duration-1000 ${getPhaseColor()}`}
           style={{ width: `${progress}%` }}
         />
       </div>
 
       {/* Additional Info */}
-      <div className="flex justify-between text-xs text-gray-500">
+      <div className="flex justify-between text-xs text-gray-400">
         <span>
           Set {currentSet} of {totalSets}
         </span>

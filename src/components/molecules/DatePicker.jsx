@@ -371,7 +371,7 @@ const DatePicker = ({
           setShowPicker(!showPicker);
           setFocusedDate(selectedDate || new Date());
         }}
-        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
         aria-haspopup="dialog"
         aria-expanded={showPicker}
         aria-label={`Choose date, selected date is ${formatDate(selectedDate, 'MMMM d, yyyy')}`}
@@ -389,15 +389,15 @@ const DatePicker = ({
             role="dialog"
             aria-modal="true"
             aria-label="Calendar"
-            className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 focus:outline-none overflow-visible"
+            className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200/60 z-50 focus:outline-none overflow-visible"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
             tabIndex="-1"
             {...popupAnimations}
           >
-          <div className="p-4">
+          <div className="p-3">
             {/* Month Navigation */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-3">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -411,7 +411,7 @@ const DatePicker = ({
                     setYearRangeStart(yearRangeStart - 20);
                   }
                 }}
-                className="p-1 rounded-full hover:bg-gray-100"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                 aria-label={viewMode === 'days' ? "Previous month" : viewMode === 'months' ? "Previous year" : "Previous years"}
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -424,7 +424,7 @@ const DatePicker = ({
                         e.stopPropagation();
                         handleViewModeChange('months');
                       }}
-                      className="font-medium hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                      className="text-sm font-medium text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-lg cursor-pointer transition-colors duration-150 tabular-nums"
                       aria-label="Select month"
                     >
                       {formatDate(calendarDays[15] || new Date(), 'MMMM')}
@@ -434,7 +434,7 @@ const DatePicker = ({
                         e.stopPropagation();
                         handleViewModeChange('years');
                       }}
-                      className="font-medium hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                      className="text-sm font-medium text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-lg cursor-pointer transition-colors duration-150 tabular-nums"
                       aria-label="Select year"
                     >
                       {formatDate(calendarDays[15] || new Date(), 'yyyy')}
@@ -448,7 +448,7 @@ const DatePicker = ({
                         e.stopPropagation();
                         handleViewModeChange('days');
                       }}
-                      className="p-1 rounded-full hover:bg-gray-100"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                       aria-label="Back to days"
                     >
                       <ArrowDownLeft className="w-4 h-4" />
@@ -458,7 +458,7 @@ const DatePicker = ({
                         e.stopPropagation();
                         handleViewModeChange('years');
                       }}
-                      className="font-medium hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                      className="text-sm font-medium text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-lg cursor-pointer transition-colors duration-150 tabular-nums"
                       aria-label="Select year"
                     >
                       {formatDate(currentDisplayDate, 'yyyy')}
@@ -472,13 +472,13 @@ const DatePicker = ({
                         e.stopPropagation();
                         handleViewModeChange('months');
                       }}
-                      className="p-1 rounded-full hover:bg-gray-100"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                       aria-label="Back to months"
                     >
                       <ArrowDownLeft className="w-4 h-4" />
                     </button>
                     <div
-                      className="font-medium"
+                      className="text-sm font-medium text-gray-900 tabular-nums"
                       aria-live="polite"
                     >
                       {getYearRangeTitle()}
@@ -499,7 +499,7 @@ const DatePicker = ({
                     setYearRangeStart(yearRangeStart + 20);
                   }
                 }}
-                className="p-1 rounded-full hover:bg-gray-100"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
                 aria-label={viewMode === 'days' ? "Next month" : viewMode === 'months' ? "Next year" : "Next years"}
               >
                 <ChevronRight className="w-5 h-5" />
@@ -526,7 +526,7 @@ const DatePicker = ({
                   {viewMode === 'days' && (
                     <div
                       role="row"
-                      className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2"
+                      className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-400 uppercase tracking-wider mb-2"
                       aria-hidden="true"
                     >
                       {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day, i) => (
@@ -597,16 +597,16 @@ const DatePicker = ({
                                 }}
                                 id={`date-${format(zonedDay, 'yyyy-MM-dd')}`}
                                 data-date={day.toISOString()}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm tabular-nums transition-colors duration-150 ${
                                   isSelected
-                                    ? 'bg-blue-600 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                                    ? 'bg-blue-600 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
                                     : isToday
-                                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 focus:bg-blue-200'
+                                      ? 'text-blue-600 font-semibold hover:bg-blue-50 focus:bg-blue-50'
                                       : isFutureDate(day)
                                         ? 'text-gray-300 cursor-not-allowed'
                                         : !isCurrentMonth
                                           ? 'text-gray-400 hover:bg-gray-50 focus:bg-gray-50'
-                                          : 'hover:bg-gray-100 focus:bg-gray-100'
+                                          : 'text-gray-700 hover:bg-gray-100 focus:bg-gray-100'
                                 } focus:outline-none`}
                                 disabled={isFutureDate(day)}
                                 aria-label={`${format(zonedDay, 'EEEE, MMMM d, yyyy')}${isSelected ? ' (selected)' : ''}${!isCurrentMonth ? ' (not in current month)' : ''}`}
@@ -640,12 +640,12 @@ const DatePicker = ({
                           <motion.button
                             key={month}
                             onClick={() => handleMonthSelect(index)}
-                            className={`p-3 text-sm rounded-lg font-medium ${
+                            className={`p-3 text-sm rounded-lg font-medium transition-colors duration-150 ${
                               isSelected
                                 ? 'bg-blue-600 text-white'
                                 : isCurrentMonth
-                                  ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                  : 'hover:bg-gray-100'
+                                  ? 'text-blue-600 font-semibold hover:bg-blue-50'
+                                  : 'text-gray-700 hover:bg-gray-100'
                             } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                             aria-label={`Select ${month}`}
                             aria-selected={isSelected}
@@ -673,12 +673,12 @@ const DatePicker = ({
                           <motion.button
                             key={year}
                             onClick={() => handleYearSelect(year)}
-                            className={`p-2 text-sm rounded-lg font-medium ${
+                            className={`p-2 text-sm rounded-lg font-medium tabular-nums transition-colors duration-150 ${
                               isSelected
                                 ? 'bg-blue-600 text-white'
                                 : isCurrentYear
-                                  ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                  : 'hover:bg-gray-100'
+                                  ? 'text-blue-600 font-semibold hover:bg-blue-50'
+                                  : 'text-gray-700 hover:bg-gray-100'
                             } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                             aria-label={`Select year ${year}`}
                             aria-selected={isSelected}

@@ -248,20 +248,20 @@ const DataImportExport = ({ onImportSuccess }) => {
 
   return (
     <div className="max-w-4xl mx-auto">
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Management</h3>
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
+      <h3 className="text-lg font-semibold text-gray-900 tracking-tight mb-4">Data Management</h3>
 
       <div className="space-y-6">
         {/* Export Section */}
-        <div className="border border-gray-200 rounded-lg p-4">
+        <div className="border border-gray-200/80 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3">
               <Download className="w-5 h-5 text-blue-600" />
-              <h4 className="font-medium text-gray-900">Export Data</h4>
+              <h4 className="text-base font-semibold text-gray-900 tracking-tight">Export Data</h4>
             </div>
             <button
               onClick={() => setShowAdvancedExport(!showAdvancedExport)}
-              className="text-sm text-blue-600 hover:text-blue-700"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-150"
             >
               {showAdvancedExport ? 'Simple Export' : 'Advanced Export'}
             </button>
@@ -269,10 +269,10 @@ const DataImportExport = ({ onImportSuccess }) => {
 
           {!showAdvancedExport ? (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">Download all your timesheet data as a backup file</p>
+              <p className="text-[13px] text-gray-500">Download all your timesheet data as a backup file</p>
               <button
                 onClick={exportTimesheetData}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 <span>Export All</span>
@@ -283,34 +283,34 @@ const DataImportExport = ({ onImportSuccess }) => {
               {/* Export Mode Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Export Mode</label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="radio"
                       value="all"
                       checked={exportMode === 'all'}
                       onChange={(e) => setExportMode(e.target.value)}
-                      className="mr-2"
+                      className="accent-blue-600"
                     />
                     <span>All Data</span>
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="radio"
                       value="days"
                       checked={exportMode === 'days'}
                       onChange={(e) => setExportMode(e.target.value)}
-                      className="mr-2"
+                      className="accent-blue-600"
                     />
                     <span>Specific Days</span>
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="radio"
                       value="weeks"
                       checked={exportMode === 'weeks'}
                       onChange={(e) => setExportMode(e.target.value)}
-                      className="mr-2"
+                      className="accent-blue-600"
                     />
                     <span>Specific Weeks</span>
                   </label>
@@ -321,38 +321,38 @@ const DataImportExport = ({ onImportSuccess }) => {
               {exportMode === 'days' && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 tabular-nums">
                       Select Days ({selectedDays.length} selected)
                     </label>
-                    <div className="flex space-x-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={selectAllDays}
-                        className="text-xs text-blue-600 hover:text-blue-700"
+                        className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors duration-150"
                       >
                         Select All
                       </button>
                       <button
                         onClick={deselectAllDays}
-                        className="text-xs text-gray-600 hover:text-gray-700"
+                        className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-150"
                       >
                         Deselect All
                       </button>
                     </div>
                   </div>
-                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3 shadow-xs">
                     {availableDays.length === 0 ? (
                       <p className="text-sm text-gray-500">No daily data available</p>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         {availableDays.map(day => (
-                          <label key={day.date} className="flex items-center space-x-2 text-sm">
+                          <label key={day.date} className="flex items-center gap-2 text-sm text-gray-700">
                             <input
                               type="checkbox"
                               checked={selectedDays.includes(day.date)}
                               onChange={() => toggleDaySelection(day.date)}
-                              className="rounded"
+                              className="rounded accent-blue-600"
                             />
-                            <span>{day.formatted} ({day.entries} entries)</span>
+                            <span className="tabular-nums">{day.formatted} ({day.entries} entries)</span>
                           </label>
                         ))}
                       </div>
@@ -365,38 +365,38 @@ const DataImportExport = ({ onImportSuccess }) => {
               {exportMode === 'weeks' && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 tabular-nums">
                       Select Weeks ({selectedWeeks.length} selected)
                     </label>
-                    <div className="flex space-x-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={selectAllWeeks}
-                        className="text-xs text-blue-600 hover:text-blue-700"
+                        className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors duration-150"
                       >
                         Select All
                       </button>
                       <button
                         onClick={deselectAllWeeks}
-                        className="text-xs text-gray-600 hover:text-gray-700"
+                        className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-150"
                       >
                         Deselect All
                       </button>
                     </div>
                   </div>
-                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-3 shadow-xs">
                     {availableWeeks.length === 0 ? (
                       <p className="text-sm text-gray-500">No weekly data available</p>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         {availableWeeks.map(week => (
-                          <label key={week.weekKey} className="flex items-center space-x-2 text-sm">
+                          <label key={week.weekKey} className="flex items-center gap-2 text-sm text-gray-700">
                             <input
                               type="checkbox"
                               checked={selectedWeeks.includes(week.weekKey)}
                               onChange={() => toggleWeekSelection(week.weekKey)}
-                              className="rounded"
+                              className="rounded accent-blue-600"
                             />
-                            <span>{week.formatted}</span>
+                            <span className="tabular-nums">{week.formatted}</span>
                           </label>
                         ))}
                       </div>
@@ -413,7 +413,7 @@ const DataImportExport = ({ onImportSuccess }) => {
                     (exportMode === 'days' && selectedDays.length === 0) ||
                     (exportMode === 'weeks' && selectedWeeks.length === 0)
                   }
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" />
                   <span>Export Selected</span>
@@ -424,15 +424,15 @@ const DataImportExport = ({ onImportSuccess }) => {
         </div>
 
         {/* Import Section */}
-        <div className="border border-gray-200 rounded-lg p-4">
+        <div className="border border-gray-200/80 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3">
               <Upload className="w-5 h-5 text-green-600" />
-              <h4 className="font-medium text-gray-900">Import Data</h4>
+              <h4 className="text-base font-semibold text-gray-900 tracking-tight">Import Data</h4>
             </div>
             <button
               onClick={() => setShowAdvancedImport(!showAdvancedImport)}
-              className="text-sm text-green-600 hover:text-green-700"
+              className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors duration-150"
             >
               {showAdvancedImport ? 'Simple Import' : 'Advanced Import'}
             </button>
@@ -440,8 +440,8 @@ const DataImportExport = ({ onImportSuccess }) => {
 
           {!showAdvancedImport ? (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">Restore all your data from a backup file</p>
-              <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 cursor-pointer">
+              <p className="text-[13px] text-gray-500">Restore all your data from a backup file</p>
+              <label className="px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2 cursor-pointer">
                 <Upload className="w-4 h-4" />
                 <span>{isImporting ? 'Importing...' : 'Import All'}</span>
                 <input
@@ -461,34 +461,34 @@ const DataImportExport = ({ onImportSuccess }) => {
               {/* Import Mode Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Import Mode</label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="radio"
                       value="all"
                       checked={importMode === 'all'}
                       onChange={(e) => setImportMode(e.target.value)}
-                      className="mr-2"
+                      className="accent-green-600"
                     />
                     <span>All Data</span>
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="radio"
                       value="days"
                       checked={importMode === 'days'}
                       onChange={(e) => setImportMode(e.target.value)}
-                      className="mr-2"
+                      className="accent-green-600"
                     />
                     <span>Daily Only</span>
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="radio"
                       value="weeks"
                       checked={importMode === 'weeks'}
                       onChange={(e) => setImportMode(e.target.value)}
-                      className="mr-2"
+                      className="accent-green-600"
                     />
                     <span>Weekly Only</span>
                   </label>
@@ -497,13 +497,13 @@ const DataImportExport = ({ onImportSuccess }) => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-[13px] text-gray-500">
                     {importMode === 'all' ? 'Restore all data from backup file' :
                      importMode === 'days' ? 'Restore only daily entries from backup file' :
                      'Restore only weekly summaries from backup file'}
                   </p>
                 </div>
-                <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 cursor-pointer">
+                <label className="px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2 cursor-pointer">
                   <Upload className="w-4 h-4" />
                   <span>{isImporting ? 'Importing...' : 'Import'}</span>
                   <input
@@ -521,12 +521,12 @@ const DataImportExport = ({ onImportSuccess }) => {
 
         {/* Import Info */}
         {importInfo && (
-          <div className="p-4 bg-green-100 border border-green-300 rounded-lg">
-            <div className="flex items-start space-x-3">
+          <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+            <div className="flex items-start gap-3">
               <FileText className="w-5 h-5 text-green-600 mt-0.5" />
               <div>
                 <h4 className="font-medium text-green-900">Import Successful</h4>
-                <div className="mt-2 text-sm text-green-800">
+                <div className="mt-2 text-sm text-green-800 tabular-nums">
                   <p>Daily entries: {importInfo.dailyEntries}</p>
                   <p>Weekly entries: {importInfo.weeklyEntries}</p>
                   <p>Timezone: {importInfo.timezone}</p>
@@ -539,17 +539,17 @@ const DataImportExport = ({ onImportSuccess }) => {
 
         {/* Revert Option */}
         {showRevertOption && (
-          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+            <div className="flex items-center gap-3">
               <RotateCcw className="w-5 h-5 text-yellow-600" />
               <div>
                 <h4 className="font-medium text-gray-900">Revert Import</h4>
-                <p className="text-sm text-gray-600">Restore data to state before last import</p>
+                <p className="text-[13px] text-gray-500">Restore data to state before last import</p>
               </div>
             </div>
             <button
               onClick={handleRevert}
-              className="px-4 py-2 bg-yellow-600/80 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2"
+              className="px-4 py-2 bg-yellow-600/80 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Revert</span>
@@ -558,17 +558,17 @@ const DataImportExport = ({ onImportSuccess }) => {
         )}
 
         {/* Clear All Data */}
-        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-red-600" />
             <div>
               <h4 className="font-medium text-gray-900">Clear All Data</h4>
-              <p className="text-sm text-gray-600">Permanently delete all timesheet data</p>
+              <p className="text-[13px] text-gray-500">Permanently delete all timesheet data</p>
             </div>
           </div>
           <button
             onClick={handleClearAll}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear All</span>
@@ -576,9 +576,9 @@ const DataImportExport = ({ onImportSuccess }) => {
         </div>
 
         {/* Instructions */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-6 p-4 bg-gray-50 rounded-xl">
           <h4 className="font-medium text-gray-900 mb-2">Instructions:</h4>
-          <ul className="text-sm text-gray-600 space-y-1">
+          <ul className="text-sm text-gray-600 space-y-1.5">
             <li>• <strong>Simple Export:</strong> Downloads all your data at once</li>
             <li>• <strong>Advanced Export:</strong> Select specific days or weeks to export</li>
             <li>• <strong>Simple Import:</strong> Restores all your data from a backup file</li>
