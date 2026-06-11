@@ -4,7 +4,6 @@ import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { loadSidebarState, saveSidebarState } from '../utils/storage';
 import TimezoneSelect from './TimezoneSelect';
-import DataImportExport from './DataImportExport';
 import PomodoroProgressBar from './atoms/PomodoroProgressBar';
 import DailyTrackerProgressBar from './atoms/DailyTrackerProgressBar';
 

@@ -239,15 +239,21 @@ const Settings = ({ onCorruptionResolved }) => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
-      <h3 className="text-lg font-semibold text-gray-900 tracking-tight mb-4">Settings</h3>
+    <div>
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Preferences</p>
+        <h2 className="mt-1.5 font-display text-xl font-semibold text-gray-900">Settings</h2>
+        <p className="mt-1.5 text-sm text-gray-500">Tune how Kronos tracks, displays, and organizes your time.</p>
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Data Recovery — only rendered when there are quarantined backups. */}
         {backups.length > 0 && (
-          <div className="border border-amber-200 rounded-xl p-5 bg-amber-50">
-            <div className="flex items-center gap-3 mb-2">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
+          <div className="border border-amber-200/80 rounded-2xl p-6 bg-amber-50/80">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100/80 text-amber-600">
+                <AlertTriangle className="w-[18px] h-[18px]" />
+              </div>
               <h4 className="text-base font-semibold text-amber-900 tracking-tight">Data Recovery</h4>
             </div>
             <p className="text-sm text-amber-800 mb-4">
@@ -306,9 +312,11 @@ const Settings = ({ onCorruptionResolved }) => {
         )}
 
         {/* Timezone Settings */}
-        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Globe className="w-5 h-5 text-blue-600" />
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+              <Globe className="w-[18px] h-[18px]" />
+            </div>
             <h4 className="text-base font-semibold text-gray-900 tracking-tight">Timezone Settings</h4>
           </div>
 
@@ -332,9 +340,11 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Clock Format Settings */}
-        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Clock className="w-5 h-5 text-blue-600" />
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+              <Clock className="w-[18px] h-[18px]" />
+            </div>
             <h4 className="text-base font-semibold text-gray-900 tracking-tight">Clock Format</h4>
           </div>
 
@@ -382,9 +392,11 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Work Schedule — week start, non-work days, and daily hour goal */}
-        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Calendar className="w-5 h-5 text-blue-600" />
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+              <Calendar className="w-[18px] h-[18px]" />
+            </div>
             <h4 className="text-base font-semibold text-gray-900 tracking-tight">Work Schedule</h4>
           </div>
 
@@ -420,10 +432,10 @@ const Settings = ({ onCorruptionResolved }) => {
                       type="button"
                       onClick={() => toggleWeekendDay(idx)}
                       aria-pressed={isSelected}
-                      className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 ${
+                      className={`min-w-13 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors duration-150 ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50/60 text-blue-700 ring-1 ring-blue-500/30'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          ? 'border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                          : 'border-gray-200 bg-white text-gray-600 shadow-xs hover:border-gray-300 hover:text-gray-900'
                       }`}
                     >
                       {label}
@@ -458,9 +470,11 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Heatmap Colors */}
-        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <BarChart2 className="w-5 h-5 text-blue-600" />
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600">
+              <BarChart2 className="w-[18px] h-[18px]" />
+            </div>
             <h4 className="text-base font-semibold text-gray-900 tracking-tight">Heatmap Colors</h4>
           </div>
 
@@ -620,9 +634,11 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Goal Ring Colors */}
-        <div className="border border-gray-200/80 rounded-xl shadow-xs p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <BarChart2 className="w-5 h-5 text-blue-600" />
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-600">
+              <BarChart2 className="w-[18px] h-[18px]" />
+            </div>
             <h4 className="text-base font-semibold text-gray-900 tracking-tight">Goal Ring Colors</h4>
           </div>
 
@@ -706,18 +722,20 @@ const Settings = ({ onCorruptionResolved }) => {
         </div>
 
         {/* Save Settings Button */}
-        <div className="border border-blue-200/80 rounded-xl p-5 bg-blue-50/60">
+        <div className="border border-blue-200/80 rounded-2xl p-5 bg-blue-50/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <SettingsIcon className="w-5 h-5 text-blue-600" />
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-100/80 text-blue-600">
+                <SettingsIcon className="w-[18px] h-[18px]" />
+              </div>
               <div>
-                <h4 className="text-base font-semibold text-blue-900 tracking-tight">Save Changes</h4>
+                <h4 className="text-sm font-semibold text-blue-900 tracking-tight">Save Changes</h4>
                 <p className="text-[13px] text-blue-700">Apply your updated settings</p>
               </div>
             </div>
             <button
               onClick={handleSaveSettings}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-xs hover:bg-blue-700 active:bg-blue-800 transition-colors duration-150 flex items-center gap-2"
+              className="px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 hover:bg-blue-500 active:bg-blue-700 transition-colors duration-150 flex items-center gap-2"
             >
               <SettingsIcon className="w-4 h-4" />
               <span>Save Settings</span>
@@ -729,35 +747,39 @@ const Settings = ({ onCorruptionResolved }) => {
 
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-5 bg-amber-50 border border-amber-200/80 rounded-xl">
+            <div className="flex items-center justify-between p-5 bg-amber-50/80 border border-amber-200/80 rounded-2xl">
               <div className="flex items-center gap-3">
-                <RotateCcw className="w-5 h-5 text-amber-600" />
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100/80 text-amber-600">
+                  <RotateCcw className="w-[18px] h-[18px]" />
+                </div>
                 <div>
-                  <h5 className="font-medium text-amber-900">Reset Onboarding</h5>
+                  <h5 className="text-sm font-semibold text-amber-900">Reset Onboarding</h5>
                   <p className="text-[13px] text-amber-700">Show the setup screen again on next app start</p>
                 </div>
               </div>
               <button
                 onClick={handleResetOnboarding}
-                className="px-4 py-2 bg-amber-600/80 text-white text-sm font-medium rounded-lg shadow-xs hover:bg-amber-700 transition-colors duration-150 flex items-center gap-2"
+                className="px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-amber-600/25 hover:bg-amber-500 active:bg-amber-700 transition-colors duration-150 flex items-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Reset</span>
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-5 bg-red-50 border border-red-200/80 rounded-xl">
+            <div className="flex items-center justify-between p-5 bg-red-50/80 border border-red-200/80 rounded-2xl">
               <div className="flex items-center gap-3">
-                <Trash2 className="w-5 h-5 text-red-600" />
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-red-100/80 text-red-600">
+                  <Trash2 className="w-[18px] h-[18px]" />
+                </div>
                 <div>
-                  <h5 className="font-medium text-red-900">Clear All Data</h5>
+                  <h5 className="text-sm font-semibold text-red-900">Clear All Data</h5>
                   <p className="text-[13px] text-red-700">Delete all timesheet entries and reset app</p>
                 </div>
               </div>
               <button
                 onClick={handleClearAllData}
                 disabled={isResetting}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg shadow-xs hover:bg-red-700 active:bg-red-800 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-red-600/25 hover:bg-red-500 active:bg-red-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>{isResetting ? 'Clearing...' : 'Clear All'}</span>

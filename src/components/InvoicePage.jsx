@@ -614,9 +614,10 @@ const InvoicePage = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Invoice Generator</h1>
-        <p className="text-gray-500">Convert your timesheet data into professional PDF invoices</p>
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Billing</p>
+        <h1 className="mt-1.5 font-display text-lg font-semibold text-gray-900">Invoice Generator</h1>
+        <p className="mt-1.5 text-sm text-gray-500">Convert your timesheet data into professional PDF invoices.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -624,15 +625,17 @@ const InvoicePage = () => {
         <div className="lg:col-span-1 space-y-6">
           {/* Settings Panel */}
           <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
-            <h2 className="text-lg font-semibold text-gray-900 tracking-tight mb-4 flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Invoice Settings
-            </h2>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                <User className="w-[18px] h-[18px]" />
+              </div>
+              <h2 className="text-base font-semibold text-gray-900 tracking-tight">Invoice Settings</h2>
+            </div>
 
             {/* User/Business Information Section */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <Globe className="w-4 h-4" />
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-gray-400" />
                 Your Business Information
               </h3>
               <div className="space-y-3">
@@ -685,8 +688,8 @@ const InvoicePage = () => {
 
             {/* Client Information Section */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <User className="w-4 h-4" />
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <User className="w-4 h-4 text-gray-400" />
                 Client Information
               </h3>
               <div>
@@ -722,8 +725,8 @@ const InvoicePage = () => {
 
             {/* Invoice Details Section */}
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gray-400" />
                 Invoice Details
               </h3>
               <div className="space-y-4">
@@ -891,7 +894,7 @@ const InvoicePage = () => {
                       const newList = [...(settings.additionalsList || []), { name: '', amount: 0 }];
                       setSettings(prev => ({ ...prev, additionalsList: newList }));
                     }}
-                    className="w-full py-2 border-2 border-dashed border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-400 hover:bg-green-50 rounded-lg transition-colors duration-150 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 border-2 border-dashed border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-400 hover:bg-green-50 rounded-xl transition-colors duration-150 flex items-center justify-center gap-2"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
@@ -902,10 +905,12 @@ const InvoicePage = () => {
 
           {/* Income Preview Section */}
           <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
-            <h3 className="text-lg font-semibold text-gray-900 tracking-tight mb-4 flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Income Summary
-            </h3>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-green-50 text-green-600">
+                <DollarSign className="w-[18px] h-[18px]" />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 tracking-tight">Income Summary</h3>
+            </div>
 
             <div className="space-y-4">
               <div className="bg-blue-50 rounded-xl p-4">
@@ -955,11 +960,13 @@ const InvoicePage = () => {
         {/* Right Column - Preview */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 tracking-tight flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Invoice Preview
-              </h2>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                  <FileText className="w-[18px] h-[18px]" />
+                </div>
+                <h2 className="text-base font-semibold text-gray-900 tracking-tight">Invoice Preview</h2>
+              </div>
 
               {filterEntries.length > 0 && settings.clientName && !isAnyFieldFocused && (
                 <PDFDownloadLink
@@ -971,7 +978,7 @@ const InvoicePage = () => {
                     />
                   }
                   fileName={generateFileName()}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 transition-colors duration-150"
                 >
                   {({ loading }) => (
                     <>
@@ -983,7 +990,7 @@ const InvoicePage = () => {
               )}
 
               {isAnyFieldFocused && (
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-300 text-white text-sm font-medium rounded-lg shadow-xs cursor-not-allowed" title="Deselect any input field to continue">
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-200 text-gray-500 text-sm font-semibold rounded-xl shadow-xs cursor-not-allowed" title="Deselect any input field to continue">
                   <Download className="w-4 h-4" />
                   Finish editing...
                 </div>

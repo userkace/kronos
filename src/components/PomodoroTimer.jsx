@@ -169,14 +169,15 @@ const PomodoroTimer = () => {
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 p-6">
+    <div className="text-gray-900 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pomodoro Timer</h1>
-              <p className="text-gray-600 mt-2">Boost productivity with focused work sessions</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Focus</p>
+              <h1 className="mt-1.5 font-display text-lg font-semibold text-gray-900">Pomodoro Timer</h1>
+              <p className="mt-1.5 text-sm text-gray-500">Boost productivity with focused work sessions.</p>
             </div>
             <div className="flex items-center gap-2">
               <button

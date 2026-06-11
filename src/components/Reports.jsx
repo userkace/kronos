@@ -356,8 +356,9 @@ const Reports = () => {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 tracking-tight">Reports</h2>
-          <p className="text-[13px] text-gray-500">Time tracked over the selected range.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Insights</p>
+          <h2 className="mt-1.5 font-display text-xl font-semibold text-gray-900">Reports</h2>
+          <p className="mt-1.5 text-sm text-gray-500">Time tracked over the selected range.</p>
         </div>
         <div role="tablist" aria-label="Range" className="inline-flex bg-gray-100 rounded-xl p-1">
           {RANGES.map(r => (
@@ -455,8 +456,10 @@ const Reports = () => {
       </div>
 
       <div ref={heatmapCardRef} className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="w-5 h-5 text-gray-400" />
+        <div className="flex items-center gap-3 mb-5">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+            <BarChart3 className="w-[18px] h-[18px]" />
+          </div>
           <h3 className="text-base font-semibold text-gray-900 tracking-tight">
             {range === 'week' ? 'Daily hours' : 'Activity heatmap'}
           </h3>
@@ -604,8 +607,10 @@ const Reports = () => {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <ListChecks className="w-5 h-5 text-gray-400" />
+        <div className="flex items-center gap-3 mb-5">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+            <ListChecks className="w-[18px] h-[18px]" />
+          </div>
           <h3 className="text-base font-semibold text-gray-900 tracking-tight">Time by task</h3>
         </div>
         {taskBreakdown.items.length === 0 ? (
