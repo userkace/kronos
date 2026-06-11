@@ -23,6 +23,19 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.5.1',
+    date: '2026-06-11',
+    title: 'Onboarding redesign',
+    changes: [
+      { type: 'changed', description: 'Onboarding rebuilt from the ground up: a single focused card with an animated progress bar, step counter, and smooth slide transitions between steps.' },
+      { type: 'added', description: 'New Unbounded display font for brand moments — the Kronos wordmark and onboarding headings — paired with Inter for body text.' },
+      { type: 'changed', description: 'Week start is now a sliding segmented control and non-work days are pill toggles, replacing the old dropdown and square buttons.' },
+      { type: 'changed', description: 'Welcome step refreshed with a feature list and a calmer ambient backdrop (soft color washes over a faint dot grid).' },
+      { type: 'added', description: 'Pressing Enter during onboarding now advances to the next step instead of doing nothing.' },
+      { type: 'added', description: 'A branded splash screen now welcomes you when the app opens, and right after you finish onboarding.' },
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-06-10',
     title: 'Modern design refresh',
