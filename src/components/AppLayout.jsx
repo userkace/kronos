@@ -163,7 +163,7 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
                 className="w-9 h-9 rounded-xl shrink-0 shadow-xs"
               />
               <div className="flex flex-col justify-center">
-                <h1 className="text-[15px] font-semibold text-gray-900 leading-5 tracking-tight">Kronos</h1>
+                <h1 className="font-display text-sm font-semibold text-gray-900 leading-5 lowercase tracking-wide">kronos</h1>
                 <p className="text-xs text-gray-400 leading-tight">Own your time.</p>
               </div>
             </div>

@@ -4,6 +4,8 @@ import DailyTracker from './components/DailyTracker';
 import AppLayout from './components/AppLayout';
 import DataImportExport from './components/DataImportExport';
 import Onboarding from './components/Onboarding';
+import SplashScreen from './components/SplashScreen';
+import { AnimatePresence } from 'framer-motion';
 import Settings from './components/Settings';
 import PomodoroTimer from './components/PomodoroTimer';
 import InvoicePage from './components/InvoicePage';
@@ -40,6 +42,9 @@ function AppContent() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for refreshing weekly data
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // Branded splash overlay. Shown on load for users who've already onboarded,
+  // and again right after the onboarding flow completes. Self-dismisses.
+  const [showSplash, setShowSplash] = useState(false);
 
   // Tracks keys with unresolved corruption. Saves to those keys are refused
   // by the storage layer; the banner here surfaces it persistently and the
@@ -78,6 +83,9 @@ function AppContent() {
       setCurrentDate(loadedDate);
       setTimesheetData(loadedData || {});
       setShowOnboarding(!hasCompletedOnboarding);
+      // Returning users get the splash on load; fresh installs see onboarding
+      // first and get the splash when they finish it.
+      setShowSplash(Boolean(hasCompletedOnboarding));
       setIsInitialized(true);
 
       // Re-read the pending list now that all mount loads have run.
@@ -169,6 +177,7 @@ function AppContent() {
     saveOnboardingCompleted();
     // Also save timezone directly to ensure it's persisted before the next render.
     saveTimezone(preferences.timezone);
+    setShowSplash(true);
     setShowOnboarding(false);
   };
 
@@ -204,6 +213,11 @@ function AppContent() {
 
   return (
     <>
+      {/* Splash overlays the app (z-100) while it mounts underneath, then
+          fades out via the AnimatePresence exit animation. */}
+      <AnimatePresence>
+        {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      </AnimatePresence>
       {showOnboarding ? (
         <Onboarding
           onComplete={handleOnboardingComplete}
