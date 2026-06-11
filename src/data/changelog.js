@@ -33,7 +33,8 @@ export const CHANGELOG = [
       { type: 'changed', description: 'Onboarding rebuilt from the ground up: a single focused card with an animated progress bar, step counter, and smooth slide transitions between steps.' },
       { type: 'changed', description: 'Week start is now a sliding segmented control and non-work days are pill toggles, replacing the old dropdown and square buttons.' },
       { type: 'changed', description: 'Welcome step refreshed with a feature list and a calmer ambient backdrop (soft color washes over a faint dot grid).' },
-      { type: 'changed', description: 'Data, Settings, Reports, Invoice, and Pomodoro pages restyled to match the new look: display-font page headings, sections as standalone cards with color-tinted icon tiles, pill-style day toggles, and refined buttons.' },
+      { type: 'changed', description: 'Data, Settings, Reports, Invoice, Timesheet, and Pomodoro pages restyled to match the new look: display-font page headings, sections as standalone cards with color-tinted icon tiles, pill-style day toggles, and refined buttons.' },
+      { type: 'changed', description: '"What\'s new" modal restyled: sheet-style on mobile, tinted icon tile header, version numbers alongside entry titles, softer badge rings, and a refined footer button.' },
     ],
   },
   {
