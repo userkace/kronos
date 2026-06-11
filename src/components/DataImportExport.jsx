@@ -248,15 +248,21 @@ const DataImportExport = ({ onImportSuccess }) => {
 
   return (
     <div className="max-w-4xl mx-auto">
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs p-6">
-      <h3 className="text-lg font-semibold text-gray-900 tracking-tight mb-4">Data Management</h3>
+    <div>
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Your data</p>
+        <h2 className="mt-1.5 font-display text-lg font-semibold text-gray-900">Data Management</h2>
+        <p className="mt-1.5 text-sm text-gray-500">Back up, restore, and manage everything Kronos stores on this device.</p>
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Export Section */}
-        <div className="border border-gray-200/80 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <Download className="w-5 h-5 text-blue-600" />
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                <Download className="w-[18px] h-[18px]" />
+              </div>
               <h4 className="text-base font-semibold text-gray-900 tracking-tight">Export Data</h4>
             </div>
             <button
@@ -272,7 +278,7 @@ const DataImportExport = ({ onImportSuccess }) => {
               <p className="text-[13px] text-gray-500">Download all your timesheet data as a backup file</p>
               <button
                 onClick={exportTimesheetData}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2"
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 transition-colors duration-150 flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 <span>Export All</span>
@@ -413,7 +419,7 @@ const DataImportExport = ({ onImportSuccess }) => {
                     (exportMode === 'days' && selectedDays.length === 0) ||
                     (exportMode === 'weeks' && selectedWeeks.length === 0)
                   }
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" />
                   <span>Export Selected</span>
@@ -424,10 +430,12 @@ const DataImportExport = ({ onImportSuccess }) => {
         </div>
 
         {/* Import Section */}
-        <div className="border border-gray-200/80 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <Upload className="w-5 h-5 text-green-600" />
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-green-50 text-green-600">
+                <Upload className="w-[18px] h-[18px]" />
+              </div>
               <h4 className="text-base font-semibold text-gray-900 tracking-tight">Import Data</h4>
             </div>
             <button
@@ -441,7 +449,7 @@ const DataImportExport = ({ onImportSuccess }) => {
           {!showAdvancedImport ? (
             <div className="flex items-center justify-between">
               <p className="text-[13px] text-gray-500">Restore all your data from a backup file</p>
-              <label className="px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2 cursor-pointer">
+              <label className="px-4 py-2.5 bg-green-600 hover:bg-green-500 active:bg-green-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-green-600/25 transition-colors duration-150 flex items-center gap-2 cursor-pointer">
                 <Upload className="w-4 h-4" />
                 <span>{isImporting ? 'Importing...' : 'Import All'}</span>
                 <input
@@ -503,7 +511,7 @@ const DataImportExport = ({ onImportSuccess }) => {
                      'Restore only weekly summaries from backup file'}
                   </p>
                 </div>
-                <label className="px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2 cursor-pointer">
+                <label className="px-4 py-2.5 bg-green-600 hover:bg-green-500 active:bg-green-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-green-600/25 transition-colors duration-150 flex items-center gap-2 cursor-pointer">
                   <Upload className="w-4 h-4" />
                   <span>{isImporting ? 'Importing...' : 'Import'}</span>
                   <input
@@ -521,7 +529,7 @@ const DataImportExport = ({ onImportSuccess }) => {
 
         {/* Import Info */}
         {importInfo && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+          <div className="p-5 bg-green-50/80 border border-green-200/80 rounded-2xl">
             <div className="flex items-start gap-3">
               <FileText className="w-5 h-5 text-green-600 mt-0.5" />
               <div>
@@ -539,17 +547,19 @@ const DataImportExport = ({ onImportSuccess }) => {
 
         {/* Revert Option */}
         {showRevertOption && (
-          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+          <div className="flex items-center justify-between p-5 bg-amber-50/80 border border-amber-200/80 rounded-2xl">
             <div className="flex items-center gap-3">
-              <RotateCcw className="w-5 h-5 text-yellow-600" />
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100/80 text-amber-600">
+                <RotateCcw className="w-[18px] h-[18px]" />
+              </div>
               <div>
-                <h4 className="font-medium text-gray-900">Revert Import</h4>
+                <h4 className="text-sm font-semibold text-gray-900">Revert Import</h4>
                 <p className="text-[13px] text-gray-500">Restore data to state before last import</p>
               </div>
             </div>
             <button
               onClick={handleRevert}
-              className="px-4 py-2 bg-yellow-600/80 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2"
+              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-amber-600/25 transition-colors duration-150 flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               <span>Revert</span>
@@ -558,17 +568,19 @@ const DataImportExport = ({ onImportSuccess }) => {
         )}
 
         {/* Clear All Data */}
-        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-xl">
+        <div className="flex items-center justify-between p-5 bg-red-50/80 border border-red-200/80 rounded-2xl">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-red-100/80 text-red-600">
+              <AlertTriangle className="w-[18px] h-[18px]" />
+            </div>
             <div>
-              <h4 className="font-medium text-gray-900">Clear All Data</h4>
+              <h4 className="text-sm font-semibold text-gray-900">Clear All Data</h4>
               <p className="text-[13px] text-gray-500">Permanently delete all timesheet data</p>
             </div>
           </div>
           <button
             onClick={handleClearAll}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-medium rounded-lg shadow-xs transition-colors duration-150 flex items-center gap-2"
+            className="px-4 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-red-600/25 transition-colors duration-150 flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear All</span>
@@ -576,15 +588,15 @@ const DataImportExport = ({ onImportSuccess }) => {
         </div>
 
         {/* Instructions */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-          <h4 className="font-medium text-gray-900 mb-2">Instructions:</h4>
-          <ul className="text-sm text-gray-600 space-y-1.5">
-            <li>• <strong>Simple Export:</strong> Downloads all your data at once</li>
-            <li>• <strong>Advanced Export:</strong> Select specific days or weeks to export</li>
-            <li>• <strong>Simple Import:</strong> Restores all your data from a backup file</li>
-            <li>• <strong>Advanced Import:</strong> Select specific data types to restore (Daily Only, Weekly Only)</li>
-            <li>• <strong>Revert:</strong> Undoes the last import operation</li>
-            <li>• <strong>Clear All:</strong> Permanently deletes all data (cannot be undone)</li>
+        <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">How it works</h4>
+          <ul className="text-sm text-gray-600 space-y-2">
+            <li><span className="font-medium text-gray-900">Simple Export</span> — downloads all your data at once</li>
+            <li><span className="font-medium text-gray-900">Advanced Export</span> — select specific days or weeks to export</li>
+            <li><span className="font-medium text-gray-900">Simple Import</span> — restores all your data from a backup file</li>
+            <li><span className="font-medium text-gray-900">Advanced Import</span> — restore only daily or only weekly data</li>
+            <li><span className="font-medium text-gray-900">Revert</span> — undoes the last import operation</li>
+            <li><span className="font-medium text-gray-900">Clear All</span> — permanently deletes all data (cannot be undone)</li>
           </ul>
         </div>
       </div>

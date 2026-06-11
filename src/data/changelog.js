@@ -33,6 +33,7 @@ export const CHANGELOG = [
       { type: 'changed', description: 'Welcome step refreshed with a feature list and a calmer ambient backdrop (soft color washes over a faint dot grid).' },
       { type: 'added', description: 'Pressing Enter during onboarding now advances to the next step instead of doing nothing.' },
       { type: 'added', description: 'A branded splash screen now welcomes you when the app opens, and right after you finish onboarding.' },
+      { type: 'changed', description: 'Data, Settings, Reports, Invoice, and Pomodoro pages restyled to match the new look: display-font page headings, sections as standalone cards with color-tinted icon tiles, pill-style day toggles, and refined buttons.' },
     ],
   },
   {

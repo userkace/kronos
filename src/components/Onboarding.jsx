@@ -298,7 +298,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                             type="button"
                             onClick={() => toggleWeekendDay(idx)}
                             aria-pressed={isSelected}
-                            className={`min-w-[3.25rem] rounded-full border px-3.5 py-2 text-sm font-medium transition-colors duration-150 ${
+                            className={`min-w-13 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors duration-150 ${
                               isSelected
                                 ? 'border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/25'
                                 : 'border-gray-200 bg-white text-gray-600 shadow-xs hover:border-gray-300 hover:text-gray-900'
