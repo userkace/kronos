@@ -23,6 +23,18 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.6.0',
+    date: '2026-06-24',
+    title: 'Workspaces',
+    changes: [
+      { type: 'added', description: 'Workspaces let freelancers keep multiple clients separate — each workspace has its own time logs, weekly timesheet, invoice settings, timezone, and display preferences.' },
+      { type: 'added', description: 'A workspace switcher now sits at the top of the sidebar. Switch between workspaces, create new ones inline, or open "Manage workspaces" to rename and delete.' },
+      { type: 'added', description: 'Deleting a workspace asks for confirmation and permanently removes all of that workspace\'s data; at least one workspace is always kept.' },
+      { type: 'changed', description: 'Your existing data is automatically kept in a "Default workspace" (which you can rename) — nothing to migrate.' },
+      { type: 'changed', description: 'Import and export now operate on the active workspace, so you can back up and restore each client\'s data independently.' },
+    ],
+  },
+  {
     version: '0.5.1',
     date: '2026-06-11',
     title: 'Onboarding redesign',

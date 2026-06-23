@@ -31,6 +31,7 @@ import { TimezoneProvider, useTimezone } from './contexts/TimezoneContext';
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { PomodoroProvider } from './contexts/PomodoroContext';
+import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import './App.css';
 
 function AppContent() {
@@ -287,13 +288,15 @@ function AppContent() {
 function AppWrapper() {
   return (
     <ToastProvider>
-      <TimezoneProvider>
-        <UserPreferencesProvider>
-          <PomodoroProvider>
-            <AppContent />
-          </PomodoroProvider>
-        </UserPreferencesProvider>
-      </TimezoneProvider>
+      <WorkspaceProvider>
+        <TimezoneProvider>
+          <UserPreferencesProvider>
+            <PomodoroProvider>
+              <AppContent />
+            </PomodoroProvider>
+          </UserPreferencesProvider>
+        </TimezoneProvider>
+      </WorkspaceProvider>
     </ToastProvider>
   );
 }
