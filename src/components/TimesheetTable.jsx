@@ -207,7 +207,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                 </span>
                 <span className="hidden lg:inline">
                   {weekDays[0] && weekDays[6] ? 
-                    `${format(weekDays[0], 'MMMM d, yyyy')} - ${format(weekDays[6], 'MMMM d, yyyy')}` : 
+                    `${format(weekDays[0], 'MMM')}. ${format(weekDays[0], 'd, yyyy')} - ${format(weekDays[6], 'MMM')}. ${format(weekDays[6], 'd, yyyy')}` :
                     'Loading...'
                   }
                 </span>

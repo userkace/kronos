@@ -155,6 +155,15 @@ function AppContent() {
     }
   }, [currentDate, isInitialized]);
 
+  // Always open the Timesheet on the current week, mirroring how the Daily
+  // Tracker always opens on today. Within the view the user can still navigate
+  // to other weeks, but switching away and back resets to the current week.
+  useEffect(() => {
+    if (isInitialized && currentView === 'timesheet') {
+      setCurrentDate(new Date());
+    }
+  }, [currentView, isInitialized]);
+
   const handleWeekChange = (newDate) => {
     setCurrentDate(newDate);
   };
