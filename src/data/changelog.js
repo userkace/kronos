@@ -32,6 +32,8 @@ export const CHANGELOG = [
       { type: 'added', description: 'Deleting a workspace asks for confirmation and permanently removes all of that workspace\'s data; at least one workspace is always kept.' },
       { type: 'changed', description: 'Your existing data is automatically kept in a "Default workspace" (which you can rename) — nothing to migrate.' },
       { type: 'changed', description: 'Import and export now operate on the active workspace, so you can back up and restore each client\'s data independently.' },
+      { type: 'changed', description: 'The active task card in the sidebar is refined to match the Pomodoro widget: a filled play badge, a green "Tracking" label, and a live animated progress bar.' },
+      { type: 'changed', description: 'Delete and merge toasts now shorten long task names so the notification no longer stretches across the screen.' },
     ],
   },
   {
