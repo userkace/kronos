@@ -26,6 +26,13 @@ import faviconManager from '../utils/faviconManager';
 import storageEventSystem from '../utils/storageEvents';
 import { writeWeeklyTimesheetForDates } from '../utils/weeklyTimesheet';
 
+// Shorten an entry/task name for inline use in toast messages so a long
+// description doesn't stretch the toast across the whole screen.
+const truncateName = (name, max = 50) => {
+  const str = String(name ?? '');
+  return str.length > max ? `${str.slice(0, max)}...` : str;
+};
+
 // Hoisted to module scope so the array isn't reallocated on every render of
 // DailyTracker. Frozen because we never want to mutate it.
 const FUNNY_DEFAULT_TASKS = Object.freeze([
@@ -973,7 +980,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     autoSaveToWeeklyTimesheet([storageKey]);
 
     actionToast(
-      `Merged ${entriesToMerge.length} entries into "${description}"`,
+      `Merged ${entriesToMerge.length} entries into "${truncateName(description)}"`,
       {
         label: 'Undo',
         onClick: () => {
@@ -1253,7 +1260,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     autoSaveToWeeklyTimesheet([storageKey]);
 
     actionToast(
-      `Deleted "${entry.description || 'entry'}"`,
+      `Deleted "${truncateName(entry.description || 'entry')}"`,
       {
         label: 'Undo',
         onClick: () => {

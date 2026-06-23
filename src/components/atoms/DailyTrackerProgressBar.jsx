@@ -77,7 +77,7 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Format duration for display
+  // Format duration in a human-friendly way for the footer
   const formatDisplayDuration = () => {
     if (!activeEntry) return '0s';
 
@@ -105,27 +105,22 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2 min-w-0">
           <div className="shrink-0 p-1 rounded-full bg-green-500 text-white">
-            <Play className="w-4 h-4" />
+            <Play className="w-4 h-4 fill-current" />
           </div>
           <span className="text-sm font-medium text-gray-700 truncate">
             {activeEntry.description?.length > 15
-            ? activeEntry.description.substring(0, 15) + '...'
-            : activeEntry.description}
+              ? activeEntry.description.substring(0, 15) + '...'
+              : (activeEntry.description || 'Active task')}
           </span>
         </div>
-        <div className="flex items-center space-x-2 shrink-0">
-          <span className="text-sm font-medium text-gray-600 tabular-nums">
-            {getActiveDuration()}
-          </span>
-        </div>
+        <span className="text-sm font-medium text-gray-600 tabular-nums shrink-0">
+          {getActiveDuration()}
+        </span>
       </div>
 
       {/* Progress Bar */}
       <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2 relative overflow-hidden">
-        <div
-          className="h-1.5 rounded-full bg-green-500 relative"
-          style={{ width: '100%' }}
-        >
+        <div className="h-1.5 rounded-full bg-green-500 relative" style={{ width: '100%' }}>
           {/* Animated beam effect */}
           <div
             className="absolute inset-0 bg-linear-to-r from-transparent via-white to-transparent opacity-30"
@@ -139,8 +134,8 @@ const DailyTrackerProgressBar = ({ onViewChange, className, timezone }) => {
 
       {/* Additional Info */}
       <div className="flex justify-between text-xs text-gray-400">
-        <span className="font-medium" title={activeEntry.description}>
-          Active Task
+        <span className="font-medium text-green-600" title={activeEntry.description}>
+          Tracking
         </span>
         <span className="tabular-nums">
           {formatDisplayDuration()}
