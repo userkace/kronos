@@ -240,12 +240,14 @@ function AppContent() {
               modal cannot appear while the onboarding flow is active. The
               entries.length check keeps it suppressed when there's nothing
               new to show. */}
-          {changelogEntries.length > 0 && (
-            <ChangelogModal
-              entries={changelogEntries}
-              onDismiss={dismissChangelog}
-            />
-          )}
+          <AnimatePresence>
+            {changelogEntries.length > 0 && (
+              <ChangelogModal
+                entries={changelogEntries}
+                onDismiss={dismissChangelog}
+              />
+            )}
+          </AnimatePresence>
           <AppLayout
             currentView={currentView}
             onViewChange={setCurrentView}

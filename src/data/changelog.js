@@ -37,6 +37,7 @@ export const CHANGELOG = [
       { type: 'changed', description: 'Your existing data is automatically adopted by a "Default workspace" (which you can rename) — nothing to migrate.' },
       { type: 'changed', description: 'Switching workspaces reloads the app so the newly active workspace\'s timezone and display preferences take effect right away.' },
       { type: 'changed', description: 'Import and export now operate on the active workspace, so you can back up and restore each client\'s data independently.' },
+      { type: 'changed', description: 'The "What\'s new" modal now matches the workspace manager: it springs in with a staggered entrance, fades out cleanly, and always sits above the sidebar instead of being covered by it.' },
     ],
   },
   {

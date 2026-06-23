@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
 import { CHANGE_TYPES } from '../data/changelog';
@@ -29,16 +31,49 @@ const ChangeBadge = ({ type }) => {
 };
 
 const ChangelogModal = ({ entries, onDismiss }) => {
+  const prefersReduced = useReducedMotion();
+
   if (!entries || entries.length === 0) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div
+  // Panel rises and fades in (bottom-sheet on mobile, centered card on
+  // desktop); the entry sections stagger in just behind it. Reduced-motion
+  // users get a plain cross-fade with no movement or scale. Mirrors the
+  // workspace manager modal.
+  const panelVariants = prefersReduced
+    ? { hidden: { opacity: 0 }, visible: { opacity: 1 }, exit: { opacity: 0 } }
+    : {
+        hidden: { opacity: 0, y: 24, scale: 0.97 },
+        visible: {
+          opacity: 1, y: 0, scale: 1,
+          transition: { type: 'spring', stiffness: 380, damping: 32, staggerChildren: 0.035, delayChildren: 0.04 },
+        },
+        exit: { opacity: 0, y: 16, scale: 0.98, transition: { duration: 0.15, ease: 'easeIn' } },
+      };
+
+  const sectionVariants = prefersReduced
+    ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+    : { hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } };
+
+  // Portal to <body>: keeps the fixed overlay anchored to the viewport rather
+  // than any transformed ancestor, matching the workspace manager modal.
+  return createPortal(
+    <div className="fixed inset-0 z-60 flex items-end sm:items-center justify-center">
+      <motion.div
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
         onClick={onDismiss}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
       />
 
-      <div className="relative bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-200/60 w-full max-w-lg mx-0 sm:mx-4 max-h-[90vh] sm:max-h-[85vh] flex flex-col">
+      <motion.div
+        className="relative bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-200/60 w-full max-w-lg mx-0 sm:mx-4 max-h-[90vh] sm:max-h-[85vh] flex flex-col"
+        variants={panelVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
@@ -66,7 +101,7 @@ const ChangelogModal = ({ entries, onDismiss }) => {
         {/* Entries */}
         <div className="overflow-y-auto px-6 py-5 space-y-6">
           {entries.map(entry => (
-            <section key={entry.version}>
+            <motion.section key={entry.version} variants={sectionVariants}>
               <header className="flex items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-[11px] font-semibold tabular-nums text-gray-400 shrink-0">
@@ -88,7 +123,7 @@ const ChangelogModal = ({ entries, onDismiss }) => {
                   </li>
                 ))}
               </ul>
-            </section>
+            </motion.section>
           ))}
         </div>
 
@@ -101,8 +136,9 @@ const ChangelogModal = ({ entries, onDismiss }) => {
             Got it
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </div>,
+    document.body
   );
 };
 
