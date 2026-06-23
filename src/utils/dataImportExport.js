@@ -4,6 +4,8 @@ import {
   saveTimesheetData,
   loadWeeklyTimesheet,
   saveWeeklyTimesheet,
+  loadTimezone,
+  saveTimezone,
 } from './storage';
 import { idbGet, idbSet, idbDelete } from './timesheetDB';
 
@@ -84,7 +86,7 @@ const validateImportShape = (importData) => {
 
 export const exportTimesheetData = () => {
   try {
-    const timezone = localStorage.getItem('kronos_selected_timezone');
+    const timezone = loadTimezone();
     const exportData = {
       dailyData: loadTimesheetData(),
       weeklyData: loadWeeklyTimesheet(),
@@ -132,7 +134,7 @@ export const importTimesheetDataSelective = (file, importMode) => {
         await idbSet(BACKUP_KEY, {
           dailyData: loadTimesheetData(),
           weeklyData: loadWeeklyTimesheet(),
-          timezone: localStorage.getItem('kronos_selected_timezone'),
+          timezone: loadTimezone(),
           backupDate: new Date().toISOString(),
         });
 
@@ -141,7 +143,7 @@ export const importTimesheetDataSelective = (file, importMode) => {
           saveTimesheetData(importData.dailyData ?? {});
           saveWeeklyTimesheet(importData.weeklyData ?? {});
           if (importData.timezone) {
-            localStorage.setItem('kronos_selected_timezone', importData.timezone);
+            saveTimezone(importData.timezone);
           }
         } else if (importMode === 'days') {
           saveTimesheetData(importData.dailyData ?? {});
@@ -189,7 +191,7 @@ export const importTimesheetData = (file) => {
         await idbSet(BACKUP_KEY, {
           dailyData: loadTimesheetData(),
           weeklyData: loadWeeklyTimesheet(),
-          timezone: localStorage.getItem('kronos_selected_timezone'),
+          timezone: loadTimezone(),
           backupDate: new Date().toISOString(),
         });
 
@@ -197,7 +199,7 @@ export const importTimesheetData = (file) => {
         saveTimesheetData(importData.dailyData ?? {});
         saveWeeklyTimesheet(importData.weeklyData ?? {});
         if (importData.timezone) {
-          localStorage.setItem('kronos_selected_timezone', importData.timezone);
+          saveTimezone(importData.timezone);
         }
 
         resolve({
@@ -230,7 +232,7 @@ export const revertImport = async () => {
     if (backupData.dailyData) saveTimesheetData(backupData.dailyData);
     if (backupData.weeklyData) saveWeeklyTimesheet(backupData.weeklyData);
     if (backupData.timezone) {
-      localStorage.setItem('kronos_selected_timezone', backupData.timezone);
+      saveTimezone(backupData.timezone);
     }
 
     await idbDelete(BACKUP_KEY);

@@ -6,6 +6,7 @@ import { loadSidebarState, saveSidebarState } from '../utils/storage';
 import TimezoneSelect from './TimezoneSelect';
 import PomodoroProgressBar from './atoms/PomodoroProgressBar';
 import DailyTrackerProgressBar from './atoms/DailyTrackerProgressBar';
+import WorkspaceSwitcher from './WorkspaceSwitcher';
 
 const formatTimezoneDisplay = (tz) => {
   const city = tz.split('/').pop().replace(/_/g, ' ');
@@ -166,6 +167,11 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
                 <p className="text-xs text-gray-400 leading-tight">Own your time.</p>
               </div>
             </div>
+          </div>
+
+          {/* Workspace switcher */}
+          <div className="px-3 pt-4">
+            <WorkspaceSwitcher />
           </div>
 
           {/* Navigation */}

@@ -9,7 +9,7 @@ import {
   hasImportBackup,
   clearAllData
 } from '../utils/dataImportExport';
-import { loadTimesheetData, loadWeeklyTimesheet } from '../utils/storage';
+import { loadTimesheetData, loadWeeklyTimesheet, loadTimezone } from '../utils/storage';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
@@ -83,7 +83,7 @@ const DataImportExport = ({ onImportSuccess }) => {
     try {
       const dailyData = loadTimesheetData() || {};
       const weeklyData = loadWeeklyTimesheet() || {};
-      const timezone = localStorage.getItem('kronos_selected_timezone');
+      const timezone = loadTimezone();
 
       let exportData = {
         timezone: timezone || 'UTC',

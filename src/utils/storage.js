@@ -23,6 +23,117 @@ let _weeklyLastEmittedJson = null;
 const IDB_KEY_TIMESHEET = 'kronos_timesheet_data';
 const IDB_KEY_WEEKLY    = 'kronos_weekly_timesheet';
 
+// ── Workspaces ───────────────────────────────────────────────────────────
+// A workspace isolates one freelancer-client's data — time logs, weekly
+// summary, invoice settings, timezone, and display preferences. The DEFAULT
+// workspace deliberately reuses the original (un-suffixed) storage keys so
+// that pre-workspace data is adopted by it with zero migration; every other
+// workspace namespaces its keys with `__ws_<id>`.
+//
+// The workspace list and the active-workspace pointer are themselves global
+// (never namespaced), as are onboarding, sidebar, changelog, and Pomodoro
+// state — those are app-wide, not per-client.
+export const WORKSPACE_DEFAULT_ID = 'default';
+const WORKSPACES_KEY = 'kronos_workspaces';
+const ACTIVE_WORKSPACE_KEY = 'kronos_active_workspace';
+
+// Cached so the synchronous key resolver doesn't hit localStorage on every
+// read/write. Populated lazily by getActiveWorkspaceId().
+let _activeWorkspaceId = null;
+
+export const getActiveWorkspaceId = () => {
+  if (_activeWorkspaceId) return _activeWorkspaceId;
+  try {
+    _activeWorkspaceId = localStorage.getItem(ACTIVE_WORKSPACE_KEY) || WORKSPACE_DEFAULT_ID;
+  } catch {
+    _activeWorkspaceId = WORKSPACE_DEFAULT_ID;
+  }
+  return _activeWorkspaceId;
+};
+
+// Resolve a base storage key to the active workspace. Default workspace keeps
+// the bare key (retroactive adoption of existing data); others get suffixed.
+const wsKey = (baseKey) => wsKeyFor(baseKey, getActiveWorkspaceId());
+const wsKeyFor = (baseKey, id) =>
+  id === WORKSPACE_DEFAULT_ID ? baseKey : `${baseKey}__ws_${id}`;
+
+export const loadWorkspaces = () => {
+  try {
+    const raw = localStorage.getItem(WORKSPACES_KEY);
+    if (!raw) return [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
+    const parsed = JSON.parse(raw);
+    const cleaned = Array.isArray(parsed)
+      ? parsed.filter(w => w && typeof w.id === 'string' && typeof w.name === 'string')
+      : [];
+    return cleaned.length > 0 ? cleaned : [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
+  } catch (e) {
+    console.error('Error loading workspaces:', e);
+    return [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
+  }
+};
+
+export const saveWorkspaces = (list) => {
+  try {
+    localStorage.setItem(WORKSPACES_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('Error saving workspaces:', e);
+  }
+};
+
+// Point the storage layer at a different workspace and reload the IDB-backed
+// in-memory caches so subsequent loadTimesheetData/loadWeeklyTimesheet calls
+// return the new workspace's data. localStorage-backed preferences are read
+// fresh by their own load functions via wsKey, so they need no cache reload.
+// Callers typically reload the app afterwards to re-init React contexts.
+export const setActiveWorkspace = async (id) => {
+  _activeWorkspaceId = id;
+  try {
+    localStorage.setItem(ACTIVE_WORKSPACE_KEY, id);
+  } catch (e) {
+    console.error('Error saving active workspace:', e);
+  }
+  _timesheetLastEmittedJson = null;
+  _weeklyLastEmittedJson = null;
+  _timesheetCache = (await idbGet(wsKeyFor(IDB_KEY_TIMESHEET, id))) ?? {};
+  _weeklyCache = (await idbGet(wsKeyFor(IDB_KEY_WEEKLY, id))) ?? {};
+};
+
+// The localStorage base keys that hold per-workspace preferences. The two
+// IDB-backed keys (timesheet, weekly) are handled separately below.
+const WORKSPACE_SCOPED_LS_KEYS = [
+  'kronos_selected_timezone',
+  'kronos_selected_week',
+  'kronos_week_start',
+  'kronos_clock_format',
+  'kronos_sort_order',
+  'kronos_show_breaks',
+  'kronos_invoice_settings',
+  'kronos_daily_hour_goal',
+  'kronos_weekend_days',
+  'kronos_heatmap_colors',
+  'kronos_goal_ring_colors',
+  'kronos_date_format',
+];
+
+// Permanently delete every scoped store belonging to a workspace. Used when a
+// workspace is deleted. The default workspace's data lives in the bare keys,
+// so wsKeyFor handles both the suffixed and un-suffixed cases.
+export const deleteWorkspaceData = async (id) => {
+  try {
+    WORKSPACE_SCOPED_LS_KEYS.forEach(base => {
+      localStorage.removeItem(wsKeyFor(base, id));
+    });
+  } catch (e) {
+    console.error('Error clearing workspace localStorage:', e);
+  }
+  try {
+    await idbDelete(wsKeyFor(IDB_KEY_TIMESHEET, id));
+    await idbDelete(wsKeyFor(IDB_KEY_WEEKLY, id));
+  } catch (e) {
+    console.error('Error clearing workspace IDB data:', e);
+  }
+};
+
 const _doInitTimesheetStorage = async () => {
   const migrateKey = async (lsKey) => {
     const raw = localStorage.getItem(lsKey);
@@ -49,8 +160,12 @@ const _doInitTimesheetStorage = async () => {
     return await idbGet(lsKey) ?? {};
   };
 
-  _timesheetCache = await migrateKey(IDB_KEY_TIMESHEET);
-  _weeklyCache    = await migrateKey(IDB_KEY_WEEKLY);
+  // Resolve to the active workspace. For the default workspace these are the
+  // bare keys, so existing pre-workspace data migrates and loads exactly as
+  // before. Other workspaces load their suffixed keys (no localStorage to
+  // migrate — they were created after the IDB switch).
+  _timesheetCache = await migrateKey(wsKey(IDB_KEY_TIMESHEET));
+  _weeklyCache    = await migrateKey(wsKey(IDB_KEY_WEEKLY));
 };
 
 export const initTimesheetStorage = () => {
@@ -276,7 +391,7 @@ export const saveTimesheetData = (data) => {
   // reference inequality (callers often mutate the object they got from
   // loadTimesheetData() before passing it back here, keeping the same ref).
   _timesheetCache = data === _timesheetCache ? { ...data } : data;
-  idbSet(STORAGE_KEYS.TIMESHEET_DATA, _timesheetCache).catch(err =>
+  idbSet(wsKey(STORAGE_KEYS.TIMESHEET_DATA), _timesheetCache).catch(err =>
     console.error('IDB write failed for timesheet data:', err)
   );
   const json = JSON.stringify(_timesheetCache);
@@ -295,7 +410,7 @@ export const loadTimesheetData = () => _timesheetCache ?? {};
 // Save selected timezone to LocalStorage
 export const saveTimezone = (timezone) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.SELECTED_TIMEZONE, timezone);
+    localStorage.setItem(wsKey(STORAGE_KEYS.SELECTED_TIMEZONE), timezone);
   } catch (error) {
     console.error('Error saving timezone:', error);
   }
@@ -304,7 +419,7 @@ export const saveTimezone = (timezone) => {
 // Load selected timezone from LocalStorage
 export const loadTimezone = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.SELECTED_TIMEZONE);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.SELECTED_TIMEZONE));
     return stored || null; // Return null instead of 'UTC' default
   } catch (error) {
     console.error('Error loading timezone:', error);
@@ -315,7 +430,7 @@ export const loadTimezone = () => {
 // Save selected week to LocalStorage
 export const saveSelectedWeek = (date) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.SELECTED_WEEK, date.toISOString());
+    localStorage.setItem(wsKey(STORAGE_KEYS.SELECTED_WEEK), date.toISOString());
   } catch (error) {
     console.error('Error saving selected week:', error);
   }
@@ -324,7 +439,7 @@ export const saveSelectedWeek = (date) => {
 // Load selected week from LocalStorage
 export const loadSelectedWeek = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.SELECTED_WEEK);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.SELECTED_WEEK));
     return stored ? new Date(stored) : new Date();
   } catch (error) {
     console.error('Error loading selected week:', error);
@@ -335,8 +450,10 @@ export const loadSelectedWeek = () => {
 // Clear all application data from localStorage and IndexedDB
 export const clearAllData = () => {
   try {
+    // Scoped keys are cleared for the active workspace only; global keys
+    // (onboarding, sidebar, changelog) are cleared outright.
     Object.values(STORAGE_KEYS).forEach(key => {
-      localStorage.removeItem(key);
+      localStorage.removeItem(WORKSPACE_SCOPED_LS_KEYS.includes(key) ? wsKey(key) : key);
     });
   } catch (error) {
     console.error('Error clearing data:', error);
@@ -345,10 +462,10 @@ export const clearAllData = () => {
   _weeklyCache = {};
   _timesheetLastEmittedJson = null;
   _weeklyLastEmittedJson = null;
-  idbDelete(STORAGE_KEYS.TIMESHEET_DATA).catch(err =>
+  idbDelete(wsKey(STORAGE_KEYS.TIMESHEET_DATA)).catch(err =>
     console.error('IDB delete failed for timesheet data:', err)
   );
-  idbDelete(STORAGE_KEYS.WEEKLY_TIMESHEET).catch(err =>
+  idbDelete(wsKey(STORAGE_KEYS.WEEKLY_TIMESHEET)).catch(err =>
     console.error('IDB delete failed for weekly timesheet:', err)
   );
 };
@@ -363,7 +480,7 @@ export const saveWeeklyTimesheet = (data) => {
     return false;
   }
   _weeklyCache = data === _weeklyCache ? { ...data } : data;
-  idbSet(STORAGE_KEYS.WEEKLY_TIMESHEET, _weeklyCache).catch(err =>
+  idbSet(wsKey(STORAGE_KEYS.WEEKLY_TIMESHEET), _weeklyCache).catch(err =>
     console.error('IDB write failed for weekly timesheet:', err)
   );
   const json = JSON.stringify(_weeklyCache);
@@ -382,7 +499,7 @@ export const loadWeeklyTimesheet = () => _weeklyCache ?? {};
 // Save week start preference to LocalStorage
 export const saveWeekStart = (weekStart) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.WEEK_START, weekStart);
+    localStorage.setItem(wsKey(STORAGE_KEYS.WEEK_START), weekStart);
   } catch (error) {
     console.error('Error saving week start:', error);
   }
@@ -391,7 +508,7 @@ export const saveWeekStart = (weekStart) => {
 // Load week start preference from LocalStorage
 export const loadWeekStart = () => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.WEEK_START) || 'sunday';
+    return localStorage.getItem(wsKey(STORAGE_KEYS.WEEK_START)) || 'sunday';
   } catch (error) {
     console.error('Error loading week start:', error);
     return 'sunday';
@@ -419,7 +536,7 @@ export const loadOnboardingCompleted = () => {
 
 export const saveDateFormat = (dateFormat) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.DATE_FORMAT, dateFormat);
+    localStorage.setItem(wsKey(STORAGE_KEYS.DATE_FORMAT), dateFormat);
   } catch (error) {
     console.error('Error saving date format:', error);
   }
@@ -427,7 +544,7 @@ export const saveDateFormat = (dateFormat) => {
 
 export const loadDateFormat = () => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.DATE_FORMAT) || 'short';
+    return localStorage.getItem(wsKey(STORAGE_KEYS.DATE_FORMAT)) || 'short';
   } catch (error) {
     console.error('Error loading date format:', error);
     return 'short';
@@ -437,7 +554,7 @@ export const loadDateFormat = () => {
 // Save clock format preference to LocalStorage
 export const saveClockFormat = (clockFormat) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.CLOCK_FORMAT, clockFormat);
+    localStorage.setItem(wsKey(STORAGE_KEYS.CLOCK_FORMAT), clockFormat);
   } catch (error) {
     console.error('Error saving clock format:', error);
   }
@@ -446,7 +563,7 @@ export const saveClockFormat = (clockFormat) => {
 // Load clock format preference from LocalStorage
 export const loadClockFormat = () => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.CLOCK_FORMAT) || '12hour'; // Default to 12-hour format
+    return localStorage.getItem(wsKey(STORAGE_KEYS.CLOCK_FORMAT)) || '12hour'; // Default to 12-hour format
   } catch (error) {
     console.error('Error loading clock format:', error);
     return '12hour';
@@ -484,7 +601,7 @@ export const loadSidebarState = () => {
 // Save sort order preference to LocalStorage
 export const saveSortOrder = (sortOrder) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.SORT_ORDER, JSON.stringify(sortOrder));
+    localStorage.setItem(wsKey(STORAGE_KEYS.SORT_ORDER), JSON.stringify(sortOrder));
   } catch (error) {
     console.error('Error saving sort order:', error);
   }
@@ -493,7 +610,7 @@ export const saveSortOrder = (sortOrder) => {
 // Load sort order preference from LocalStorage
 export const loadSortOrder = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.SORT_ORDER);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.SORT_ORDER));
     return stored !== null ? JSON.parse(stored) : 'desc'; // Default to descending (newest first)
   } catch (error) {
     console.error('Error loading sort order:', error);
@@ -504,7 +621,7 @@ export const loadSortOrder = () => {
 // Save daily hour goal (whole-number hours) to LocalStorage
 export const saveDailyHourGoal = (hours) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.DAILY_HOUR_GOAL, JSON.stringify(hours));
+    localStorage.setItem(wsKey(STORAGE_KEYS.DAILY_HOUR_GOAL), JSON.stringify(hours));
   } catch (error) {
     console.error('Error saving daily hour goal:', error);
   }
@@ -515,7 +632,7 @@ export const saveDailyHourGoal = (hours) => {
 // the best UX for a settings field.
 export const loadDailyHourGoal = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.DAILY_HOUR_GOAL);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.DAILY_HOUR_GOAL));
     if (stored == null) return DEFAULT_DAILY_HOUR_GOAL;
     const parsed = JSON.parse(stored);
     return typeof parsed === 'number' && Number.isFinite(parsed) && parsed > 0
@@ -533,7 +650,7 @@ export const loadDailyHourGoal = () => {
 export const saveWeekendDays = (days) => {
   try {
     const cleaned = sanitizeWeekendDays(days);
-    localStorage.setItem(STORAGE_KEYS.WEEKEND_DAYS, JSON.stringify(cleaned));
+    localStorage.setItem(wsKey(STORAGE_KEYS.WEEKEND_DAYS), JSON.stringify(cleaned));
   } catch (error) {
     console.error('Error saving weekend days:', error);
   }
@@ -543,7 +660,7 @@ export const saveWeekendDays = (days) => {
 // value here is harmless and the default is the most-common preference.
 export const loadWeekendDays = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.WEEKEND_DAYS);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.WEEKEND_DAYS));
     if (stored == null) return [...DEFAULT_WEEKEND_DAYS];
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return [...DEFAULT_WEEKEND_DAYS];
@@ -556,7 +673,7 @@ export const loadWeekendDays = () => {
 
 export const saveHeatmapColors = (colors) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.HEATMAP_COLORS, JSON.stringify(colors));
+    localStorage.setItem(wsKey(STORAGE_KEYS.HEATMAP_COLORS), JSON.stringify(colors));
   } catch (error) {
     console.error('Error saving heatmap colors:', error);
   }
@@ -564,7 +681,7 @@ export const saveHeatmapColors = (colors) => {
 
 export const loadHeatmapColors = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.HEATMAP_COLORS);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.HEATMAP_COLORS));
     if (stored == null) return JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
     const parsed = JSON.parse(stored);
     return isValidHeatmapColors(parsed)
@@ -578,7 +695,7 @@ export const loadHeatmapColors = () => {
 
 export const saveGoalRingColors = (colors) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.GOAL_RING_COLORS, JSON.stringify(colors));
+    localStorage.setItem(wsKey(STORAGE_KEYS.GOAL_RING_COLORS), JSON.stringify(colors));
   } catch (error) {
     console.error('Error saving goal ring colors:', error);
   }
@@ -586,7 +703,7 @@ export const saveGoalRingColors = (colors) => {
 
 export const loadGoalRingColors = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.GOAL_RING_COLORS);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.GOAL_RING_COLORS));
     if (stored == null) return { ...DEFAULT_GOAL_RING_COLORS };
     const parsed = JSON.parse(stored);
     if (
@@ -604,7 +721,7 @@ export const loadGoalRingColors = () => {
 // Save break visibility preference to LocalStorage
 export const saveShowBreaks = (showBreaks) => {
   try {
-    localStorage.setItem(STORAGE_KEYS.SHOW_BREAKS, JSON.stringify(showBreaks));
+    localStorage.setItem(wsKey(STORAGE_KEYS.SHOW_BREAKS), JSON.stringify(showBreaks));
   } catch (error) {
     console.error('Error saving show breaks preference:', error);
   }
@@ -613,7 +730,7 @@ export const saveShowBreaks = (showBreaks) => {
 // Load break visibility preference from LocalStorage
 export const loadShowBreaks = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.SHOW_BREAKS);
+    const stored = localStorage.getItem(wsKey(STORAGE_KEYS.SHOW_BREAKS));
     return stored !== null ? JSON.parse(stored) : true; // Default to true (show breaks)
   } catch (error) {
     console.error('Error loading show breaks preference:', error);
@@ -623,10 +740,10 @@ export const loadShowBreaks = () => {
 
 // Save invoice settings to LocalStorage (only persistent settings, not invoice-specific data)
 export const saveInvoiceSettings = (settings) => {
-  if (isKeyCorruptPending(STORAGE_KEYS.INVOICE_SETTINGS)) {
+  if (isKeyCorruptPending(wsKey(STORAGE_KEYS.INVOICE_SETTINGS))) {
     console.warn(
       'Refused saveInvoiceSettings: corruption pending for ' +
-      STORAGE_KEYS.INVOICE_SETTINGS + '. Resolve in Settings → Data Recovery.'
+      wsKey(STORAGE_KEYS.INVOICE_SETTINGS) + '. Resolve in Settings → Data Recovery.'
     );
     return false;
   }
@@ -642,7 +759,7 @@ export const saveInvoiceSettings = (settings) => {
       hourlyRate: settings.hourlyRate,
       currency: settings.currency
     };
-    localStorage.setItem(STORAGE_KEYS.INVOICE_SETTINGS, JSON.stringify(persistentSettings));
+    localStorage.setItem(wsKey(STORAGE_KEYS.INVOICE_SETTINGS), JSON.stringify(persistentSettings));
     return true;
   } catch (error) {
     console.error('Error saving invoice settings:', error);
@@ -652,14 +769,14 @@ export const saveInvoiceSettings = (settings) => {
 
 // Load invoice settings from LocalStorage
 export const loadInvoiceSettings = () => {
-  const stored = localStorage.getItem(STORAGE_KEYS.INVOICE_SETTINGS);
+  const stored = localStorage.getItem(wsKey(STORAGE_KEYS.INVOICE_SETTINGS));
   let persistentSettings = {};
   if (stored) {
     try {
       persistentSettings = JSON.parse(stored);
     } catch (error) {
       console.error('Error loading invoice settings:', error);
-      quarantineCorruption(STORAGE_KEYS.INVOICE_SETTINGS, stored);
+      quarantineCorruption(wsKey(STORAGE_KEYS.INVOICE_SETTINGS), stored);
     }
   }
   try {
