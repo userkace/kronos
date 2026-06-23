@@ -135,8 +135,6 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
     }
   ];
 
-  const activeNavItem = navigationItems.find((item) => item.id === currentView);
-
   return (
     <div className="flex h-screen bg-gray-50 relative">
       {/* Sidebar Overlay for Mobile */}
@@ -228,8 +226,8 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header — intentionally minimal: the page title only shows when the
-            sidebar is hidden, so it never duplicates the active nav item. */}
+        {/* Header — intentionally minimal: the kronos wordmark only shows when
+            the sidebar is hidden, so it never duplicates the sidebar wordmark. */}
         <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200/80 px-4 sm:px-6 h-14 flex items-center justify-between shrink-0">
           <div className="flex items-center min-w-0">
             <button
@@ -242,8 +240,8 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
 
             <div className={`hidden sm:flex items-center min-w-0 ${sidebarOpen ? 'lg:hidden' : ''}`}>
               <div className="h-5 w-px bg-gray-200 mx-3" aria-hidden="true" />
-              <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight truncate">
-                {activeNavItem?.label ?? 'Kronos'}
+              <h2 className="font-display text-[15px] font-semibold text-gray-900 lowercase tracking-wide truncate">
+                kronos
               </h2>
             </div>
           </div>

@@ -42,10 +42,12 @@ export const CHANGELOG = [
   {
     version: '0.5.3',
     date: '2026-06-24',
-    title: 'Timesheet tweaks',
+    title: 'Header & Timesheet tweaks',
     changes: [
       { type: 'changed', description: 'The Timesheet week range now uses the abbreviated month ("Jun.") at every screen size, instead of switching to the full month name on larger screens.' },
       { type: 'changed', description: 'The Timesheet now always opens on the current week (like the Tracker always opens on today). You can still navigate to other weeks, but switching away and back returns to the current week.' },
+      { type: 'changed', description: 'When the sidebar is hidden, the header now shows the "kronos" wordmark in the display font instead of the current page name.' },
+      { type: 'removed', description: 'The header no longer shows the name of the active page (e.g. "Tracker", "Timesheet").' },
     ],
   },
   {
