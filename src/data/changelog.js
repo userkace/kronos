@@ -33,7 +33,8 @@ export const CHANGELOG = [
       { type: 'changed', description: 'Your existing data is automatically kept in a "Default workspace" (which you can rename) — nothing to migrate.' },
       { type: 'changed', description: 'Import and export now operate on the active workspace, so you can back up and restore each client\'s data independently.' },
       { type: 'changed', description: 'The active task card in the sidebar is refined to match the Pomodoro widget: a filled play badge, a green "Tracking" label, and a live animated progress bar.' },
-      { type: 'changed', description: 'Delete and merge toasts now shorten long task names so the notification no longer stretches across the screen.' },
+      { type: 'changed', description: 'The Pomodoro page has a refreshed timer: a circular progress ring with the countdown and phase centered inside, phase-colored (work/break/long break), set-progress dots, and clearer Start/Pause/Skip/Reset controls.' },
+      { type: 'fixed', description: 'Delete and merge toasts now shorten long task names so the notification no longer stretches across the screen.' },
     ],
   },
   {
