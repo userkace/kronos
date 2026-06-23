@@ -504,6 +504,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
   }, []);
 
+  // Compact decimal-hours format (e.g. "8.5h") shown on narrow screens where
+  // the verbose "8h 30min" form would crowd the row.
+  const formatDecimalHours = useCallback((seconds) => `${(seconds / 3600).toFixed(1)}h`, []);
+
   // Calculate break time between two consecutive entries
   const calculateBreakTime = useCallback((currentEntry, previousEntry) => {
     if (!currentEntry || !previousEntry || !previousEntry.endTime || !currentEntry.startTime) return null;
@@ -530,8 +534,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     return breakSeconds;
   }, [timezone]);
 
-  // Calculate total break time for the day
-  const dailyBreakTotal = useMemo(() => {
+  // Calculate total break time for the day, in seconds.
+  const dailyBreakSeconds = useMemo(() => {
     let totalBreakSeconds = 0;
 
     // Get completed entries only (filter out active entries)
@@ -556,8 +560,12 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
       }
     }
 
-    return formatDisplayDuration(totalBreakSeconds);
-  }, [selectedDateEntries, activeEntry, calculateBreakTime, formatDisplayDuration]);
+    return totalBreakSeconds;
+  }, [selectedDateEntries, activeEntry, calculateBreakTime]);
+
+  // Verbose ("8h 30min") and compact decimal ("8.5h") break-total strings.
+  const dailyBreakTotal = formatDisplayDuration(dailyBreakSeconds);
+  const dailyBreakTotalDecimal = formatDecimalHours(dailyBreakSeconds);
 
   // Calculate duration for active entry
   const getActiveDuration = (entry) => {
@@ -1528,9 +1536,25 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
             <div className="flex-1">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                    <span className="sm:hidden">{formatInTimezone(selectedDate, 'MMM. d, yyyy')}</span>
-                    <span className="hidden sm:inline">{formatInTimezone(selectedDate, 'MMMM d, yyyy')}</span>
+                  {/* Month in Unbounded (display) mixed with the numeric
+                      day/year in the same display font, tabular-nums — the
+                      "number font" treatment from the Pomodoro timer. */}
+                  <h1 className="font-display text-3xl font-semibold text-gray-900 tracking-tight">
+                    {/* lower (< 400px): abbreviated month, no year */}
+                    <span className="min-[480px]:hidden">
+                      {formatInTimezone(selectedDate, 'MMM')}.{' '}
+                      <span className="tabular-nums">{formatInTimezone(selectedDate, 'd')}</span>
+                    </span>
+                    {/* xs (400px–sm): abbreviated month with year */}
+                    <span className="hidden min-[480px]:inline sm:hidden">
+                      {formatInTimezone(selectedDate, 'MMM')}.{' '}
+                      <span className="tabular-nums">{formatInTimezone(selectedDate, 'd, yyyy')}</span>
+                    </span>
+                    {/* sm+: full month with year */}
+                    <span className="hidden sm:inline">
+                      {formatInTimezone(selectedDate, 'MMMM')}{' '}
+                      <span className="tabular-nums">{formatInTimezone(selectedDate, 'd, yyyy')}</span>
+                    </span>
                   </h1>
                 </div>
               </div>
@@ -1582,6 +1606,13 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
               ? dailyHourGoal * 3600
               : 0;
             const goalMet = goalSeconds > 0 && dailyTotalSeconds >= goalSeconds;
+            // Compact decimal ("8.5h") on narrow screens, verbose ("8h 30min") above 450px.
+            const totalDisplay = (
+              <>
+                <span className="min-[450px]:hidden">{formatDecimalHours(dailyTotalSeconds)}</span>
+                <span className="hidden min-[450px]:inline">{calculateDailyTotal()}</span>
+              </>
+            );
             return (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1608,7 +1639,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                 >
                   <Clock className="w-5 h-5 self-center mt-1" />
                   <span className="text-2xl font-semibold tracking-tight tabular-nums">
-                    {calculateDailyTotal()}
+                    {totalDisplay}
                   </span>
                 </motion.div>
               ) : activeEntry && isToday() ? (
@@ -1625,14 +1656,14 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                 >
                   <Clock className="w-5 h-5 self-center mt-1" />
                   <span className="text-2xl font-semibold tracking-tight tabular-nums">
-                    {calculateDailyTotal()}
+                    {totalDisplay}
                   </span>
                 </motion.div>
               ) : (
                 <div className="flex items-baseline gap-2 text-gray-600">
                   <Clock className="w-5 h-5 self-center mt-1" />
                   <span className="text-2xl font-semibold tracking-tight tabular-nums text-gray-900">
-                    {calculateDailyTotal()}
+                    {totalDisplay}
                   </span>
                 </div>
               )}
@@ -1648,7 +1679,8 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                     className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium tabular-nums bg-orange-50 text-orange-600"
                   >
                     <Coffee className="w-4 h-4 mr-1.5" />
-                    {dailyBreakTotal}
+                    <span className="min-[450px]:hidden">{dailyBreakTotalDecimal}</span>
+                    <span className="hidden min-[450px]:inline">{dailyBreakTotal}</span>
                   </motion.span>
                 )}
               </AnimatePresence>

@@ -392,7 +392,7 @@ const PomodoroTimer = () => {
               className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-150 ${
                 (currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 text-white hover:bg-green-700 shadow-xs'
+                  : 'text-green-600 bg-green-50 hover:bg-green-100'
               }`}
               disabled={(currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry}
               title={
@@ -403,7 +403,7 @@ const PomodoroTimer = () => {
                     : 'Start Pomodoro timer'
               }
             >
-              <Play className="w-4 h-4 fill-current" />
+              <Play className="w-4 h-4" />
               <span>Start</span>
             </button>
           ) : isPaused ? (

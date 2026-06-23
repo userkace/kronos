@@ -189,16 +189,19 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              {/* Unbounded display font with tabular-nums numerals — matches
+                  the Tracker date and Pomodoro timer "number font" treatment.
+                  tabular-nums only affects digits, so month names stay normal. */}
+              <h1 className="font-display text-3xl font-semibold text-gray-900 tracking-tight tabular-nums">
                 <span className="sm:hidden">
-                  {weekDays[0] && weekDays[6] ? 
-                    `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d')}` : 
+                  {weekDays[0] && weekDays[6] ?
+                    `${format(weekDays[0], 'MMM')}. ${format(weekDays[0], 'd')} - ${format(weekDays[6], 'd')}` :
                     'Loading...'
                   }
                 </span>
                 <span className="hidden sm:inline lg:hidden">
-                  {weekDays[0] && weekDays[6] ? 
-                    `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}` : 
+                  {weekDays[0] && weekDays[6] ?
+                    `${format(weekDays[0], 'MMM')}. ${format(weekDays[0], 'd')} - ${format(weekDays[6], 'MMM')}. ${format(weekDays[6], 'd')}` :
                     'Loading...'
                   }
                 </span>
