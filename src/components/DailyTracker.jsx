@@ -1980,11 +1980,11 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                   width: `${inlineEdit.dims.width}px`,
                                   height: `${inlineEdit.dims.height}px`,
                                 } : undefined}
-                                className="font-semibold text-gray-900 bg-blue-50/60 rounded outline-none ring-2 ring-blue-400/50 resize leading-normal p-0"
+                                className="font-semibold text-gray-900 bg-blue-50/60 rounded outline-none ring-2 ring-blue-400/50 resize leading-normal p-0 m-0 border-0 box-border block align-top whitespace-pre-wrap wrap-break-word overflow-hidden tracking-normal"
                               />
                             ) : (
                               <h3
-                                className="font-semibold text-gray-900 cursor-text rounded hover:ring-1 hover:ring-gray-200 hover:bg-gray-50/80 inline-block whitespace-pre-wrap wrap-break-word transition-colors duration-150"
+                                className="font-semibold text-gray-900 cursor-text rounded hover:ring-1 hover:ring-gray-200 hover:bg-gray-50/80 inline-block whitespace-pre-wrap wrap-break-word leading-normal tracking-normal p-0 m-0 border-0 box-border align-top transition-colors duration-150"
                                 onClick={(e) => {
                                   const rect = e.currentTarget.getBoundingClientRect();
                                   startInlineEdit(entry, 'description', {
