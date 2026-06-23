@@ -166,7 +166,41 @@ const PomodoroTimer = () => {
     }
   };
 
+  // SVG stroke colour for the progress ring, matching the phase palette.
+  const getPhaseStroke = () => {
+    switch (currentPhase) {
+      case 'work':       return 'stroke-blue-500';
+      case 'shortBreak': return 'stroke-green-500';
+      case 'longBreak':  return 'stroke-purple-500';
+      default:           return 'stroke-gray-500';
+    }
+  };
+
+  // Text/icon accent colour for the phase.
+  const getPhaseTextColor = () => {
+    switch (currentPhase) {
+      case 'work':       return 'text-blue-600';
+      case 'shortBreak': return 'text-green-600';
+      case 'longBreak':  return 'text-purple-600';
+      default:           return 'text-gray-600';
+    }
+  };
+
+  const getPhaseLabel = () => {
+    switch (currentPhase) {
+      case 'work':       return 'Work Session';
+      case 'shortBreak': return 'Short Break';
+      case 'longBreak':  return 'Long Break';
+      default:           return 'Focus';
+    }
+  };
+
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
+
+  // Progress-ring geometry. The ring fills clockwise as the phase elapses.
+  const RING_RADIUS = 54;
+  const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+  const ringOffset = RING_CIRCUMFERENCE * (1 - Math.min(Math.max(progress, 0), 100) / 100);
 
   return (
     <div className="text-gray-900 p-6">
@@ -296,76 +330,94 @@ const PomodoroTimer = () => {
         {/* Status Information */}
         {isTrackingTask && (
           <div className="bg-blue-50 border border-blue-200/70 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2 text-blue-800">
-              <Timer className="w-5 h-5" />
-              <span className="font-medium">Tracking time for: {currentTask}</span>
+            <div className="flex items-center gap-2 text-blue-800 min-w-0">
+              <Timer className="w-5 h-5 shrink-0" />
+              <span className="font-medium truncate">Tracking time for: {currentTask}</span>
             </div>
           </div>
         )}
-{isTrackingTask && (
-<>
-        <div className="text-center mb-6">
-          <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full ${getPhaseColor()} text-white mb-4`}>
-            {getPhaseIcon()}
+
+        {/* Circular Timer */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative w-60 h-60 sm:w-64 sm:h-64">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+              <circle
+                cx="60" cy="60" r={RING_RADIUS}
+                fill="none" strokeWidth="6"
+                className="stroke-gray-100"
+              />
+              <circle
+                cx="60" cy="60" r={RING_RADIUS}
+                fill="none" strokeWidth="6" strokeLinecap="round"
+                strokeDasharray={RING_CIRCUMFERENCE}
+                strokeDashoffset={ringOffset}
+                className={`${getPhaseStroke()} transition-[stroke-dashoffset] duration-1000 ease-linear`}
+              />
+            </svg>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className={`mb-2 ${getPhaseTextColor()}`}>
+                {getPhaseIcon()}
+              </div>
+              <div className="font-display text-5xl font-semibold tracking-tight tabular-nums text-gray-900">
+                {formatTime(timeLeft)}
+              </div>
+              <div className={`mt-1.5 text-sm font-medium ${getPhaseTextColor()}`}>
+                {getPhaseLabel()}
+              </div>
+            </div>
           </div>
-          <div className="text-6xl font-semibold tracking-tight tabular-nums text-gray-900 mb-2">
-            {formatTime(timeLeft)}
+
+          {/* Set progress dots */}
+          <div className="mt-6 flex items-center gap-1.5">
+            {Array.from({ length: totalSets }).map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i < currentSet ? `${getPhaseColor()} w-6` : 'bg-gray-200 w-1.5'
+                }`}
+              />
+            ))}
           </div>
-          <div className="text-lg text-gray-600 capitalize">
-            {currentPhase === 'work' ? 'Work Session' :
-             currentPhase === 'shortBreak' ? 'Short Break' : 'Long Break'}
-          </div>
-          <div className="text-sm text-gray-500 mt-2 tabular-nums">
+          <div className="mt-2.5 text-xs text-gray-400 tabular-nums">
             Set {currentSet} of {totalSets}
           </div>
         </div>
 
-
-        <div className="mb-6">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className={`h-2 rounded-full transition-[width] duration-1000 ${getPhaseColor()}`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-</>
-)}
-
         {/* Control Buttons */}
-        <div className="flex justify-center gap-3">
+        <div className="flex flex-wrap justify-center items-center gap-2.5">
           {!isRunning ? (
             <button
               onClick={handleStartTimer}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${
+              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-150 ${
                 (currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry
-                  ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700 shadow-xs'
               }`}
               disabled={(currentPhase === 'work' && !currentTask.trim()) || hasActiveTimerEntry}
               title={
-                hasActiveTimerEntry 
+                hasActiveTimerEntry
                   ? 'Cannot start Pomodoro while timer is active in Daily Tracker'
                   : (currentPhase === 'work' && !currentTask.trim())
                     ? 'Please enter a task description'
                     : 'Start Pomodoro timer'
               }
             >
-              <Play className="w-4 h-4" />
+              <Play className="w-4 h-4 fill-current" />
               <span>Start</span>
             </button>
           ) : isPaused ? (
             <button
               onClick={resumeTimer}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors duration-150"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-xs transition-colors duration-150"
             >
-              <Play className="w-4 h-4" />
+              <Play className="w-4 h-4 fill-current" />
               <span>Resume</span>
             </button>
           ) : (
             <button
               onClick={pauseTimer}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors duration-150"
             >
               <Pause className="w-4 h-4" />
               <span>Pause</span>
@@ -373,24 +425,24 @@ const PomodoroTimer = () => {
           )}
 
           <button
-            onClick={resetTimer}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-150"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Reset</span>
-          </button>
-
-          <button
             onClick={skipPhase}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors duration-150"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors duration-150"
           >
             <SkipForward className="w-4 h-4" />
             <span>Skip</span>
           </button>
 
           <button
+            onClick={resetTimer}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-150"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Reset</span>
+          </button>
+
+          <button
             onClick={resetAll}
-            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150"
+            className="px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-150"
           >
             Reset All
           </button>
