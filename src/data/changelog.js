@@ -63,6 +63,7 @@ export const CHANGELOG = [
       { type: 'changed', description: 'The Timesheet week range now adapts to screen width too: "Jun. 1 - 7" on the smallest screens, "Jun. 1 - Jun. 7" on small screens, and the full month-and-year range on larger ones.' },
       { type: 'changed', description: 'On narrow screens (under 450px), the Tracker\'s daily total and break time switch to a compact decimal format (e.g. "8.5h") instead of "8h 30min" to save space.' },
       { type: 'changed', description: 'On very small screens, the page title in the header is now hidden to save horizontal space.' },
+      { type: 'fixed', description: 'Inline-editing a task name now lines up exactly with the display text — the textarea no longer reserves a scrollbar gutter or uses different wrapping, so its inner margins and text spacing match the static label 1:1.' },
       { type: 'fixed', description: 'Delete and merge toasts now shorten long task names so the notification no longer stretches across the screen.' },
     ],
   },
