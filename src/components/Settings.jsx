@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import TimezoneSelect from './TimezoneSelect';
+import AccountSettings from './AccountSettings';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
@@ -247,6 +248,9 @@ const Settings = ({ onCorruptionResolved }) => {
       </div>
 
       <div className="space-y-5">
+        {/* Account & Sync — optional cloud accounts and cross-device sync. */}
+        <AccountSettings />
+
         {/* Data Recovery — only rendered when there are quarantined backups. */}
         {backups.length > 0 && (
           <div className="border border-amber-200/80 rounded-2xl p-6 bg-amber-50/80">

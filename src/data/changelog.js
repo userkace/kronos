@@ -23,6 +23,19 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.0',
+    date: '2026-06-24',
+    title: 'Optional accounts & cloud sync',
+    changes: [
+      { type: 'added', description: 'You can now optionally sign in with your email to back up your data and sync it across devices. Kronos still works fully offline with no account — signing in just turns on cloud sync.' },
+      { type: 'added', description: 'Sign-in is passwordless: enter your email in Settings → Account & Sync and we email you a one-time magic link.' },
+      { type: 'added', description: 'When signed in, your workspaces, time entries, weekly summaries, invoice & billing settings, display preferences, and Pomodoro settings sync automatically — pulled in when you sign in and pushed up as you make changes.' },
+      { type: 'added', description: 'A "Sync now" button and a live sync status (Syncing / Synced / error) appear in Settings while signed in.' },
+      { type: 'added', description: 'If the same item was changed both on this device and in your account, a conflict dialog lets you choose which copy to keep, item by item.' },
+      { type: 'changed', description: 'Your live Pomodoro timer state (a running countdown) stays on each device — only your Pomodoro settings sync, so a timer running on one device never appears to run on another.' },
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-06-24',
     title: 'Workspaces',
