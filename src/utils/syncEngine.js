@@ -20,7 +20,7 @@
 // the same document and they differ, we ASK the user which to keep. Documents
 // present on only one side are copied to the other with no prompt.
 import { supabase } from '../lib/supabase';
-import { idbGet, idbSet } from './timesheetDB';
+import { idbGet, idbSet, idbDelete } from './timesheetDB';
 import {
   wsKeyFor,
   loadWorkspaces,
@@ -336,6 +336,12 @@ const saveBase = (wsId, docKey, blob) => {
   idbSet(baseStorageKey(wsId, docKey), blob).catch(e => console.error('Sync base save failed:', e));
 };
 
+// Base snapshot for the workspace LIST (global, not per-workspace). null means
+// "no base yet" → first sync unions rather than inferring deletions.
+const wsBaseKey = () => `__sync_base_workspaces__${_userId}`;
+const loadWsBase = async () => (await idbGet(wsBaseKey())) ?? null;
+const saveWsBase = (list) => idbSet(wsBaseKey(), list).catch(e => console.error('WS base save failed:', e));
+
 // Every (workspace, key) descriptor we care about, given the live workspace ids.
 const allDescriptors = (workspaceIds) => {
   const descs = [];
@@ -400,46 +406,93 @@ const fetchCloudWorkspaces = async () => {
   return data || [];
 };
 
-// Merge local + cloud workspace lists. Cloud tombstones (deleted=true) win and
-// remove the workspace locally; otherwise it's a union by id with local names
-// preferred. Returns { merged, changedLocal }.
-const mergeWorkspaces = (localList, cloudRows) => {
-  const deleted = new Set(cloudRows.filter(r => r.deleted).map(r => r.id));
-  const byId = new Map();
-  for (const r of cloudRows) {
-    if (r.deleted) continue;
-    byId.set(r.id, { id: r.id, name: r.name });
-  }
+// 3-way merge of the workspace list against a base (last-synced) snapshot, so a
+// delete on either side propagates instead of resurrecting via union. Cloud rows
+// flagged deleted (legacy tombstones) are treated as absent. Preserves local
+// order and appends cloud-only additions. Returns { merged, toDeleteCloud,
+// changedLocal }. With no base yet (first sync) it unions and infers no deletes.
+const mergeWorkspaces = (base, localList, cloudRows) => {
+  const cloudMap = new Map(cloudRows.filter(r => !r.deleted).map(r => [r.id, r.name]));
+  const localMap = new Map(localList.map(w => [w.id, w.name]));
+  const baseMap = base ? new Map(base.map(w => [w.id, w.name])) : null;
+
+  const merged = [];
+  const toDeleteCloud = [];
+
+  // Walk local first (preserves the user's ordering).
   for (const w of localList) {
-    if (deleted.has(w.id)) continue; // honor a delete made on another device
-    byId.set(w.id, { id: w.id, name: w.name }); // local name wins
+    if (cloudMap.has(w.id)) {
+      // Present on both → keep; prefer whichever side renamed it since base.
+      const bn = baseMap ? baseMap.get(w.id) : undefined;
+      const cn = cloudMap.get(w.id);
+      const name = baseMap && w.name === bn && cn !== bn ? cn : w.name;
+      merged.push({ id: w.id, name });
+    } else if (baseMap && baseMap.has(w.id)) {
+      // Was synced before, now gone from cloud → deleted elsewhere → drop locally.
+    } else {
+      merged.push({ id: w.id, name: w.name }); // local-only addition (or first sync)
+    }
   }
-  let merged = [...byId.values()];
-  if (merged.length === 0) merged = [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
+  // Cloud-only entries.
+  for (const [id, name] of cloudMap) {
+    if (localMap.has(id)) continue;
+    if (baseMap && baseMap.has(id)) toDeleteCloud.push(id); // deleted locally → remove from cloud
+    else merged.push({ id, name }); // new from another device (or first sync)
+  }
+
+  if (merged.length === 0) merged.push({ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' });
   const changedLocal = stable(merged) !== stable(localList);
-  return { merged, changedLocal };
+  return { merged, toDeleteCloud, changedLocal };
 };
 
-const pushWorkspaces = async () => {
-  const local = loadWorkspaces();
+// Fetch → merge → persist the workspace list both ways, then advance the base.
+// Hard-deletes (not tombstones) workspaces removed locally. Returns the merged
+// list and whether local changed.
+const syncWorkspaces = async () => {
   const cloud = await fetchCloudWorkspaces();
-  const localIds = new Set(local.map(w => w.id));
-  // Upsert every local workspace as live.
-  for (const w of local) {
+  const base = await loadWsBase();
+  const { merged, toDeleteCloud, changedLocal } = mergeWorkspaces(base, loadWorkspaces(), cloud);
+
+  if (changedLocal) {
+    // Suppress the storage-event push echo while we write the merged list.
+    _applyingRemote = true;
+    try { saveWorkspaces(merged); } finally { _applyingRemote = false; }
+  }
+
+  for (const w of merged) {
     const { error } = await supabase.from(WS_TABLE).upsert(
       { user_id: _userId, id: w.id, name: w.name, updated_at: new Date().toISOString(), deleted: false },
       { onConflict: 'user_id,id' }
     );
     if (error) throw error;
   }
-  // Tombstone cloud workspaces that no longer exist locally.
-  for (const r of cloud) {
-    if (!r.deleted && !localIds.has(r.id)) {
-      const { error } = await supabase.from(WS_TABLE)
-        .update({ deleted: true, updated_at: new Date().toISOString() })
-        .eq('user_id', _userId).eq('id', r.id);
-      if (error) throw error;
-    }
+  for (const id of toDeleteCloud) {
+    const { error } = await supabase.from(WS_TABLE).delete().eq('user_id', _userId).eq('id', id);
+    if (error) throw error;
+    await supabase.from(DOCS_TABLE).delete().eq('user_id', _userId).eq('workspace_id', id);
+  }
+
+  saveWsBase(merged);
+  return { merged, changedLocal };
+};
+
+// Synchronously hard-delete a workspace (its list row, its documents, and this
+// device's base snapshots) BEFORE the UI reloads on delete — otherwise the
+// deletion loses the race with the debounced push and reconcile resurrects it.
+// No-op when signed out.
+export const deleteWorkspaceRemote = async (id) => {
+  if (!supabase || !_userId) return;
+  try {
+    await supabase.from(WS_TABLE).delete().eq('user_id', _userId).eq('id', id);
+    await supabase.from(DOCS_TABLE).delete().eq('user_id', _userId).eq('workspace_id', id);
+    await idbDelete(baseStorageKey(id, TIMESHEET_KEY));
+    await idbDelete(baseStorageKey(id, WEEKLY_KEY));
+    // Drop it from the workspace-list base so reconcile doesn't think the cloud
+    // deleted a still-local workspace (and try to re-delete / mis-merge).
+    const base = await loadWsBase();
+    if (base) saveWsBase(base.filter(w => w.id !== id));
+  } catch (e) {
+    console.error('Remote workspace delete failed:', e);
   }
 };
 
@@ -451,10 +504,7 @@ export const reconcile = async () => {
   setStatus({ state: 'syncing', lastError: null });
   try {
     // 1. Workspace list first — it defines which workspaces' docs to consider.
-    const cloudWs = await fetchCloudWorkspaces();
-    const { merged: mergedWs, changedLocal: wsChanged } = mergeWorkspaces(loadWorkspaces(), cloudWs);
-    if (wsChanged) saveWorkspaces(mergedWs);
-    await pushWorkspaces();
+    const { merged: mergedWs, changedLocal: wsChanged } = await syncWorkspaces();
 
     // 2. Documents.
     const cloudDocs = await fetchAllDocs();
@@ -645,7 +695,7 @@ const flush = async () => {
 
   setStatus({ state: 'syncing', lastError: null });
   try {
-    if (pushWs) await pushWorkspaces();
+    if (pushWs) await syncWorkspaces();
     for (const id of batch) {
       if (_conflicted.has(id)) continue; // don't push a doc with an open conflict
       const [wsId, baseKey] = id.split('::');

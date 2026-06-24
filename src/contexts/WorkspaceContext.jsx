@@ -7,6 +7,7 @@ import {
   deleteWorkspaceData,
   WORKSPACE_DEFAULT_ID,
 } from '../utils/storage';
+import { deleteWorkspaceRemote } from '../utils/syncEngine';
 
 const WorkspaceContext = createContext();
 
@@ -63,6 +64,10 @@ export const WorkspaceProvider = ({ children }) => {
   const deleteWorkspace = async (id) => {
     if (workspaces.length <= 1) return;
     await deleteWorkspaceData(id);
+    // Tombstone in the cloud synchronously BEFORE the reload below, otherwise
+    // the deletion loses the race with the debounced background push and sync
+    // resurrects the workspace from its still-live cloud row. No-op when offline.
+    await deleteWorkspaceRemote(id);
     const remaining = workspaces.filter(w => w.id !== id);
     persist(remaining);
     if (id === activeId) {
