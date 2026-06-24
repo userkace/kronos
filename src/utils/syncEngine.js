@@ -98,6 +98,10 @@ const _dirty = new Set();    // docIds pending push
 let _pushTimer = null;
 let _pushWorkspaces = false;
 const _unsubs = [];
+// Doc ids with an unresolved conflict. These are frozen from auto-sync: we
+// neither push them (which would silently converge local→cloud and make the
+// conflict vanish on the next load) nor mark them dirty, until the user picks.
+const _conflicted = new Set();
 let _onStatus = null;
 const _status = { state: 'idle', lastError: null, lastSyncedAt: null };
 
@@ -158,8 +162,100 @@ const isPresent = (kind, value) => {
   return true;
 };
 
-const valuesEqual = (kind, a, b) =>
-  kind === 'idb' ? stable(a) === stable(b) : a === b;
+// Canonical comparable form. For ls we normalize JSON (parse → stable) so two
+// equivalent blobs that differ only in key order or whitespace don't read as a
+// conflict; non-JSON strings compare as-is.
+const canonical = (kind, val) => {
+  if (kind === 'idb') return stable(val ?? null);
+  if (val == null) return 'null';
+  try { return stable(JSON.parse(val)); } catch { return JSON.stringify(val); }
+};
+
+const valuesEqual = (kind, a, b) => canonical(kind, a) === canonical(kind, b);
+
+// Coerce a stored value to a plain object for field-level diffing, or null if
+// it isn't one (scalars and arrays fall back to whole-value conflict handling).
+const toObject = (kind, val) => {
+  let obj = val;
+  if (kind !== 'idb') {
+    if (val == null) return null;
+    try { obj = JSON.parse(val); } catch { return null; }
+  }
+  return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : null;
+};
+
+// "hourlyRate" → "Hourly rate"; date keys (timesheet) are left as-is.
+const humanizeKey = (k) => {
+  if (/^\d{4}-\d{2}-\d{2}/.test(k)) return k;
+  const spaced = k.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+};
+
+// Build the per-field diff for an object-valued document. Returns the list of
+// changed fields (each with both values + presence), or null when the value
+// isn't a plain object — in which case the caller treats it as a single value.
+const diffFields = (kind, localVal, cloudVal) => {
+  const lo = toObject(kind, localVal);
+  const co = toObject(kind, cloudVal);
+  if (!lo || !co) return null;
+  const keys = new Set([...Object.keys(lo), ...Object.keys(co)]);
+  const fields = [];
+  for (const k of keys) {
+    const lHas = Object.prototype.hasOwnProperty.call(lo, k);
+    const cHas = Object.prototype.hasOwnProperty.call(co, k);
+    if (lHas && cHas && stable(lo[k]) === stable(co[k])) continue; // unchanged
+    fields.push({
+      key: k,
+      label: humanizeKey(k),
+      localValue: lHas ? lo[k] : undefined,
+      cloudValue: cHas ? co[k] : undefined,
+      localPresent: lHas,
+      cloudPresent: cHas,
+    });
+  }
+  return fields.length ? fields : null;
+};
+
+// ── Active (in-progress) time entries ──────────────────────────────────────
+// A running timer is device-local live state, like the Pomodoro countdown: its
+// time is always "now-ish" and differs across devices, so syncing it produces
+// endless false conflicts. We strip active entries from the synced/compared
+// representation of the timesheet and keep them only on the local device.
+const TIMESHEET_KEY = 'kronos_timesheet_data';
+
+// An entry isn't a finalized record until it has an endTime and isn't active.
+const isActiveEntry = (e) => !e || e.isActive === true || !e.endTime;
+
+// Remove active entries from every day; drop days left empty so the result
+// matches what other (idle) devices have.
+const stripActive = (blob) => {
+  const out = {};
+  for (const [day, arr] of Object.entries(blob || {})) {
+    if (!Array.isArray(arr)) { out[day] = arr; continue; }
+    const kept = arr.filter(e => !isActiveEntry(e));
+    if (kept.length) out[day] = kept;
+  }
+  return out;
+};
+
+// Re-attach this device's active entries on top of a synced (stripped) blob, so
+// pulling cloud data never wipes a timer the user is currently running.
+const reattachActive = (syncedBlob, localBlob) => {
+  const out = {};
+  for (const [day, arr] of Object.entries(syncedBlob || {})) {
+    out[day] = Array.isArray(arr) ? [...arr] : arr;
+  }
+  for (const [day, arr] of Object.entries(localBlob || {})) {
+    if (!Array.isArray(arr)) continue;
+    const active = arr.filter(isActiveEntry);
+    if (active.length) out[day] = [...(out[day] || []), ...active];
+  }
+  return out;
+};
+
+// The representation a document contributes to sync (push + comparison).
+const normalizeForSync = (baseKey, value) =>
+  baseKey === TIMESHEET_KEY ? stripActive(value) : value;
 
 // Every (workspace, key) descriptor we care about, given the live workspace ids.
 const allDescriptors = (workspaceIds) => {
@@ -277,15 +373,24 @@ export const reconcile = async () => {
     const pushList = [];
 
     for (const d of descs) {
-      const localVal = await readLocal(d.wsId, d.baseKey, d.kind);
+      const rawLocal = await readLocal(d.wsId, d.baseKey, d.kind);
       const cloudRow = cloudDocs.get(docId(d.wsId, d.baseKey));
+      // Compare/classify on the synced representation: for the timesheet this
+      // strips the running timer so it never registers as a conflict.
+      const localVal = normalizeForSync(d.baseKey, rawLocal);
+      const cloudVal = cloudRow ? normalizeForSync(d.baseKey, cloudRow.data) : null;
       const localHas = isPresent(d.kind, localVal);
-      const cloudHas = cloudRow != null && isPresent(d.kind, cloudRow.data);
+      const cloudHas = cloudRow != null && isPresent(d.kind, cloudVal);
 
       if (!localHas && !cloudHas) continue;
       if (localHas && !cloudHas) { pushList.push({ d, value: localVal }); continue; }
-      if (!localHas && cloudHas) { pullList.push({ d, value: cloudRow.data }); continue; }
-      if (valuesEqual(d.kind, localVal, cloudRow.data)) continue;
+      // On pull, re-attach this device's active entries so a running timer survives.
+      if (!localHas && cloudHas) {
+        const toWrite = d.baseKey === TIMESHEET_KEY ? reattachActive(cloudVal, rawLocal) : cloudVal;
+        pullList.push({ d, value: toWrite });
+        continue;
+      }
+      if (valuesEqual(d.kind, localVal, cloudVal)) continue;
       conflicts.push({
         id: docId(d.wsId, d.baseKey),
         wsId: d.wsId,
@@ -296,7 +401,10 @@ export const reconcile = async () => {
           ? null
           : (mergedWs.find(w => w.id === d.wsId)?.name ?? d.wsId),
         localValue: localVal,
-        cloudValue: cloudRow.data,
+        cloudValue: cloudVal,
+        // Per-field diff for object documents (invoice settings, colors,
+        // timesheet-by-date). null → the UI offers a single whole-value choice.
+        fields: diffFields(d.kind, localVal, cloudVal),
       });
     }
 
@@ -310,6 +418,11 @@ export const reconcile = async () => {
     // Apply uploads.
     for (const { d, value } of pushList) await upsertDoc(d.wsId, d.baseKey, value);
 
+    // Freeze the conflicting docs from auto-sync until the user resolves them,
+    // so a background push can't silently converge (and hide) the conflict.
+    _conflicted.clear();
+    for (const c of conflicts) _conflicted.add(c.id);
+
     const changedLocal = wsChanged || pullList.length > 0;
     setStatus({ state: 'synced', lastSyncedAt: new Date().toISOString() });
     return { conflicts, changedLocal };
@@ -320,8 +433,27 @@ export const reconcile = async () => {
   }
 };
 
-// Resolve the conflicts reconcile() surfaced. `choices` maps conflict id ->
-// 'local' | 'cloud'. Returns true if any local data changed (caller reloads).
+// Merge an object document field-by-field from per-field choices. Unchanged
+// fields are kept as-is; changed fields take the chosen side (omitted if that
+// side didn't have the field, i.e. a deletion). Returns the value to store
+// (object for idb, JSON string for ls).
+const mergeFields = (c, fieldChoices) => {
+  const lo = toObject(c.kind, c.localValue) || {};
+  const co = toObject(c.kind, c.cloudValue) || {};
+  const changed = new Map(c.fields.map(f => [f.key, f]));
+  const keys = new Set([...Object.keys(lo), ...Object.keys(co)]);
+  const merged = {};
+  for (const k of keys) {
+    if (!changed.has(k)) { merged[k] = lo[k]; continue; } // identical both sides
+    const src = (fieldChoices[k] || 'local') === 'cloud' ? co : lo;
+    if (Object.prototype.hasOwnProperty.call(src, k)) merged[k] = src[k];
+  }
+  return c.kind === 'idb' ? merged : JSON.stringify(merged);
+};
+
+// Resolve the conflicts reconcile() surfaced. For object documents `choices[id]`
+// is a per-field map ({ fieldKey: 'local'|'cloud' }); for scalar documents it's
+// a single 'local'|'cloud'. Returns true if any local data changed.
 export const resolveConflicts = async (conflicts, choices) => {
   if (!supabase || !_userId) return false;
   setStatus({ state: 'syncing', lastError: null });
@@ -329,14 +461,31 @@ export const resolveConflicts = async (conflicts, choices) => {
   try {
     _applyingRemote = true;
     for (const c of conflicts) {
-      const pick = choices[c.id] || 'local';
-      if (pick === 'cloud') {
-        await writeLocal(c.wsId, c.baseKey, c.kind, c.cloudValue);
+      if (c.fields) {
+        // Field-level merge. The merged value is the synced representation
+        // (timesheet conflicts are diffed on stripped data) — push it to the
+        // cloud, but re-attach this device's running timer before writing local.
+        const merged = mergeFields(c, choices[c.id] || {});
+        const localValue = c.baseKey === TIMESHEET_KEY
+          ? reattachActive(merged, await readLocal(c.wsId, c.baseKey, c.kind))
+          : merged;
+        await writeLocal(c.wsId, c.baseKey, c.kind, localValue);
+        await upsertDoc(c.wsId, c.baseKey, merged);
         changedLocal = true;
       } else {
-        // Local wins — overwrite cloud so the two sides converge.
-        await upsertDoc(c.wsId, c.baseKey, c.localValue);
+        const pick = choices[c.id] || 'local';
+        if (pick === 'cloud') {
+          const localValue = c.baseKey === TIMESHEET_KEY
+            ? reattachActive(c.cloudValue, await readLocal(c.wsId, c.baseKey, c.kind))
+            : c.cloudValue;
+          await writeLocal(c.wsId, c.baseKey, c.kind, localValue);
+          changedLocal = true;
+        } else {
+          // Local wins — overwrite cloud so the two sides converge.
+          await upsertDoc(c.wsId, c.baseKey, c.localValue);
+        }
       }
+      _conflicted.delete(c.id); // unfreeze: this doc may auto-sync again
     }
     setStatus({ state: 'synced', lastSyncedAt: new Date().toISOString() });
   } catch (err) {
@@ -367,9 +516,12 @@ const flush = async () => {
   try {
     if (pushWs) await pushWorkspaces();
     for (const id of batch) {
+      if (_conflicted.has(id)) continue; // don't push a doc with an open conflict
       const [wsId, baseKey] = id.split('::');
       const kind = WS_IDB_KEYS.includes(baseKey) ? 'idb' : 'ls';
-      const value = await readLocal(wsId, baseKey, kind);
+      // Push the synced representation — for the timesheet this excludes the
+      // running timer, so starting/ticking a timer never writes to the cloud.
+      const value = normalizeForSync(baseKey, await readLocal(wsId, baseKey, kind));
       if (isPresent(kind, value)) await upsertDoc(wsId, baseKey, value);
     }
     setStatus({ state: 'synced', lastSyncedAt: new Date().toISOString() });
@@ -384,7 +536,9 @@ const flush = async () => {
 
 const markDirty = (wsId, baseKey) => {
   if (_applyingRemote) return;
-  _dirty.add(docId(wsId, baseKey));
+  const id = docId(wsId, baseKey);
+  if (_conflicted.has(id)) return; // frozen until the user resolves the conflict
+  _dirty.add(id);
   scheduleFlush();
 };
 
@@ -427,6 +581,7 @@ export const stop = () => {
   _unsubs.forEach(fn => { try { fn(); } catch { /* noop */ } });
   _unsubs.length = 0;
   _dirty.clear();
+  _conflicted.clear();
   _pushWorkspaces = false;
   if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
   setStatus({ state: 'idle', lastError: null });
