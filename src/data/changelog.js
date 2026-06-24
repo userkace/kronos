@@ -23,6 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.3',
+    date: '2026-06-24',
+    title: 'Deleted workspace keeps resyncing',
+    changes: [
+      { type: 'fixed', description: 'Deleting a workspace while signed in now sticks. Previously the app could reload before the deletion reached the cloud, so the next sync treated the workspace as still present and brought it back — now the deletion is sent to the cloud before the reload.' },
+      { type: 'fixed', description: 'A deleted workspace and its data are now fully removed from the cloud, instead of leaving a hidden leftover record behind. Deletions still carry across to your other devices.' },
+    ],
+  },
+  {
     version: '0.7.2',
     date: '2026-06-24',
     title: 'Smarter time-entry sync',
