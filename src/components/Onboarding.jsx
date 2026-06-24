@@ -9,11 +9,14 @@ import {
   Building2,
   CalendarRange,
   FileDown,
+  Cloud,
+  Mail,
+  Loader2,
 } from 'lucide-react';
 import { useMotionPreferences } from '../hooks/useMotionPreferences';
+import { useAuth } from '../contexts/AuthContext';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const TOTAL_STEPS = 3;
 
 const FEATURES = [
   {
@@ -44,6 +47,26 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
   // +1 when moving forward, -1 backward — drives the slide direction
   const [direction, setDirection] = useState(1);
   const { getTransition, shouldReduceMotion } = useMotionPreferences();
+
+  // Optional cloud sign-in step — only when Supabase is configured. Signing in
+  // here is non-blocking: the magic link finishes the sign-in later (on click),
+  // so onboarding always completes locally regardless.
+  const { isConfigured, user, signInWithMagicLink } = useAuth();
+  const TOTAL_STEPS = isConfigured ? 4 : 3;
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [sendError, setSendError] = useState(null);
+
+  const handleSendLink = async () => {
+    if (!email.trim() || sending) return;
+    setSending(true);
+    setSendError(null);
+    const { ok, error } = await signInWithMagicLink(email);
+    setSending(false);
+    if (ok) setSent(true);
+    else setSendError(error || 'Could not send the link.');
+  };
 
   const toggleWeekendDay = (idx) => {
     setWeekendDays(prev =>
@@ -315,6 +338,97 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   </div>
                 </motion.div>
               )}
+
+              {isConfigured && currentStep === 3 && (
+                <motion.div
+                  key="sync"
+                  custom={direction}
+                  variants={stepVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={stepTransition}
+                  className="space-y-6"
+                >
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+                      Sync · optional
+                    </p>
+                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 sm:text-[1.7rem]">
+                      Back up &amp; sync across devices?
+                    </h1>
+                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600">
+                      Sign in with your email to back up your data and keep it in sync everywhere.
+                      It&apos;s completely optional — Kronos works fully on this device without an account.
+                    </p>
+                  </div>
+
+                  {user ? (
+                    <div className="flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3.5">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
+                        <Check className="h-[18px] w-[18px]" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-emerald-900">You&apos;re signed in</p>
+                        <p className="truncate text-[13px] text-emerald-700">{user.email}</p>
+                      </div>
+                    </div>
+                  ) : sent ? (
+                    <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3.5">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-emerald-900">
+                        <Mail className="h-4 w-4" /> Check your inbox
+                      </div>
+                      <p className="mt-1 text-[13px] leading-relaxed text-emerald-700">
+                        We sent a sign-in link to <span className="font-medium">{email}</span>. Open it on
+                        this device any time to finish signing in — you can keep setting up now.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => { setSent(false); setEmail(''); }}
+                        className="mt-2 text-xs font-medium text-emerald-700 underline hover:text-emerald-900"
+                      >
+                        Use a different email
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="email"
+                            inputMode="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSendLink(); } }}
+                            placeholder="you@example.com"
+                            className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSendLink}
+                          disabled={sending || !email.trim()}
+                          className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50"
+                        >
+                          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                          <span>Send link</span>
+                        </button>
+                      </div>
+                      {sendError && (
+                        <p className="text-xs text-red-600">{sendError}</p>
+                      )}
+                      <div className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3">
+                        <Cloud className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                        <p className="text-xs leading-relaxed text-gray-500">
+                          Passwordless — we&apos;ll email you a one-time link. You can also do this later from
+                          <span className="font-medium text-gray-600"> Settings → Account &amp; Sync</span>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </AnimatePresence>
 
             {/* Footer nav (steps 2 & 3 — the welcome step has its own CTA) */}
@@ -358,7 +472,9 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
         </form>
 
         <p className="mt-5 text-center text-xs text-gray-400">
-          Your data never leaves this device.
+          {isConfigured
+            ? 'Your data stays on this device — syncing is optional.'
+            : 'Your data never leaves this device.'}
         </p>
       </motion.div>
     </div>
