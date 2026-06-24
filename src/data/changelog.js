@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.4',
+    date: '2026-06-24',
+    title: 'Optional sync during setup',
+    changes: [
+      { type: 'added', description: 'Onboarding now has an optional last step to sign in and turn on cloud backup & sync. It only appears when sync is available, and it never blocks setup — you can send yourself the magic link and finish right away, or skip it entirely and enable sync later from Settings.' },
+    ],
+  },
+  {
     version: '0.7.3',
     date: '2026-06-24',
     title: 'Deleted workspace keeps resyncing',
