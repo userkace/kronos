@@ -13,6 +13,13 @@ const fmtValue = (v) => {
   if (v === '') return '(empty)';
   if (Array.isArray(v)) return `${v.length} entr${v.length === 1 ? 'y' : 'ies'}`;
   if (v && typeof v === 'object') {
+    // Time entry: show "description · HH:MM–HH:MM" rather than raw JSON.
+    if (v.startTime) {
+      const desc = (v.description || '').trim() || 'Untitled';
+      const a = v.startTime.slice(11, 16);
+      const b = v.endTime ? v.endTime.slice(11, 16) : 'running';
+      return `${desc} · ${a}–${b}`;
+    }
     const s = JSON.stringify(v);
     return s.length > 90 ? `${s.slice(0, 90)}…` : s;
   }

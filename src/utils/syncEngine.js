@@ -216,46 +216,125 @@ const diffFields = (kind, localVal, cloudVal) => {
   return fields.length ? fields : null;
 };
 
-// ── Active (in-progress) time entries ──────────────────────────────────────
-// A running timer is device-local live state, like the Pomodoro countdown: its
-// time is always "now-ish" and differs across devices, so syncing it produces
-// endless false conflicts. We strip active entries from the synced/compared
-// representation of the timesheet and keep them only on the local device.
+// ── Time-entry & weekly merge ──────────────────────────────────────────────
+// Time entries sync per ENTRY (by id), not as one opaque blob. This lets a
+// running timer simply appear on other devices (its stored form is just a
+// startTime — the ticking clock is computed live, never saved), lets a stop on
+// one device win over a still-running copy on another, and merges independent
+// edits without a prompt. We use a 3-way merge against a per-account "base"
+// snapshot of the last synced state, so deletes propagate instead of resurrecting.
 const TIMESHEET_KEY = 'kronos_timesheet_data';
+const WEEKLY_KEY = 'kronos_weekly_timesheet';
 
-// An entry isn't a finalized record until it has an endTime and isn't active.
-const isActiveEntry = (e) => !e || e.isActive === true || !e.endTime;
+const isCompleted = (e) => e && e.isActive !== true && !!e.endTime;
 
-// Remove active entries from every day; drop days left empty so the result
-// matches what other (idle) devices have.
-const stripActive = (blob) => {
-  const out = {};
+// Flatten { day: [entries] } → Map(entryId → { day, entry }).
+const flattenEntries = (blob) => {
+  const m = new Map();
   for (const [day, arr] of Object.entries(blob || {})) {
-    if (!Array.isArray(arr)) { out[day] = arr; continue; }
-    const kept = arr.filter(e => !isActiveEntry(e));
-    if (kept.length) out[day] = kept;
-  }
-  return out;
-};
-
-// Re-attach this device's active entries on top of a synced (stripped) blob, so
-// pulling cloud data never wipes a timer the user is currently running.
-const reattachActive = (syncedBlob, localBlob) => {
-  const out = {};
-  for (const [day, arr] of Object.entries(syncedBlob || {})) {
-    out[day] = Array.isArray(arr) ? [...arr] : arr;
-  }
-  for (const [day, arr] of Object.entries(localBlob || {})) {
     if (!Array.isArray(arr)) continue;
-    const active = arr.filter(isActiveEntry);
-    if (active.length) out[day] = [...(out[day] || []), ...active];
+    for (const e of arr) if (e && e.id) m.set(e.id, { day, entry: e });
+  }
+  return m;
+};
+
+// Map(entryId → { day, entry }) → { day: [entries] }, days sorted by start.
+const rebuildEntries = (map) => {
+  const out = {};
+  for (const { day, entry } of map.values()) (out[day] ||= []).push(entry);
+  for (const day of Object.keys(out)) {
+    out[day].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
   }
   return out;
 };
 
-// The representation a document contributes to sync (push + comparison).
-const normalizeForSync = (baseKey, value) =>
-  baseKey === TIMESHEET_KEY ? stripActive(value) : value;
+// Human label for an entry in the conflict dialog.
+const entryLabel = (e) => {
+  if (!e) return 'entry';
+  const desc = (e.description || '').trim() || 'Untitled';
+  const t = e.startTime ? e.startTime.slice(11, 16) : '';
+  return t ? `${desc} · ${t}` : desc;
+};
+
+// 3-way merge of time entries. Returns { merged, conflicts } where merged is the
+// fully-resolved blob (clashes default to the local copy as a placeholder) and
+// conflicts lists genuine same-entry edit clashes for the UI to resolve.
+const mergeEntries = (baseBlob, localBlob, cloudBlob) => {
+  const base = flattenEntries(baseBlob);
+  const local = flattenEntries(localBlob);
+  const cloud = flattenEntries(cloudBlob);
+  const ids = new Set([...base.keys(), ...local.keys(), ...cloud.keys()]);
+  const out = new Map();
+  const conflicts = [];
+  for (const id of ids) {
+    const b = base.get(id), l = local.get(id), c = cloud.get(id);
+    const bc = b ? stable(b.entry) : null;
+    const lc = l ? stable(l.entry) : null;
+    const cc = c ? stable(c.entry) : null;
+    const lChanged = lc !== bc;
+    const cChanged = cc !== bc;
+
+    if (!lChanged && !cChanged) { if (l) out.set(id, l); continue; }
+    if (lChanged && !cChanged) { if (l) out.set(id, l); continue; }   // local edit/delete
+    if (!lChanged && cChanged) { if (c) out.set(id, c); continue; }   // cloud edit/delete
+    if (lc === cc) { if (l) out.set(id, l); continue; }               // same change both sides
+
+    // Both diverged. Auto-resolve the unambiguous cases:
+    if (l && c) {
+      if (isCompleted(l.entry) && !isCompleted(c.entry)) { out.set(id, l); continue; } // stop wins
+      if (isCompleted(c.entry) && !isCompleted(l.entry)) { out.set(id, c); continue; }
+    }
+    if (!l || !c) { out.set(id, l || c); continue; } // edit-vs-delete → keep the surviving edit
+
+    // Genuine clash: same entry, both completed, edited differently → ask.
+    out.set(id, l); // placeholder; resolution overrides
+    conflicts.push({ id, day: l.day, cloudDay: c.day, local: l.entry, cloud: c.entry });
+  }
+  return { merged: rebuildEntries(out), conflicts };
+};
+
+// Weekly summary is derived data; merge it by date, auto-resolving clashes to
+// the cloud copy (it self-heals when that day is next recomputed locally).
+const mergeWeekly = (baseBlob, localBlob, cloudBlob) => {
+  const base = new Map(Object.entries(baseBlob || {}));
+  const local = new Map(Object.entries(localBlob || {}));
+  const cloud = new Map(Object.entries(cloudBlob || {}));
+  const keys = new Set([...base.keys(), ...local.keys(), ...cloud.keys()]);
+  const out = {};
+  for (const k of keys) {
+    const b = base.get(k), l = local.get(k), c = cloud.get(k);
+    const bc = b === undefined ? null : stable(b);
+    const lc = l === undefined ? null : stable(l);
+    const cc = c === undefined ? null : stable(c);
+    const lChanged = lc !== bc, cChanged = cc !== bc;
+    let pick;
+    if (!lChanged && !cChanged) pick = l;
+    else if (lChanged && !cChanged) pick = l;
+    else if (!lChanged && cChanged) pick = c;
+    else pick = c !== undefined ? c : l; // both changed → cloud wins (derived)
+    if (pick !== undefined) out[k] = pick;
+  }
+  return out;
+};
+
+const isMergedKey = (baseKey) => baseKey === TIMESHEET_KEY || baseKey === WEEKLY_KEY;
+
+// Remove an entry by id from a { day: [entries] } blob, in place.
+const removeEntryById = (blob, id) => {
+  for (const day of Object.keys(blob)) {
+    if (!Array.isArray(blob[day])) continue;
+    blob[day] = blob[day].filter(e => e.id !== id);
+    if (blob[day].length === 0) delete blob[day];
+  }
+};
+
+// ── Per-account merge base (last-synced snapshot, in IndexedDB) ─────────────
+const baseStorageKey = (wsId, docKey) =>
+  storageKeyFor(wsId, `__sync_base__${_userId}__${docKey}`);
+const loadBase = async (wsId, docKey) => (await idbGet(baseStorageKey(wsId, docKey))) ?? {};
+const saveBase = (wsId, docKey, blob) => {
+  idbSet(baseStorageKey(wsId, docKey), blob).catch(e => console.error('Sync base save failed:', e));
+};
 
 // Every (workspace, key) descriptor we care about, given the live workspace ids.
 const allDescriptors = (workspaceIds) => {
@@ -282,6 +361,19 @@ const upsertDoc = async (wsId, baseKey, value) => {
     { onConflict: 'user_id,workspace_id,doc_key' }
   );
   if (error) throw error;
+};
+
+// Fetch a single document's current cloud value ({} if absent/deleted).
+const fetchOneDoc = async (wsId, baseKey) => {
+  const { data, error } = await supabase
+    .from(DOCS_TABLE)
+    .select('data, deleted')
+    .eq('user_id', _userId)
+    .eq('workspace_id', wsId)
+    .eq('doc_key', baseKey)
+    .maybeSingle();
+  if (error) throw error;
+  return data && !data.deleted ? data.data : {};
 };
 
 const fetchAllDocs = async () => {
@@ -372,39 +464,70 @@ export const reconcile = async () => {
     const pullList = [];
     const pushList = [];
 
+    const wsName = (wsId) => wsId === GLOBAL_WS
+      ? null
+      : (mergedWs.find(w => w.id === wsId)?.name ?? wsId);
+
     for (const d of descs) {
       const rawLocal = await readLocal(d.wsId, d.baseKey, d.kind);
       const cloudRow = cloudDocs.get(docId(d.wsId, d.baseKey));
-      // Compare/classify on the synced representation: for the timesheet this
-      // strips the running timer so it never registers as a conflict.
-      const localVal = normalizeForSync(d.baseKey, rawLocal);
-      const cloudVal = cloudRow ? normalizeForSync(d.baseKey, cloudRow.data) : null;
-      const localHas = isPresent(d.kind, localVal);
-      const cloudHas = cloudRow != null && isPresent(d.kind, cloudVal);
 
-      if (!localHas && !cloudHas) continue;
-      if (localHas && !cloudHas) { pushList.push({ d, value: localVal }); continue; }
-      // On pull, re-attach this device's active entries so a running timer survives.
-      if (!localHas && cloudHas) {
-        const toWrite = d.baseKey === TIMESHEET_KEY ? reattachActive(cloudVal, rawLocal) : cloudVal;
-        pullList.push({ d, value: toWrite });
+      // Time entries & weekly summary: per-entry / per-date 3-way merge.
+      if (isMergedKey(d.baseKey)) {
+        const local = rawLocal ?? {};
+        const cloud = cloudRow?.data ?? {};
+        const base = await loadBase(d.wsId, d.baseKey);
+        if (d.baseKey === TIMESHEET_KEY) {
+          const { merged, conflicts: entryClashes } = mergeEntries(base, local, cloud);
+          if (entryClashes.length > 0) {
+            // Hold all of this doc's changes until the user resolves the clashes.
+            conflicts.push({
+              id: docId(d.wsId, d.baseKey),
+              wsId: d.wsId, baseKey: d.baseKey, kind: d.kind,
+              label: docLabel(d.baseKey), workspaceName: wsName(d.wsId),
+              isEntryMerge: true,
+              mergedBlob: merged,
+              fields: entryClashes.map(x => ({
+                key: x.id,
+                label: entryLabel(x.local || x.cloud),
+                localValue: x.local, cloudValue: x.cloud,
+                localDay: x.day, cloudDay: x.cloudDay,
+                localPresent: true, cloudPresent: true,
+              })),
+            });
+            continue;
+          }
+          if (stable(merged) !== stable(local)) pullList.push({ d, value: merged });
+          if (stable(merged) !== stable(cloud)) pushList.push({ d, value: merged });
+          saveBase(d.wsId, d.baseKey, merged);
+        } else {
+          const merged = mergeWeekly(base, local, cloud);
+          if (stable(merged) !== stable(local)) pullList.push({ d, value: merged });
+          if (stable(merged) !== stable(cloud)) pushList.push({ d, value: merged });
+          saveBase(d.wsId, d.baseKey, merged);
+        }
         continue;
       }
-      if (valuesEqual(d.kind, localVal, cloudVal)) continue;
+
+      const localHas = isPresent(d.kind, rawLocal);
+      const cloudHas = cloudRow != null && isPresent(d.kind, cloudRow.data);
+
+      if (!localHas && !cloudHas) continue;
+      if (localHas && !cloudHas) { pushList.push({ d, value: rawLocal }); continue; }
+      if (!localHas && cloudHas) { pullList.push({ d, value: cloudRow.data }); continue; }
+      if (valuesEqual(d.kind, rawLocal, cloudRow.data)) continue;
       conflicts.push({
         id: docId(d.wsId, d.baseKey),
         wsId: d.wsId,
         baseKey: d.baseKey,
         kind: d.kind,
         label: docLabel(d.baseKey),
-        workspaceName: d.wsId === GLOBAL_WS
-          ? null
-          : (mergedWs.find(w => w.id === d.wsId)?.name ?? d.wsId),
-        localValue: localVal,
-        cloudValue: cloudVal,
-        // Per-field diff for object documents (invoice settings, colors,
-        // timesheet-by-date). null → the UI offers a single whole-value choice.
-        fields: diffFields(d.kind, localVal, cloudVal),
+        workspaceName: wsName(d.wsId),
+        localValue: rawLocal,
+        cloudValue: cloudRow.data,
+        // Per-field diff for object documents (invoice settings, colors). null →
+        // the UI offers a single whole-value choice.
+        fields: diffFields(d.kind, rawLocal, cloudRow.data),
       });
     }
 
@@ -461,24 +584,32 @@ export const resolveConflicts = async (conflicts, choices) => {
   try {
     _applyingRemote = true;
     for (const c of conflicts) {
-      if (c.fields) {
-        // Field-level merge. The merged value is the synced representation
-        // (timesheet conflicts are diffed on stripped data) — push it to the
-        // cloud, but re-attach this device's running timer before writing local.
+      if (c.isEntryMerge) {
+        // Timesheet: start from the auto-merged blob, then override each clashing
+        // entry with the chosen side. Same value goes to local, cloud, and base.
+        const merged = JSON.parse(JSON.stringify(c.mergedBlob));
+        const fieldChoices = choices[c.id] || {};
+        for (const f of c.fields) {
+          const pick = fieldChoices[f.key] || 'local';
+          const entry = pick === 'cloud' ? f.cloudValue : f.localValue;
+          const day = pick === 'cloud' ? (f.cloudDay || f.localDay) : f.localDay;
+          removeEntryById(merged, f.key);
+          if (entry) (merged[day] ||= []).push(entry);
+        }
+        await writeLocal(c.wsId, c.baseKey, c.kind, merged);
+        await upsertDoc(c.wsId, c.baseKey, merged);
+        saveBase(c.wsId, c.baseKey, merged);
+        changedLocal = true;
+      } else if (c.fields) {
+        // Field-level merge → write the merged result to both sides.
         const merged = mergeFields(c, choices[c.id] || {});
-        const localValue = c.baseKey === TIMESHEET_KEY
-          ? reattachActive(merged, await readLocal(c.wsId, c.baseKey, c.kind))
-          : merged;
-        await writeLocal(c.wsId, c.baseKey, c.kind, localValue);
+        await writeLocal(c.wsId, c.baseKey, c.kind, merged);
         await upsertDoc(c.wsId, c.baseKey, merged);
         changedLocal = true;
       } else {
         const pick = choices[c.id] || 'local';
         if (pick === 'cloud') {
-          const localValue = c.baseKey === TIMESHEET_KEY
-            ? reattachActive(c.cloudValue, await readLocal(c.wsId, c.baseKey, c.kind))
-            : c.cloudValue;
-          await writeLocal(c.wsId, c.baseKey, c.kind, localValue);
+          await writeLocal(c.wsId, c.baseKey, c.kind, c.cloudValue);
           changedLocal = true;
         } else {
           // Local wins — overwrite cloud so the two sides converge.
@@ -519,9 +650,37 @@ const flush = async () => {
       if (_conflicted.has(id)) continue; // don't push a doc with an open conflict
       const [wsId, baseKey] = id.split('::');
       const kind = WS_IDB_KEYS.includes(baseKey) ? 'idb' : 'ls';
-      // Push the synced representation — for the timesheet this excludes the
-      // running timer, so starting/ticking a timer never writes to the cloud.
-      const value = normalizeForSync(baseKey, await readLocal(wsId, baseKey, kind));
+
+      // Time entries & weekly: merge against the cloud before pushing so we never
+      // clobber entries another device added that we haven't pulled yet.
+      if (isMergedKey(baseKey)) {
+        const local = (await readLocal(wsId, baseKey, 'idb')) ?? {};
+        const cloud = await fetchOneDoc(wsId, baseKey);
+        const base = await loadBase(wsId, baseKey);
+        if (baseKey === TIMESHEET_KEY) {
+          const { merged, conflicts } = mergeEntries(base, local, cloud);
+          if (conflicts.length > 0) {
+            // Genuine same-entry clash: keep the cloud copy of each clashing entry
+            // and DON'T advance base, so the next reconcile surfaces the prompt
+            // instead of silently letting this device win.
+            for (const x of conflicts) {
+              removeEntryById(merged, x.id);
+              (merged[x.cloudDay || x.day] ||= []).push(x.cloud);
+            }
+            await upsertDoc(wsId, baseKey, merged);
+          } else {
+            await upsertDoc(wsId, baseKey, merged);
+            saveBase(wsId, baseKey, merged);
+          }
+        } else {
+          const merged = mergeWeekly(base, local, cloud);
+          await upsertDoc(wsId, baseKey, merged);
+          saveBase(wsId, baseKey, merged);
+        }
+        continue;
+      }
+
+      const value = await readLocal(wsId, baseKey, kind);
       if (isPresent(kind, value)) await upsertDoc(wsId, baseKey, value);
     }
     setStatus({ state: 'synced', lastSyncedAt: new Date().toISOString() });

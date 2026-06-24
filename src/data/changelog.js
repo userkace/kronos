@@ -23,6 +23,16 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.2',
+    date: '2026-06-24',
+    title: 'Smarter time-entry sync',
+    changes: [
+      { type: 'changed', description: 'Time entries now sync entry by entry instead of as one all-or-nothing list, so entries from different devices simply combine. A timer running on one device now appears (and keeps ticking) on your other devices, since only its start time is synced and the elapsed time is calculated locally.' },
+      { type: 'changed', description: 'Stopping a timer on one device now reliably wins over a still-running copy on another, and deleting an entry on one device removes it on the others instead of having it reappear.' },
+      { type: 'fixed', description: 'A running timer no longer causes repeated sync conflicts. You\'re now only prompted in the rare case where the very same entry was edited differently on two devices — and then you choose per entry which version to keep.' },
+    ],
+  },
+  {
     version: '0.7.1',
     date: '2026-06-24',
     title: 'Sync conflict improvements',
