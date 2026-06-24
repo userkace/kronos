@@ -23,6 +23,19 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.1',
+    date: '2026-06-24',
+    title: 'Sync conflict improvements',
+    changes: [
+      { type: 'changed', description: 'Sync conflicts are now resolved field by field instead of all-or-nothing. When the same data changed in two places, the dialog shows only the fields that actually differ — for example, just the hourly rate on your invoice settings — each with its value on this device and in the cloud, so you can keep the right one for every field.' },
+      { type: 'changed', description: 'Each conflicting item also gets quick "All device" / "All cloud" shortcuts, alongside the existing global options, for when you do want to take one side wholesale.' },
+      { type: 'fixed', description: 'An unresolved sync conflict is no longer silently decided for you. Previously, if you refreshed without picking a side, background syncing could merge the two copies on its own and the conflict prompt would vanish. Now a conflicting item is frozen from syncing until you explicitly choose, so the prompt reliably comes back every time until you resolve it.' },
+      { type: 'fixed', description: 'A timer that\'s actively running is now kept on the device it\'s running on and left out of sync until you stop it — so an in-progress entry, whose elapsed time is always changing, no longer triggers a sync conflict every time. Once you stop the timer, the finished entry syncs normally.' },
+      { type: 'fixed', description: 'Pulling cloud data no longer wipes a timer you\'re currently running on this device.' },
+      { type: 'fixed', description: 'Sync no longer raises a false conflict when this device and the cloud hold the same data saved in a different field order or formatting.' },
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-06-24',
     title: 'Optional accounts & cloud sync',
@@ -31,7 +44,7 @@ export const CHANGELOG = [
       { type: 'added', description: 'Sign-in is passwordless: enter your email in Settings → Account & Sync and we email you a one-time magic link.' },
       { type: 'added', description: 'When signed in, your workspaces, time entries, weekly summaries, invoice & billing settings, display preferences, and Pomodoro settings sync automatically — pulled in when you sign in and pushed up as you make changes.' },
       { type: 'added', description: 'A "Sync now" button and a live sync status (Syncing / Synced / error) appear in Settings while signed in.' },
-      { type: 'added', description: 'If the same item was changed both on this device and in your account, a conflict dialog lets you choose which copy to keep, item by item.' },
+      { type: 'added', description: 'If the same data was changed both on this device and in your account, a conflict dialog lets you choose which copy to keep, item by item.' },
       { type: 'changed', description: 'Your live Pomodoro timer state (a running countdown) stays on each device — only your Pomodoro settings sync, so a timer running on one device never appears to run on another.' },
     ],
   },
