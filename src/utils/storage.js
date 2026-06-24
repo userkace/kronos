@@ -54,7 +54,9 @@ export const getActiveWorkspaceId = () => {
 // Resolve a base storage key to the active workspace. Default workspace keeps
 // the bare key (retroactive adoption of existing data); others get suffixed.
 const wsKey = (baseKey) => wsKeyFor(baseKey, getActiveWorkspaceId());
-const wsKeyFor = (baseKey, id) =>
+// Exported so the sync engine can compute the on-disk key for any workspace
+// (including non-active ones) when pulling cloud data into local storage.
+export const wsKeyFor = (baseKey, id) =>
   id === WORKSPACE_DEFAULT_ID ? baseKey : `${baseKey}__ws_${id}`;
 
 export const loadWorkspaces = () => {

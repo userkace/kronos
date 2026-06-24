@@ -32,11 +32,14 @@ import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPref
 import { ToastProvider } from './contexts/ToastContext';
 import { PomodoroProvider } from './contexts/PomodoroContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import SyncConflictModal from './components/SyncConflictModal';
 import './App.css';
 
 function AppContent() {
   const { selectedTimezone, changeTimezone, isInitialized: timezoneInitialized } = useTimezone();
   const { changeWeekStart, changeWeekendDays } = useUserPreferences();
+  const { conflicts, resolveConflicts } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
   const [currentView, setCurrentView] = useState('tracker'); // 'tracker', 'timesheet', or 'data'
@@ -223,6 +226,11 @@ function AppContent() {
 
   return (
     <>
+      {/* Cloud-sync conflict resolver — overlays everything when sign-in finds
+          documents changed both locally and in the account. */}
+      {conflicts.length > 0 && (
+        <SyncConflictModal conflicts={conflicts} onResolve={resolveConflicts} />
+      )}
       {/* Splash overlays the app (z-100) while it mounts underneath, then
           fades out via the AnimatePresence exit animation. */}
       <AnimatePresence>
@@ -299,15 +307,17 @@ function AppContent() {
 function AppWrapper() {
   return (
     <ToastProvider>
-      <WorkspaceProvider>
-        <TimezoneProvider>
-          <UserPreferencesProvider>
-            <PomodoroProvider>
-              <AppContent />
-            </PomodoroProvider>
-          </UserPreferencesProvider>
-        </TimezoneProvider>
-      </WorkspaceProvider>
+      <AuthProvider>
+        <WorkspaceProvider>
+          <TimezoneProvider>
+            <UserPreferencesProvider>
+              <PomodoroProvider>
+                <AppContent />
+              </PomodoroProvider>
+            </UserPreferencesProvider>
+          </TimezoneProvider>
+        </WorkspaceProvider>
+      </AuthProvider>
     </ToastProvider>
   );
 }
