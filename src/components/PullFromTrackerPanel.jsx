@@ -129,11 +129,15 @@ const PullFromTrackerPanel = ({ weekDays, timezone, weeklyData }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs mt-4">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      {/* Header — standard card header: icon chip + base-size title, matching
+          the section cards on the Settings/Data/Invoice tabs. */}
+      <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <ArrowDownToLine className="w-[18px] h-[18px]" />
+        </div>
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">Pull from Daily Tracker</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <h2 className="text-base font-semibold text-gray-900 tracking-tight">Pull from Daily Tracker</h2>
+          <p className="text-[13px] text-gray-500 mt-0.5">
             Fill timesheet days from your tracked entries — no need to open each day in the tracker.
           </p>
         </div>
@@ -202,10 +206,10 @@ const PullFromTrackerPanel = ({ weekDays, timezone, weeklyData }) => {
         <button
           onClick={handlePull}
           disabled={selectedCount === 0}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${
+          className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-150 ${
             selectedCount === 0
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white shadow-sm shadow-blue-600/25'
           }`}
         >
           <ArrowDownToLine className="w-4 h-4" />

@@ -194,7 +194,10 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       {/* Week Navigation Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          {/* Eyebrow — the page-identity treatment every non-tracker tab opens
+              with (Reports "Insights", Settings "Preferences", …). */}
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Weekly summary</p>
+          <div className="mt-1.5 flex items-center gap-3">
             <div className="relative">
               {/* Unbounded display font with tabular-nums numerals — matches
                   the Tracker date and Pomodoro timer "number font" treatment.
@@ -290,7 +293,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                 <div className="text-sm font-semibold text-gray-900">
                   {dayNames[index]}, {format(day, 'MMM d')}
                 </div>
-                <div className="text-sm font-mono text-gray-700 tabular-nums">
+                <div className="text-sm font-medium text-gray-900 tabular-nums">
                   {dayTotal.toFixed(2)} h
                 </div>
               </div>
@@ -321,7 +324,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     placeholder="Describe work done..."
                     className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                       copiedField === `${dayKey}-workDetails`
-                        ? 'bg-green-100 border-green-400'
+                        ? 'bg-green-50 border-green-300'
                         : 'border-gray-200 bg-white'
                     }`}
                     title="Click to copy"
@@ -341,7 +344,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                       onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
                       className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                         copiedField === `${dayKey}-timeIn`
-                          ? 'bg-green-100 border-green-400'
+                          ? 'bg-green-50 border-green-300'
                           : 'border-gray-200 bg-white'
                       }`}
                       title="Click to copy"
@@ -359,7 +362,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                       onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
                       className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                         copiedField === `${dayKey}-timeOut`
-                          ? 'bg-green-100 border-green-400'
+                          ? 'bg-green-50 border-green-300'
                           : 'border-gray-200 bg-white'
                       }`}
                       title="Click to copy"
@@ -381,7 +384,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     step="0.5"
                     className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                       copiedField === `${dayKey}-breakHours`
-                        ? 'bg-green-100 border-green-400'
+                        ? 'bg-green-50 border-green-300'
                         : 'border-gray-200 bg-white'
                     }`}
                     title="Click to copy"
@@ -394,7 +397,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
 
         <div className="rounded-2xl border border-gray-200/80 shadow-xs bg-gray-50 px-4 py-3 flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-900">Grand Total</span>
-          <span className="text-sm font-mono font-semibold text-gray-900 tabular-nums">
+          <span className="text-sm font-semibold text-gray-900 tabular-nums">
             {calculateGrandTotal().toFixed(2)} h
           </span>
         </div>
@@ -469,7 +472,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     placeholder="Describe work done..."
                     className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 ${
                       copiedField === `${dayKey}-workDetails` 
-                        ? 'bg-green-100 border-green-400' 
+                        ? 'bg-green-50 border-green-300' 
                         : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"
@@ -484,7 +487,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     onClick={() => handleCopyToClipboard(dayData.timeIn, `${dayKey}-timeIn`)}
                     className={`px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-timeIn`
-                        ? 'bg-green-100 border-green-400'
+                        ? 'bg-green-50 border-green-300'
                         : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"
@@ -499,7 +502,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     onClick={() => handleCopyToClipboard(dayData.timeOut, `${dayKey}-timeOut`)}
                     className={`px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 [-moz-appearance:_textfield] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-timeOut`
-                        ? 'bg-green-100 border-green-400'
+                        ? 'bg-green-50 border-green-300'
                         : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"
@@ -516,7 +519,7 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
                     step="0.5"
                     className={`w-full px-2.5 py-1.5 text-sm border rounded-lg shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors duration-150 [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${
                       copiedField === `${dayKey}-breakHours` 
-                        ? 'bg-green-100 border-green-400' 
+                        ? 'bg-green-50 border-green-300' 
                         : 'border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                     title="Click to copy"

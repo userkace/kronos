@@ -23,6 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.6',
+    date: '2026-07-06',
+    title: 'Timesheet visual polish',
+    changes: [
+      { type: 'changed', description: 'The Weekly Timesheet now matches the look of the other tabs: it gets the same page label treatment at the top, and the "Pull from Daily Tracker" section uses the same header style and buttons as the cards on the Settings, Data, and Invoice pages.' },
+      { type: 'changed', description: 'Softer visual feedback when you click a timesheet cell to copy it, and the hour totals now use the same numerals as the rest of the app.' },
+    ],
+  },
+  {
     version: '0.7.5',
     date: '2026-07-06',
     title: 'Pull tracker days into the Weekly Timesheet',
