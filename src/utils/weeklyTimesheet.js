@@ -11,7 +11,7 @@ import {
   saveWeeklyTimesheet
 } from './storage';
 
-const mergeOverlappingPeriods = (entries, timezone) => {
+export const mergeOverlappingPeriods = (entries, timezone) => {
   if (entries.length === 0) return [];
 
   // Use full-precision timestamps. Previously this floored each entry to the

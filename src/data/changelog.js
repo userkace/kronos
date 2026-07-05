@@ -23,6 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.5',
+    date: '2026-07-06',
+    title: 'Pull tracker days into the Weekly Timesheet',
+    changes: [
+      { type: 'added', description: 'The Weekly Timesheet now has a "Pull from Daily Tracker" section below the table. It lists each day of the week with a summary of its completed tracker entries (task count, time span, and worked hours), and lets you pull the days you pick straight into the timesheet — no more switching to the Daily Tracker, finding the date, and saving from there. Days that already have timesheet values are marked so you can choose whether to overwrite them.' },
+      { type: 'fixed', description: 'Edits typed directly into the Weekly Timesheet cells are now saved. Previously they only updated the screen and were lost when you left the page.' },
+    ],
+  },
+  {
     version: '0.7.4',
     date: '2026-06-24',
     title: 'Optional sync during setup',

@@ -4,15 +4,13 @@ import {
   startOfWeek,
   addDays,
   addWeeks,
-  subWeeks,
-  differenceInMinutes,
-  parse,
-  isValid
+  subWeeks
 } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
+import { loadWeeklyTimesheet, saveWeeklyTimesheet } from '../utils/storage';
+import PullFromTrackerPanel from './PullFromTrackerPanel';
 
 const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChange, onWeekChange }) => {
   const [localData, setLocalData] = useState(timesheetData || {});
@@ -119,7 +117,16 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
     }
     newData[dayKey][field] = value;
     setLocalData(newData);
-    onTimesheetChange(newData);
+    // Persist directly to storage — App.jsx keeps its timesheetData state as a
+    // read-only mirror of storage (synced via the storage event subscription),
+    // so writes must happen here. Merge onto fresh storage rather than saving
+    // localData wholesale so rows outside this week are never clobbered.
+    const weeklyData = loadWeeklyTimesheet() || {};
+    weeklyData[dayKey] = { ...newData[dayKey] };
+    saveWeeklyTimesheet(weeklyData);
+    if (onTimesheetChange) {
+      onTimesheetChange(newData);
+    }
   };
 
   // Handle copy to clipboard
@@ -537,8 +544,19 @@ const TimesheetTable = ({ currentDate, timezone, timesheetData, onTimesheetChang
       {weekDays.length > 0 && calculateGrandTotal() === 0 && (
         <div className="flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-gray-50 px-4 py-3 text-sm text-gray-500 mt-4">
           <Calendar className="w-4 h-4 shrink-0 text-gray-400" />
-          <span>No hours logged for this week yet — fill in your time above.</span>
+          <span>No hours logged for this week yet — fill in your time above, or pull days from the Daily Tracker.</span>
         </div>
+      )}
+
+      {/* Pull-from-tracker panel — keyed by the week's first day so the day
+          selection resets when the user navigates to a different week. */}
+      {weekDays.length > 0 && (
+        <PullFromTrackerPanel
+          key={getStorageDateKey(weekDays[0])}
+          weekDays={weekDays}
+          timezone={timezone}
+          weeklyData={localData}
+        />
       )}
     </div>
   );
