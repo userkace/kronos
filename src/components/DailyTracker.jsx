@@ -1127,7 +1127,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
   // (which also runs from onBlur) to skip writing for that one trigger.
   const skipNextBlurCommitRef = useRef(false);
 
-  const startInlineEdit = (entry, field, dims = null) => {
+  const startInlineEdit = (entry, field) => {
     if (!entry || !field) return;
     // Active entries can't have their times inline-edited (no endTime, and
     // mutating startTime mid-run is a footgun handled better by the modal).
@@ -1141,7 +1141,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     } else if (field === 'endTime') {
       initialValue = formatInTimezone(parseISO(entry.endTime), 'HH:mm:ss');
     }
-    setInlineEdit({ entryId: entry.id, field, value: initialValue, dims });
+    setInlineEdit({ entryId: entry.id, field, value: initialValue });
   };
 
   const updateInlineValue = (value) => {
@@ -1967,6 +1967,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                             {inlineEdit?.entryId === entry.id && inlineEdit.field === 'description' ? (
                               <textarea
                                 autoFocus
+                                rows={1}
                                 value={inlineEdit.value}
                                 onChange={(e) => updateInlineValue(e.target.value)}
                                 onBlur={commitInlineEdit}
@@ -1976,22 +1977,31 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                                 }}
                                 onFocus={(e) => e.target.select()}
                                 aria-label="Edit task name"
-                                style={inlineEdit.dims ? {
-                                  width: `${inlineEdit.dims.width}px`,
-                                  height: `${inlineEdit.dims.height}px`,
-                                } : undefined}
-                                className="font-semibold text-gray-900 bg-blue-50/60 rounded outline-none ring-2 ring-blue-400/50 resize leading-normal p-0 m-0 border-0 box-border block align-top whitespace-pre-wrap wrap-break-word overflow-hidden tracking-normal"
+                                // Auto-grow to fit content. Runs on every render (the
+                                // inline arrow makes a fresh callback), so the height
+                                // tracks the value as the user types.
+                                ref={(el) => {
+                                  if (el) {
+                                    el.style.height = 'auto';
+                                    el.style.height = `${el.scrollHeight}px`;
+                                  }
+                                }}
+                                // Full container width instead of cloning the label's
+                                // measured size: the h3 wraps against this same width,
+                                // so line breaks match by construction. A frozen
+                                // measured width put boundary words exactly at the
+                                // edge, where sub-pixel rounding inside the form
+                                // control rewrapped them.
+                                className="font-semibold text-gray-900 bg-blue-50/60 rounded outline-none ring-2 ring-blue-400/50 resize-none leading-normal p-0 m-0 border-0 box-border block w-full align-top whitespace-pre-wrap wrap-break-word overflow-hidden tracking-normal"
                               />
                             ) : (
                               <h3
-                                className="font-semibold text-gray-900 cursor-text rounded hover:ring-1 hover:ring-gray-200 hover:bg-gray-50/80 inline-block whitespace-pre-wrap wrap-break-word leading-normal tracking-normal p-0 m-0 border-0 box-border align-top transition-colors duration-150"
-                                onClick={(e) => {
-                                  const rect = e.currentTarget.getBoundingClientRect();
-                                  startInlineEdit(entry, 'description', {
-                                    width: rect.width,
-                                    height: rect.height,
-                                  });
-                                }}
+                                // text-wrap overrides the global `h3 { text-wrap: balance }`
+                                // base rule — balanced wrapping breaks lines earlier than
+                                // the container requires, so the title would rewrap the
+                                // moment it swaps to the textarea (which can't balance).
+                                className="font-semibold text-gray-900 cursor-text rounded hover:ring-1 hover:ring-gray-200 hover:bg-gray-50/80 inline-block text-wrap whitespace-pre-wrap wrap-break-word leading-normal tracking-normal p-0 m-0 border-0 box-border align-top transition-colors duration-150"
+                                onClick={() => startInlineEdit(entry, 'description')}
                                 title="Click to edit"
                               >
                                 {entry.description}
