@@ -1,428 +1,312 @@
-# Kronos
+<div align="center">
 
-A comprehensive time tracking and productivity application built with React and Tailwind CSS. Track your daily tasks, manage work hours, use Pomodoro techniques, generate invoices, and analyze your productivity with powerful data management tools.
+# ⏱️ Kronos
+
+**Time tracking, Pomodoro productivity, and invoicing — all in one place.**
+
+Track your daily tasks, manage work hours, stay focused with the Pomodoro technique, generate professional invoices, and keep full control of your data. Everything runs locally in your browser.
+
+<br>
+
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Highlights](#highlights)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Usage Guide](#usage-guide)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Your Data & Privacy](#your-data--privacy)
+- [Accessibility](#accessibility)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Support](#support)
+
+---
+
+## Highlights
+
+| | |
+|---|---|
+| ⏱️ **Time Tracking** | Start/stop/pause timers, manual entries, daily & weekly views |
+| 🍅 **Pomodoro Timer** | Configurable work/break cycles with task integration |
+| 🧾 **Invoicing** | Generate professional PDF invoices from your tracked time |
+| 💾 **Data Management** | Export, import, backup, and restore — you own your data |
+| 🔒 **Privacy First** | Everything is stored locally in your browser, no server required |
+| ♿ **Accessible** | Full keyboard navigation, screen reader support, reduced-motion |
+
+---
 
 ## Features
 
 ### Core Time Tracking
-- **Advanced Timer System**: Start, stop, pause, and resume timers for your tasks
-- **Daily View**: Comprehensive view of all time entries for any specific day
-- **Weekly Timesheets**: Generate and manage weekly work summaries with automatic calculations
-- **Manual Entries**: Add or edit time entries manually with precise time control
-- **Task Merging**: Combine duplicate entries with the same description automatically
-- **Chronological Sorting**: View entries in chronological or reverse chronological order
-- **Break Tracking**: Show/hide break entries for cleaner time analysis
+- **Advanced timer** — start, stop, pause, and resume timers for any task
+- **Daily view** — see every time entry for a given day at a glance
+- **Weekly timesheets** — automatic weekly summaries and calculations
+- **Manual entries** — add or edit entries with precise start/end times
+- **Task merging** — combine duplicate entries with the same description
+- **Flexible sorting** — chronological or reverse order, with break entries shown or hidden
 
 ### Pomodoro Timer
-- **Work/Break Cycles**: Configurable work sessions, short breaks, and long breaks
-- **Customizable Durations**: Set custom durations for work, short break, and long break periods
-- **Auto-start Options**: Automatically start breaks and work sessions
-- **Task Integration**: Link Pomodoro sessions with time tracking tasks
-- **Visual Progress**: Real-time progress indicators and phase tracking
-- **Session Management**: Track completed sets and overall productivity
+- **Work/break cycles** — customizable work, short break, and long break durations
+- **Auto-start** — chain sessions automatically to stay in flow
+- **Task integration** — link Pomodoro sessions to tracked tasks
+- **Visual progress** — real-time phase indicators and completed-set tracking
 
 ### Invoice Generation
-- **PDF Invoice Export**: Generate professional invoices directly from time tracking data
-- **Multiple Currencies**: Support for USD, EUR, GBP with customizable rates
-- **Client Management**: Set up client information and billing details
-- **Automatic Calculations**: Calculate totals, subtotals, and time-based billing
-- **Customizable Templates**: Professional invoice layouts with company information
-- **Weekly Billing**: Generate invoices based on weekly timesheet data
+- **PDF export** — professional, business-ready invoices from your time data
+- **Multiple currencies** — USD, EUR, and GBP with automatic formatting
+- **Client & company details** — configurable billing information
+- **Automatic calculations** — hours, subtotals, and totals from weekly timesheets
 
 ### Data Management
-- **Advanced Export**: Export all data, specific days, or selected weeks as JSON
-- **Selective Import**: Import data with options to merge or replace existing data
-- **Backup & Restore**: Automatic backup creation before imports with restore capability
-- **Data Validation**: Validate imported data for integrity and compatibility
-- **Cross-tab Sync**: Real-time synchronization across multiple browser tabs
-- **Storage Events**: Automatic updates when data changes in other tabs
+- **Flexible export** — all data, specific days, or selected weeks as JSON
+- **Selective import** — merge with or replace existing data
+- **Backup & restore** — automatic backups created before every import
+- **Validation** — imported data is checked for integrity and compatibility
 
-### User Experience & Accessibility
-- **Motion Preferences**: Customize animations and transitions for reduced motion preferences
-- **Responsive Design**: Optimized experience on desktop, tablet, and mobile devices
-- **Progress Indicators**: Visual progress bars for active timers and Pomodoro sessions
-- **Favicon Notifications**: Browser tab favicon changes to indicate active timer status
-- **Keyboard Navigation**: Full keyboard accessibility with comprehensive shortcuts
+### Settings & Experience
+- **Timezone support** — automatic detection plus 400+ manual options
+- **Week configuration** — start your week on Sunday or Monday
+- **Clock format** — 12-hour or 24-hour display
+- **Guided onboarding** — quick setup for new users
+- **Responsive design** — optimized for desktop, tablet, and mobile
+- **Cross-tab sync** — changes update instantly across all open tabs
+- **Favicon notifications** — the browser tab shows active-timer status
 
-### Settings & Customization
-- **Timezone Support**: Works seamlessly across different timezones with automatic detection
-- **Week Configuration**: Choose Sunday or Monday as the start of your week
-- **Clock Format**: Switch between 12-hour and 24-hour time display
-- **Onboarding Flow**: Guided setup for new users with preference configuration
-- **Data Persistence**: All settings and data saved locally in your browser
-- **Toast Notifications**: User-friendly feedback system for all actions
-
-### Navigation & Interface
-- **Sidebar Navigation**: Collapsible sidebar with quick access to all features
-- **Date Picker**: Advanced calendar interface for navigating to any date
-- **Today Button**: Quickly return to the current date from any view
-- **View Switching**: Seamless switching between Daily Tracker, Pomodoro Timer, Weekly Timesheet, Invoice Generator, Settings, and Data Management
-- **Real-time Clock**: Live clock display in selected timezone and format
-
-## Technologies Used
-
-- **React 19.2.0** - Modern UI framework with latest features
-- **Vite 7.2.4** - Fast build tool and development server
-- **Tailwind CSS 4.1.17** - Utility-first CSS framework with Vite plugin
-- **date-fns 4.1.0** - Date manipulation and formatting
-- **date-fns-tz 3.2.0** - Timezone handling
-- **Framer Motion 12.23.26** - Animation library for smooth transitions
-- **Lucide React 0.556.0** - Beautiful icon library
-- **@react-pdf/renderer 4.3.2** - PDF generation for invoices
-- **ESLint 9.39.1** - Code linting and quality assurance
+---
 
 ## Getting Started
 
 ### Prerequisites
-
-- Node.js (version 18 or higher)
-- npm or yarn
+- **Node.js** 18 or higher
+- **npm** or **yarn**
 
 ### Installation
 
-1. Clone the repository:
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd kronos
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Start the development server:
-```bash
+# Start the development server
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+Then open **http://localhost:5173** in your browser.
 
-### Building for Production
+### Available Scripts
 
-```bash
-npm run build
-```
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Build for production (output in `dist/`) |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint to check code quality |
 
-The built files will be in the `dist` directory.
+---
 
-### Linting
+## Usage Guide
 
-```bash
-npm run lint
-```
+### Tracking Time
+1. Enter a task description and click **Start** (or press <kbd>Enter</kbd>).
+2. The favicon updates to show a timer is running.
+3. **Pause/resume** to take breaks without ending the session.
+4. Click **Stop** to save the entry.
 
-Run ESLint to check code quality and style.
+Use **Add Manual Entry** for past work, hover an entry to **edit** or **delete** it, and select entries with matching descriptions to **merge** them. Navigate days with the arrow buttons, the calendar picker, or the **Today** button.
 
-### Preview Production Build
+### Using the Pomodoro Timer
+1. Open the **Pomodoro Timer** view from the sidebar.
+2. Set your work duration (default **25 min**), short break (**5 min**), and long break (**15 min**).
+3. Choose how many work sessions precede a long break.
+4. Click **Start** — enable auto-start to chain phases automatically, and link sessions to tasks for unified tracking.
 
-```bash
-npm run preview
-```
+### Generating an Invoice
+1. Open the **Invoice Generator** and fill in your company and client details.
+2. Set your hourly rate and currency.
+3. Select the week or date range and review the included entries.
+4. Add invoice number, due date, and notes, then click **Generate PDF** to download.
 
-Preview the production build locally.
+### Managing Your Data
+- **Export** — choose all data, specific days, or selected weeks, then download the JSON file.
+- **Import** — pick **Replace**, **Merge**, or **Selective** mode; a backup is created automatically first.
+- **Restore** — roll back to a previous state if needed.
 
-## Usage
+### Adjusting Settings
+Configure your **timezone**, **week start**, and **clock format**, tune **motion preferences** for performance or accessibility, and re-run **onboarding** any time from the Settings view.
 
-### Core Time Tracking
-
-#### Starting a Timer
-1. Enter a task description in the input field
-2. Click "Start" or press Enter to begin tracking
-3. The timer will start and the favicon will change to indicate active tracking
-4. Use the pause/resume functionality to take breaks without stopping the timer
-
-#### Managing Time Entries
-- **Stop Timer**: Click the "Stop" button to end the current timer and save the entry
-- **Manual Entry**: Click "Add Manual Entry" to create time entries with specific start/end times
-- **Edit Entries**: Hover over any entry and click the edit icon to modify details
-- **Delete Entries**: Use the delete option in the edit modal to remove entries
-- **Merge Entries**: Select multiple entries with the same description to merge them
-- **Sort Order**: Toggle between chronological and reverse chronological order
-
-#### Date Navigation
-- **Previous/Next Day**: Use the arrow buttons to navigate between days
-- **Calendar Picker**: Click the date to open an advanced calendar for date selection
-- **Today Button**: Quickly return to the current date
-- **Date Search**: Jump to any specific date using the calendar interface
-
-### Pomodoro Timer
-
-#### Basic Usage
-1. Navigate to the Pomodoro Timer view from the sidebar
-2. Set your work duration (default: 25 minutes)
-3. Configure short break (default: 5 minutes) and long break (default: 15 minutes) durations
-4. Set the number of work sessions per long break
-5. Click "Start" to begin your first work session
-
-#### Advanced Features
-- **Auto-start**: Enable auto-start for breaks and work sessions to maintain flow
-- **Task Integration**: Link Pomodoro sessions to specific tasks for comprehensive tracking
-- **Phase Tracking**: Visual indicators show current phase (Work, Short Break, Long Break)
-- **Session Counter**: Track completed work sessions and total sets
-- **Skip Phase**: Skip current phase if needed (use sparingly for best results)
-- **Reset Options**: Reset current session or all sessions as needed
-
-### Invoice Generation
-
-#### Setting Up Invoices
-1. Navigate to the Invoice Generator from the sidebar
-2. Configure your company information (name, address, contact details)
-3. Set up client information for billing
-4. Configure hourly rates and currency preferences
-
-#### Generating Invoices
-1. Select the week or date range for the invoice
-2. Review the time entries that will be included
-3. Customize invoice details (invoice number, due date, notes)
-4. Click "Generate PDF" to create the invoice
-5. Download the professionally formatted PDF for client delivery
-
-#### Invoice Features
-- **Multiple Currencies**: Support for USD, EUR, GBP with automatic formatting
-- **Time Calculations**: Automatic calculation of hours and totals
-- **Professional Layout**: Clean, business-ready invoice design
-- **Weekly Summaries**: Generate invoices based on weekly timesheet data
-- **Custom Rates**: Set different rates for different clients or projects
-
-### Data Management
-
-#### Exporting Data
-1. Navigate to Data Management from the sidebar
-2. Choose export mode:
-   - **All Data**: Export complete timesheet history
-   - **Specific Days**: Select individual days to export
-   - **Selected Weeks**: Choose specific weeks for export
-3. Click "Export" to download the JSON file
-4. Save the export file for backup or migration purposes
-
-#### Importing Data
-1. Click "Import Data" in the Data Management section
-2. Choose import mode:
-   - **Replace All**: Replace existing data with imported data
-   - **Merge Data**: Combine imported data with existing entries
-   - **Selective Import**: Choose specific days or weeks to import
-3. Select your JSON export file
-4. Review import summary and confirm
-5. Automatic backup is created before import
-
-#### Backup & Restore
-- **Automatic Backups**: Backups created automatically before imports
-- **Manual Restore**: Revert to previous data state if needed
-- **Data Validation**: Imported data is validated for integrity
-- **Cross-tab Sync**: Changes automatically sync across all open tabs
-
-### Settings & Customization
-
-#### Basic Settings
-- **Timezone**: Select your preferred timezone from the dropdown
-- **Week Start**: Choose Sunday or Monday as the start of your week
-- **Clock Format**: Switch between 12-hour (AM/PM) and 24-hour display
-- **Save Settings**: Click "Save Settings" to apply changes
-
-#### Advanced Preferences
-- **Motion Settings**: Reduce or disable animations for better performance
-- **Data Management**: Clear all data or reset onboarding flow
-- **Sidebar State**: Toggle sidebar collapsed/expanded state
-- **Toast Notifications**: Configure notification preferences
-
-#### Onboarding
-- **First-time Setup**: Guided flow for new users
-- **Preference Configuration**: Set up timezone, week start, and other preferences
-- **Tutorial**: Interactive walkthrough of main features
-- **Reset Option**: Reset onboarding to show setup screen again
+---
 
 ## Keyboard Shortcuts
 
-- `Enter`: Start timer with current task description
-- `Escape`: Close modals and cancel actions
-- `Tab`: Navigate between interactive elements
-- `Space`: Pause/resume active timer when focused
-- `Arrow Keys`: Navigate calendar dates and menu items
+| Key | Action |
+|---|---|
+| <kbd>Enter</kbd> | Start timer with the current task |
+| <kbd>Space</kbd> | Pause / resume the active timer (when focused) |
+| <kbd>Escape</kbd> | Close modals and cancel actions |
+| <kbd>Tab</kbd> | Move between interactive elements |
+| <kbd>Arrow Keys</kbd> | Navigate calendar dates and menus |
 
-## Timezone Support
+---
 
-Kronos provides comprehensive timezone support with automatic detection and manual configuration:
-- **Automatic Detection**: Detects your system timezone on first launch
-- **Manual Selection**: Choose from over 400 timezone options
-- **Real-time Conversion**: All time calculations respect selected timezone
-- **Cross-region Tracking**: Maintain accurate time tracking when traveling
-- **Timezone Preservation**: Exported data maintains timezone information
-- **Multiple Display**: View times in different timezones simultaneously
+## Your Data & Privacy
 
-## Data Storage & Synchronization
+Kronos stores everything **locally in your browser** using `localStorage` — no accounts, no servers, no tracking.
 
-### Local Storage
-All your time tracking data is stored locally in your browser using localStorage:
-- **Privacy First**: Your data stays private and on your device
-- **Offline Capability**: No internet connection required for basic functionality
-- **Instant Access**: Data loads immediately without server delays
-- **Export Backup**: Regular export recommended for data safety
+- **Private by default** — your data never leaves your device
+- **Works offline** — no connection needed for core features
+- **Instant** — data loads immediately, no server round-trips
+- **Cross-tab sync** — changes propagate across open tabs in real time
+- **Resilient** — data is validated on load, with automatic backups before major operations
 
-### Cross-tab Synchronization
-- **Real-time Sync**: Changes automatically sync across all open tabs
-- **Storage Events**: Advanced event system for instant updates
-- **Conflict Resolution**: Intelligent handling of simultaneous changes
-- **State Consistency**: Ensures all tabs show the same data
+> 💡 **Tip:** Export your data regularly. Since everything lives in your browser, clearing site data will remove it — keep a backup.
 
-### Data Integrity
-- **Validation**: All data is validated before storage
-- **Error Recovery**: Automatic recovery from corrupted data
-- **Backup Creation**: Automatic backups before major operations
-- **Migration Support**: Seamless data migration between versions
+---
 
-## Accessibility Features
+## Accessibility
 
-Kronos is built with accessibility in mind:
-- **Keyboard Navigation**: Full keyboard accessibility for all features
-- **Screen Reader Support**: Compatible with modern screen readers
-- **Motion Preferences**: Respect for reduced motion preferences
-- **High Contrast**: Supports high contrast mode and system themes
-- **Focus Management**: Logical focus flow and visible focus indicators
-- **ARIA Labels**: Comprehensive ARIA labeling for screen readers
+Kronos is built to be usable by everyone:
 
-## Application Structure
+- **Full keyboard navigation** for every feature
+- **Screen reader support** with comprehensive ARIA labeling
+- **Reduced-motion** preference support
+- **High-contrast** and system-theme compatibility
+- **Logical focus flow** with visible focus indicators
 
-Kronos is built with a modular, scalable component architecture:
+---
 
-### Core Application
-- **App.jsx**: Main application with routing, providers, and state management
-- **AppLayout.jsx**: Layout component with sidebar navigation and responsive design
+## Tech Stack
 
-### Feature Components
-- **DailyTracker**: Main time tracking interface with advanced timer controls
-- **PomodoroTimer**: Full-featured Pomodoro technique implementation
-- **TimesheetTable**: Weekly timesheet view with calculations and summaries
-- **InvoicePage**: PDF invoice generation with client management
-- **DataImportExport**: Advanced data management with selective operations
-- **Settings**: Comprehensive settings and preference management
-- **Onboarding**: Guided setup flow for new users
-- **TimeEntryModal**: Modal for adding and editing time entries
+| Package | Version | Purpose |
+|---|---|---|
+| **React** | 19.2.0 | UI framework |
+| **Vite** | 7.2.4 | Build tool & dev server |
+| **Tailwind CSS** | 4.1.17 | Utility-first styling |
+| **date-fns** | 4.1.0 | Date manipulation |
+| **date-fns-tz** | 3.2.0 | Timezone handling |
+| **Framer Motion** | 12.23.26 | Animations |
+| **Lucide React** | 0.556.0 | Icons |
+| **@react-pdf/renderer** | 4.3.2 | Invoice PDF generation |
+| **ESLint** | 9.39.1 | Linting |
 
-### UI Components
-- **DatePicker**: Advanced calendar component with timezone support
-- **TimezoneSelect**: Dropdown for timezone selection
-- **PomodoroProgressBar**: Visual progress indicator for Pomodoro sessions
-- **DailyTrackerProgressBar**: Progress indicator for daily time tracking
+---
 
-### Context Providers
-- **TimezoneContext**: Global timezone management and conversion
-- **UserPreferencesContext**: User settings and preferences state
-- **ToastContext**: Notification system for user feedback
-- **PomodoroContext**: Pomodoro timer state and configuration
+## Project Structure
 
-### Utilities & Hooks
-- **storage.js**: LocalStorage management with validation and error handling
-- **dataImportExport.js**: Advanced data import/export with backup/restore
-- **entryUtils.js**: Time entry manipulation and sorting utilities
-- **faviconManager.js**: Dynamic favicon management for timer status
-- **storageEvents.js**: Cross-tab synchronization system
-- **timezoneUtils.js**: Advanced timezone calculation utilities
-- **useMotionPreferences.js**: Hook for managing animation preferences
-- **useUnifiedDisplay.js**: Hook for consistent time display formatting
+Kronos uses a modular, scalable component architecture.
 
-## Performance Optimizations
+```
+src/
+├── App.jsx                 # Routing, providers, and top-level state
+├── AppLayout.jsx           # Sidebar navigation & responsive layout
+├── components/
+│   ├── DailyTracker        # Main time-tracking interface
+│   ├── PomodoroTimer       # Pomodoro technique implementation
+│   ├── TimesheetTable      # Weekly timesheet with calculations
+│   ├── InvoicePage         # PDF invoice generation
+│   ├── DataImportExport    # Data management operations
+│   ├── Settings            # Preferences & configuration
+│   ├── Onboarding          # Guided setup for new users
+│   └── ...                 # DatePicker, modals, progress bars, etc.
+├── context/
+│   ├── TimezoneContext     # Global timezone management
+│   ├── UserPreferencesContext
+│   ├── ToastContext        # Notification system
+│   └── PomodoroContext     # Pomodoro state & config
+└── utils/
+    ├── storage.js          # localStorage with validation
+    ├── dataImportExport.js # Import/export with backup/restore
+    ├── entryUtils.js       # Entry manipulation & sorting
+    ├── faviconManager.js   # Dynamic favicon status
+    ├── storageEvents.js    # Cross-tab synchronization
+    └── timezoneUtils.js    # Timezone calculations
+```
 
-- **Memoization**: Strategic use of React.memo and useMemo for performance
-- **Lazy Loading**: Components loaded on-demand to reduce initial bundle size
-- **Efficient Updates**: Optimized re-renders with proper dependency management
-- **Storage Optimization**: Efficient localStorage usage with data compression
-- **Animation Performance**: Hardware-accelerated animations with Framer Motion
-- **Bundle Optimization**: Tree-shaking and code splitting for faster load times
+---
 
 ## Troubleshooting
 
-### Common Issues
+<details>
+<summary><strong>Timer won't start</strong></summary>
 
-**Timer Not Starting**
-- Ensure you've entered a task description
-- Check that your browser supports localStorage
-- Try refreshing the page and restarting the timer
+- Make sure you've entered a task description.
+- Confirm your browser allows `localStorage`.
+- Refresh the page and try again.
+</details>
 
-**Data Not Saving**
-- Check browser localStorage permissions
-- Clear browser cache and try again
-- Export data regularly as backup
+<details>
+<summary><strong>Data isn't saving</strong></summary>
 
-**Timezone Issues**
-- Verify your system timezone is correct
-- Manually select your timezone in Settings
-- Restart the application after timezone changes
+- Check your browser's `localStorage` permissions.
+- Clear the cache and reload.
+- Export your data regularly as a backup.
+</details>
 
-**Cross-tab Sync Problems**
-- Ensure both tabs are on the same domain
-- Check that localStorage is enabled
-- Refresh both tabs to re-establish sync
+<details>
+<summary><strong>Timezone looks wrong</strong></summary>
 
-**Invoice Generation Issues**
-- Verify you have time entries for the selected period
-- Check that client information is properly configured
-- Ensure your browser supports PDF downloads
+- Verify your system timezone.
+- Manually select your timezone in Settings.
+- Reload the app after changing it.
+</details>
 
-**Performance Issues**
-- Enable reduced motion in Settings
-- Close unused browser tabs
-- Export and clear old data if storage is full
+<details>
+<summary><strong>Cross-tab sync isn't working</strong></summary>
 
-### Browser Compatibility
+- Ensure both tabs are on the same domain.
+- Confirm `localStorage` is enabled.
+- Refresh both tabs to re-establish sync.
+</details>
 
-Kronos works best with modern browsers:
-- **Chrome 90+**: Full feature support
-- **Firefox 88+**: Full feature support
-- **Safari 14+**: Full feature support
-- **Edge 90+**: Full feature support
+<details>
+<summary><strong>Invoice won't generate</strong></summary>
 
-### Data Recovery
+- Confirm there are time entries in the selected period.
+- Check that client information is filled in.
+- Make sure your browser allows PDF downloads.
+</details>
 
-If you experience data loss:
-1. Check for automatic backups in Data Management
-2. Import your most recent export file
-3. Contact support with browser console errors
+**Supported browsers:** Chrome 90+, Firefox 88+, Safari 14+, Edge 90+.
+
+---
 
 ## Contributing
 
-We welcome contributions to make Kronos even better!
+Contributions are welcome!
 
-### Development Setup
-1. Fork the repository
-2. Clone your fork locally
-3. Install dependencies: `npm install`
-4. Start development server: `npm run dev`
-5. Create a feature branch for your changes
+1. Fork the repository and clone your fork.
+2. Install dependencies: `npm install`
+3. Create a feature branch: `git checkout -b feature/amazing-feature`
+4. Make your changes, following the existing code style and keeping accessibility intact.
+5. Commit: `git commit -m "Add amazing feature"`
+6. Push: `git push origin feature/amazing-feature`
+7. Open a Pull Request with a clear description.
 
-### Contribution Guidelines
-- Follow the existing code style and patterns
-- Add tests for new features
-- Update documentation for any UI changes
-- Ensure all accessibility features are maintained
-- Test across different browsers and devices
+Please test across different browsers and devices, and update documentation for any UI changes.
 
-### Submitting Changes
-1. Create a feature branch (`git checkout -b feature/amazing-feature`)
-2. Commit your changes (`git commit -m 'Add some amazing feature')`
-3. Push to the branch (`git push origin feature/amazing-feature`)
-4. Open a Pull Request with detailed description
+---
 
 ## Support
 
-### Getting Help
-- **Documentation**: Check this README and inline tooltips
-- **Issues**: Report bugs and request features on GitHub
-- **Community**: Join discussions in GitHub Issues
-- **Email**: Contact support for enterprise inquiries
+- **Docs** — this README and in-app tooltips
+- **Issues** — report bugs and request features on GitHub
+- **Community** — join the discussion in GitHub Issues
 
-### Feature Requests
-We love hearing your ideas! When requesting features:
-- Describe the use case and problem you're solving
-- Provide examples of how you'd like it to work
-- Consider how it benefits other users
-
-### Bug Reports
-Help us fix issues quickly by providing:
-- Browser version and operating system
-- Steps to reproduce the issue
-- Expected vs actual behavior
-- Any error messages from browser console
+When reporting a bug, include your browser and OS, steps to reproduce, expected vs. actual behavior, and any console errors. For feature requests, describe the problem you're solving and how you'd like it to work.
 
 ---
 
