@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText, Bell, BarChart3 } from 'lucide-react';
+import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText, Bell, BarChart3, Github } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { loadSidebarState, saveSidebarState } from '../utils/storage';
@@ -213,12 +213,24 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
 
           {/* Sidebar Footer */}
           <div className="px-5 py-4 border-t border-gray-100">
-            {/* Timezone Display */}
-            <div className="flex items-center gap-2 text-[13px] text-gray-500">
-              <Globe className="w-4 h-4 shrink-0 text-gray-400" />
-              {(() => { const { city, offset } = formatTimezoneDisplay(selectedTimezone); return (
-                <span className="truncate">{city}{offset ? ` · ${offset}` : ''}</span>
-              ); })()}
+            <div className="flex items-center justify-between gap-2">
+              {/* Timezone Display */}
+              <div className="flex items-center gap-2 text-[13px] text-gray-500 min-w-0">
+                <Globe className="w-4 h-4 shrink-0 text-gray-400" />
+                {(() => { const { city, offset } = formatTimezoneDisplay(selectedTimezone); return (
+                  <span className="truncate">{city}{offset ? ` · ${offset}` : ''}</span>
+                ); })()}
+              </div>
+              <a
+                href="https://github.com/userkace/kronos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 -m-1 shrink-0 text-gray-300 hover:text-gray-500 transition-colors duration-150"
+                aria-label="Kronos on GitHub"
+                title="Kronos on GitHub"
+              >
+                <Github className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>

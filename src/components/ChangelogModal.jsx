@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles, X, Github } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
 import { CHANGE_TYPES } from '../data/changelog';
 
@@ -128,7 +128,16 @@ const ChangelogModal = ({ entries, onDismiss }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end px-6 py-4 border-t border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+          <a
+            href="https://github.com/userkace/kronos"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors duration-150"
+          >
+            <Github className="w-3.5 h-3.5" />
+            userkace/kronos
+          </a>
           <button
             onClick={onDismiss}
             className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 transition-colors duration-150"

@@ -302,8 +302,8 @@ Please test across different browsers and devices, and update documentation for 
 ## Support
 
 - **Docs** — this README and in-app tooltips
-- **Issues** — report bugs and request features on GitHub
-- **Community** — join the discussion in GitHub Issues
+- **Issues** — report bugs and request features on [GitHub Issues](https://github.com/userkace/kronos/issues)
+- **Community** — join the discussion in [GitHub Issues](https://github.com/userkace/kronos/issues)
 
 When reporting a bug, include your browser and OS, steps to reproduce, expected vs. actual behavior, and any console errors. For feature requests, describe the problem you're solving and how you'd like it to work.
 
@@ -312,3 +312,5 @@ When reporting a bug, include your browser and OS, steps to reproduce, expected 
 **Kronos** - Comprehensive time tracking, Pomodoro productivity, invoice generation, and data management - all in one powerful application.
 
 *Track your time, boost your productivity, manage your billing, and take control of your work day with Kronos.*
+
+Built by [@userkace](https://github.com/userkace) · [userkace/kronos](https://github.com/userkace/kronos)

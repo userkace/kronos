@@ -16,7 +16,9 @@ import {
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
   AlertTriangle, Download, RefreshCcw, X, BarChart2, Plus, Building2,
+  Github, Star,
 } from 'lucide-react';
+import { CHANGELOG } from '../data/changelog';
 
 const formatBytes = (n) => {
   if (n < 1024) return `${n} B`;
@@ -790,6 +792,45 @@ const Settings = ({ onCorruptionResolved }) => {
               </button>
             </div>
           </div>
+
+        {/* About */}
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gray-100 text-gray-600">
+                <Github className="w-[18px] h-[18px]" />
+              </div>
+              <div>
+                <h4 className="text-base font-semibold text-gray-900 tracking-tight">
+                  kronos{' '}
+                  <span className="text-sm font-normal text-gray-400 tabular-nums">
+                    v{CHANGELOG[0].version}
+                  </span>
+                </h4>
+                <p className="text-[13px] text-gray-500">
+                  Open source, made by{' '}
+                  <a
+                    href="https://github.com/userkace"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-gray-600 hover:text-gray-900 underline decoration-gray-300 underline-offset-2 transition-colors duration-150"
+                  >
+                    @userkace
+                  </a>
+                </p>
+              </div>
+            </div>
+            <a
+              href="https://github.com/userkace/kronos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 text-gray-700 rounded-lg shadow-xs transition-colors duration-150"
+            >
+              <Star className="w-4 h-4" />
+              Star on GitHub
+            </a>
+          </div>
+        </div>
 
       </div>
     </div>

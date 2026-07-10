@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.7',
+    date: '2026-07-10',
+    title: 'Kronos is on GitHub',
+    changes: [
+      { type: 'added', description: 'You can now find Kronos on GitHub. Links to the project live in this release-notes window, at the bottom of the sidebar, and in a new About section on the Settings page — which also shows the app version you\'re running.' },
+    ],
+  },
+  {
     version: '0.7.6',
     date: '2026-07-06',
     title: 'Timesheet visual polish',
