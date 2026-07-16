@@ -192,10 +192,8 @@ const TimezoneSelect = ({ timezone, onTimezoneChange }) => {
     <div className="space-y-3">
       <div
         ref={mapRef}
-        className="rounded-xl overflow-hidden border border-gray-200/80 shadow-xs"
+        className="h-48 sm:h-60 w-full rounded-xl overflow-hidden border border-gray-200/80 shadow-xs"
         style={{
-          height: '240px',
-          width: '100%',
           background: '#d4dadc',
           isolation: 'isolate',
         }}

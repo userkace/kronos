@@ -109,9 +109,14 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
   const stepTransition = getTransition({ duration: 0.3, ease: [0.22, 1, 0.36, 1] });
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Ambient backdrop: faint dot grid + soft color washes */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+    // Mobile-first, app-style layout: the flow fills the whole screen (white,
+    // edge to edge) with the navigation pinned to the bottom like a native
+    // onboarding. From `sm` up it becomes the centered card on a soft backdrop.
+    // min-h-dvh tracks the real visible height under mobile browser toolbars.
+    <div className="relative min-h-dvh bg-white sm:bg-slate-50 sm:flex sm:justify-center sm:p-6">
+      {/* Ambient backdrop (desktop only): faint dot grid + soft color washes.
+          Fixed + clipped so the oversized blobs never create horizontal scroll. */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 hidden overflow-hidden sm:block">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(15_23_42/0.05)_1px,transparent_0)] bg-size-[26px_26px]" />
         <div className="absolute -top-40 -left-32 h-120 w-120 rounded-full bg-blue-200/45 blur-3xl" />
         <div className="absolute -bottom-48 -right-32 h-136 w-136 rounded-full bg-indigo-200/40 blur-3xl" />
@@ -122,11 +127,13 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16, scale: shouldReduceMotion ? 1 : 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={getTransition({ duration: 0.45, ease: [0.22, 1, 0.36, 1] })}
-        className="relative w-full max-w-xl"
+        className="relative flex min-h-dvh w-full max-w-xl flex-col mx-auto sm:my-auto sm:min-h-0"
       >
+        {/* overflow-hidden is desktop-only: on mobile it would break the
+            sticky bottom nav. */}
         <form
           onSubmit={handleSubmit}
-          className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white/95 shadow-xl backdrop-blur-sm"
+          className="flex flex-1 flex-col bg-white sm:flex-none sm:overflow-hidden sm:rounded-3xl sm:border sm:border-gray-200/80 sm:bg-white/95 sm:shadow-xl sm:backdrop-blur-sm"
         >
           {/* Progress bar */}
           <div className="h-1 bg-gray-100">
@@ -138,8 +145,9 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
             />
           </div>
 
-          {/* Header: wordmark + step counter */}
-          <div className="flex items-center justify-between px-6 pt-6 sm:px-10">
+          {/* Header: wordmark + step counter. Extra top padding on phones with
+              a notch / status bar (PWA standalone). */}
+          <div className="flex items-center justify-between px-5 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-10 sm:pt-6">
             <div className="flex items-center gap-2.5">
               <img
                 src="/kronos-round.png"
@@ -155,8 +163,8 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
             </span>
           </div>
 
-          {/* Step content */}
-          <div className="px-6 pb-6 pt-8 sm:px-10 sm:pb-8">
+          {/* Step content — grows to push the nav to the bottom on mobile. */}
+          <div className="flex-1 px-5 pb-6 pt-7 sm:flex-none sm:px-10 sm:pb-0 sm:pt-8">
             <AnimatePresence mode="wait" custom={direction} initial={false}>
               {currentStep === 0 && (
                 <motion.div
@@ -198,15 +206,6 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                       </div>
                     ))}
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700"
-                  >
-                    <span>Get started</span>
-                    <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-                  </button>
                 </motion.div>
               )}
 
@@ -392,7 +391,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <div className="relative flex-1">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                           <input
@@ -409,7 +408,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                           type="button"
                           onClick={handleSendLink}
                           disabled={sending || !email.trim()}
-                          className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50"
+                          className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50"
                         >
                           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                           <span>Send link</span>
@@ -431,13 +430,28 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
               )}
             </AnimatePresence>
 
-            {/* Footer nav (steps 2 & 3 — the welcome step has its own CTA) */}
-            {currentStep > 0 && (
-              <div className="mt-8 flex items-center gap-3">
+          </div>
+
+          {/* Bottom nav — pinned to the bottom of the screen on mobile, like a
+              native app onboarding (sticky rides above scrolled content, with
+              home-indicator safe-area padding). On desktop it's simply the
+              card's footer. */}
+          <div className="sticky bottom-0 border-t border-gray-100 bg-white/95 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:static sm:border-0 sm:bg-transparent sm:px-10 sm:pb-8 sm:pt-8 sm:backdrop-blur-none">
+            {currentStep === 0 ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700"
+              >
+                <span>Get started</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-600 shadow-xs transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-3.5 text-sm font-medium text-gray-600 shadow-xs transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
@@ -451,7 +465,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                     key="continue"
                     type="button"
                     onClick={nextStep}
-                    className="group flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700"
+                    className="group flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700"
                   >
                     <span>Continue</span>
                     <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
@@ -460,7 +474,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   <button
                     key="finish"
                     type="submit"
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/25 transition-colors duration-150 hover:bg-blue-500 active:bg-blue-700"
                   >
                     <Check className="h-4 w-4" />
                     <span>Finish setup</span>
@@ -468,10 +482,15 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                 )}
               </div>
             )}
+            <p className="mt-3 text-center text-xs text-gray-400 sm:hidden">
+              {isConfigured
+                ? 'Your data stays on this device — syncing is optional.'
+                : 'Your data never leaves this device.'}
+            </p>
           </div>
         </form>
 
-        <p className="mt-5 text-center text-xs text-gray-400">
+        <p className="mt-5 hidden text-center text-xs text-gray-400 sm:block">
           {isConfigured
             ? 'Your data stays on this device — syncing is optional.'
             : 'Your data never leaves this device.'}
