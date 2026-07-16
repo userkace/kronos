@@ -28,6 +28,7 @@ export const CHANGELOG = [
     title: 'More invoice currencies',
     changes: [
       { type: 'added', description: 'The invoice currency picker now includes PHP (Philippine Peso) along with other common currencies: JPY, CNY, INR, KRW, AUD, CAD, SGD, HKD, NZD, and CHF.' },
+      { type: 'fixed', description: 'The sync conflict dialog used to show entry times in UTC. It now shows them in the workspace\'s timezone (or your device\'s local time if the workspace doesn\'t have one set), so the times match what you see everywhere else in the app.' },
     ],
   },
   {

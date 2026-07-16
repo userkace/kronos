@@ -541,6 +541,7 @@ export const reconcile = async () => {
         if (d.baseKey === TIMESHEET_KEY) {
           const { merged, conflicts: entryClashes } = mergeEntries(base, local, cloud);
           if (entryClashes.length > 0) {
+            const wsTz = loadTimezoneForWorkspace(d.wsId);
             // Hold all of this doc's changes until the user resolves the clashes.
             conflicts.push({
               id: docId(d.wsId, d.baseKey),
@@ -550,7 +551,7 @@ export const reconcile = async () => {
               mergedBlob: merged,
               fields: entryClashes.map(x => ({
                 key: x.id,
-                label: entryLabel(x.local || x.cloud),
+                label: entryLabel(x.local || x.cloud, wsTz),
                 localValue: x.local, cloudValue: x.cloud,
                 localDay: x.day, cloudDay: x.cloudDay,
                 localPresent: true, cloudPresent: true,

@@ -1,14 +1,26 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { formatInTimeZone } from 'date-fns-tz';
 import { CloudOff, Monitor, Cloud, GitMerge } from 'lucide-react';
+import { loadTimezoneForWorkspace } from '../utils/storage';
 
 // Shown when signing in finds the same document changed both locally and in the
 // cloud. Object documents (invoice settings, colors, time entries) are diffed
 // field-by-field so the user keeps the right value per field; scalar documents
 // offer a single this-device / cloud choice.
 
+// Stored times are UTC instants — show them in the given timezone (falling
+// back to the raw UTC HH:MM on a malformed timestamp).
+const fmtTime = (iso, timezone) => {
+  try {
+    return formatInTimeZone(new Date(iso), timezone, 'HH:mm');
+  } catch {
+    return iso.slice(11, 16);
+  }
+};
+
 // Format a single field value compactly for display.
-const fmtValue = (v) => {
+const fmtValue = (v, timezone) => {
   if (v === undefined) return '(not set)';
   if (v === '') return '(empty)';
   if (Array.isArray(v)) return `${v.length} entr${v.length === 1 ? 'y' : 'ies'}`;
@@ -16,8 +28,8 @@ const fmtValue = (v) => {
     // Time entry: show "description · HH:MM–HH:MM" rather than raw JSON.
     if (v.startTime) {
       const desc = (v.description || '').trim() || 'Untitled';
-      const a = v.startTime.slice(11, 16);
-      const b = v.endTime ? v.endTime.slice(11, 16) : 'running';
+      const a = fmtTime(v.startTime, timezone);
+      const b = v.endTime ? fmtTime(v.endTime, timezone) : 'running';
       return `${desc} · ${a}–${b}`;
     }
     const s = JSON.stringify(v);
@@ -27,12 +39,12 @@ const fmtValue = (v) => {
 };
 
 // Whole-value preview for scalar (non-object) documents.
-const previewScalar = (kind, value) => {
+const previewScalar = (kind, value, timezone) => {
   try {
-    if (kind === 'idb') return fmtValue(value);
+    if (kind === 'idb') return fmtValue(value, timezone);
     let parsed;
     try { parsed = JSON.parse(value); } catch { parsed = value; }
-    return fmtValue(parsed);
+    return fmtValue(parsed, timezone);
   } catch {
     return '—';
   }
@@ -130,7 +142,11 @@ const SyncConflictModal = ({ conflicts, onResolve }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {conflicts.map(c => (
+          {conflicts.map(c => {
+            // Each conflict may belong to a different workspace; show its times
+            // in that workspace's timezone (device-local when none is saved).
+            const tz = loadTimezoneForWorkspace(c.wsId);
+            return (
             <div key={c.id} className="rounded-xl border border-gray-200 p-4">
               <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
                 <div>
@@ -172,14 +188,14 @@ const SyncConflictModal = ({ conflicts, onResolve }) => {
                             onClick={() => setField(c.id, f.key, 'local')}
                             icon={Monitor}
                             title="This device"
-                            text={fmtValue(f.localValue)}
+                            text={fmtValue(f.localValue, tz)}
                           />
                           <Choice
                             selected={pick === 'cloud'}
                             onClick={() => setField(c.id, f.key, 'cloud')}
                             icon={Cloud}
                             title="Cloud"
-                            text={fmtValue(f.cloudValue)}
+                            text={fmtValue(f.cloudValue, tz)}
                           />
                         </div>
                       </div>
@@ -194,19 +210,20 @@ const SyncConflictModal = ({ conflicts, onResolve }) => {
                     onClick={() => setScalar(c.id, 'local')}
                     icon={Monitor}
                     title="This device"
-                    text={previewScalar(c.kind, c.localValue)}
+                    text={previewScalar(c.kind, c.localValue, tz)}
                   />
                   <Choice
                     selected={choices[c.id] === 'cloud'}
                     onClick={() => setScalar(c.id, 'cloud')}
                     icon={Cloud}
                     title="Cloud"
-                    text={previewScalar(c.kind, c.cloudValue)}
+                    text={previewScalar(c.kind, c.cloudValue, tz)}
                   />
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
