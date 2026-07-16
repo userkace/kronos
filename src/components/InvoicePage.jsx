@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { FileText, Download, Calendar, DollarSign, User, Globe, Plus, X } from 'lucide-react';
+import { FileText, Download, Calendar, DollarSign, User, Globe, Plus, X, Pencil } from 'lucide-react';
 import { loadWeeklyTimesheet, saveInvoiceSettings, loadInvoiceSettings } from '../utils/storage';
 import storageEventSystem from '../utils/storageEvents';
 import {
@@ -8,29 +8,12 @@ import {
   View,
   Document,
   StyleSheet,
-  PDFDownloadLink,
+  pdf,
   Font
 } from '@react-pdf/renderer';
 import { format, parseISO, isWithinInterval, startOfWeek } from 'date-fns';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
-
-// Debounce hook
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
 
 // Supported invoice currencies. Drives both the settings dropdown and formatting.
 const CURRENCIES = [
@@ -49,6 +32,83 @@ const CURRENCIES = [
   { code: 'NZD', symbol: 'NZ$' },
   { code: 'CHF', symbol: 'CHF ' },
 ];
+
+// Click-to-edit field for the business/client info sections: renders the value
+// as plain text (with a pencil affordance on hover) and swaps in the real
+// input on click, until it loses focus. Display state mirrors the input's
+// padding + border so nothing shifts when toggling.
+const EditableField = ({ label, value, placeholder, onChange, onFocus, onBlur, multiline = false, rows = 2, type = 'text' }) => {
+  const [editing, setEditing] = useState(false);
+  const fieldRef = useRef(null);
+
+  useEffect(() => {
+    if (editing && fieldRef.current) {
+      fieldRef.current.focus();
+      const len = fieldRef.current.value.length;
+      fieldRef.current.setSelectionRange(len, len);
+    }
+  }, [editing]);
+
+  const handleBlur = (e) => {
+    setEditing(false);
+    if (onBlur) onBlur(e);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape' || (e.key === 'Enter' && !multiline)) {
+      e.preventDefault();
+      e.target.blur();
+    }
+  };
+
+  const inputClass = 'w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20';
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      {editing ? (
+        multiline ? (
+          <textarea
+            ref={fieldRef}
+            value={value}
+            onChange={onChange}
+            onFocus={onFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            rows={rows}
+            placeholder={placeholder}
+            className={inputClass}
+          />
+        ) : (
+          <input
+            ref={fieldRef}
+            type={type}
+            value={value}
+            onChange={onChange}
+            onFocus={onFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            className={inputClass}
+          />
+        )
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className={`group flex w-full items-start justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors duration-150 hover:border-gray-200 hover:bg-gray-50 ${
+            value ? 'border-transparent' : 'border-dashed border-gray-200'
+          }`}
+        >
+          <span className={`min-w-0 whitespace-pre-line wrap-break-word ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+            {value || placeholder}
+          </span>
+          <Pencil className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+        </button>
+      )}
+    </div>
+  );
+};
 
 // Pure function for currency formatting
 const formatCurrency = (amount, currency) => {
@@ -330,8 +390,6 @@ const InvoicePage = () => {
   const { weekStart: userWeekStart } = useUserPreferences();
   const { warning } = useToast();
   const [timesheetData, setTimesheetData] = useState({});
-  const [isAnyFieldFocused, setIsAnyFieldFocused] = useState(false);
-  const focusTimeoutRef = useRef(null);
   const [settings, setSettings] = useState(() => {
     // Load saved settings on initial render
     const savedSettings = loadInvoiceSettings();
@@ -420,36 +478,6 @@ const InvoicePage = () => {
 
     return unsubscribe;
   }, []);
-
-  // Cleanup timeout on component unmount
-  useEffect(() => {
-    return () => {
-      if (focusTimeoutRef.current) {
-        clearTimeout(focusTimeoutRef.current);
-      }
-    };
-  }, []);
-
-
-  // Helper functions to handle focus events with delay
-  const handleFieldFocus = () => {
-    // Clear any existing timeout
-    if (focusTimeoutRef.current) {
-      clearTimeout(focusTimeoutRef.current);
-    }
-    setIsAnyFieldFocused(true);
-  };
-  
-  const handleFieldBlur = () => {
-    // Clear any existing timeout and set a new one
-    if (focusTimeoutRef.current) {
-      clearTimeout(focusTimeoutRef.current);
-    }
-    focusTimeoutRef.current = setTimeout(() => {
-      setIsAnyFieldFocused(false);
-    }, 150); // 150ms delay to allow for field switching
-  };
-
 
   const filterEntries = useMemo(() => {
     if (!settings.startDate || !settings.endDate) return [];
@@ -542,89 +570,34 @@ const InvoicePage = () => {
 
   const totals = useMemo(() => calculateTotals(), [calculateTotals]);
 
-  // Debounce settings for PDF generation to prevent lag during typing
-  const debouncedSettings = useDebounce(settings, 500); // 500ms delay
+  // Generate the PDF on demand (button click) instead of continuously in the
+  // background. Pre-generating on every settings/focus change made the whole
+  // page jank — e.g. a visible delay opening the currency dropdown — and
+  // required freezing the download link while any field was focused.
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
-  // Compute the PDF's entries from the same debounced settings used for its
-  // totals. Previously we reused `filterEntries` (computed from live settings),
-  // which produced a brief inconsistency window during typing where row
-  // amounts used the new rate while the totals box still showed the old one.
-  const pdfEntries = useMemo(() => {
-    if (!debouncedSettings.startDate || !debouncedSettings.endDate) return [];
-    const entries = [];
-    const start = parseISO(debouncedSettings.startDate);
-    const end = parseISO(debouncedSettings.endDate);
-
-    Object.entries(timesheetData).forEach(([dateKey, dayData]) => {
-      try {
-        const entryDate = parseISO(dateKey);
-        if (isWithinInterval(entryDate, { start, end })) {
-          const dayTotal = calculateDayTotal(
-            dayData.timeIn,
-            dayData.timeOut,
-            dayData.breakHours
-          );
-          if (dayTotal > 0) {
-            entries.push({
-              date: format(entryDate, 'MMM dd, yyyy'),
-              description: dayData.workDetails || dayData.tasks || 'Time Entry',
-              amount: formatCurrency(dayTotal * debouncedSettings.hourlyRate, debouncedSettings.currency),
-              hours: dayTotal.toFixed(2),
-              duration: dayTotal * 3600,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error processing date:', dateKey, error);
-      }
-    });
-    return entries;
-  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.currency]);
-
-  // Memoize totals for PDF
-  const pdfTotals = useMemo(() => {
-    let totalHours = 0;
-    const start = parseISO(debouncedSettings.startDate);
-    const end = parseISO(debouncedSettings.endDate);
-
-    Object.entries(timesheetData).forEach(([dateKey, dayData]) => {
-      try {
-        const entryDate = parseISO(dateKey);
-        if (isWithinInterval(entryDate, { start, end })) {
-          const dayTotal = calculateDayTotal(
-            dayData.timeIn,
-            dayData.timeOut,
-            dayData.breakHours
-          );
-          if (dayTotal > 0) {
-            totalHours += dayTotal;
-          }
-        }
-      } catch (error) {
-        console.error('Error processing date:', dateKey, error);
-      }
-    });
-
-    const totalHoursRounded = Math.round((totalHours + Number.EPSILON) * 100) / 100;
-    const subtotal = totalHoursRounded * debouncedSettings.hourlyRate;
-    
-    // Calculate total additionals from the list
-    const totalAdditionals = (debouncedSettings.additionalsList || [])
-      .reduce((sum, additional) => sum + (additional.amount || 0), 0);
-    
-    const total = subtotal + totalAdditionals;
-    
-    return {
-      totalHours: totalHoursRounded.toFixed(2),
-      subtotal: formatCurrency(subtotal, debouncedSettings.currency),
-      additionals: formatCurrency(totalAdditionals, debouncedSettings.currency),
-      total: formatCurrency(total, debouncedSettings.currency),
-      additionalsList: (debouncedSettings.additionalsList || []).map(additional => ({
-        name: additional.name || 'Additionals',
-        amount: formatCurrency(additional.amount || 0, debouncedSettings.currency)
-      }))
-    };
-  }, [timesheetData, debouncedSettings.startDate, debouncedSettings.endDate, debouncedSettings.hourlyRate, debouncedSettings.additionalsList, debouncedSettings.currency]);
+  const handleDownloadPdf = async () => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      const blob = await pdf(
+        <InvoicePDF invoiceData={totals} settings={settings} entries={filterEntries} />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = generateFileName();
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating invoice PDF:', error);
+      warning('Could not generate the PDF. Please try again.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -653,50 +626,29 @@ const InvoicePage = () => {
                 Your Business Information
               </h3>
               <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Business/Legal Name
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.userName}
-                    onChange={(e) => setSettings(prev => ({ ...prev, userName: e.target.value }))}
-                    onFocus={handleFieldFocus}
-                    onBlur={handleFieldBlur}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="Your Business or Legal Name"
-                  />
-                </div>
+                <EditableField
+                  label="Business/Legal Name"
+                  value={settings.userName}
+                  onChange={(e) => setSettings(prev => ({ ...prev, userName: e.target.value }))}
+                  placeholder="Your Business or Legal Name"
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Business Address
-                  </label>
-                  <textarea
-                    value={settings.userAddress}
-                    onChange={(e) => setSettings(prev => ({ ...prev, userAddress: e.target.value }))}
-                    onFocus={handleFieldFocus}
-                    onBlur={handleFieldBlur}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
-                    rows={2}
-                    placeholder="123 Business Street, City, State 12345"
-                  />
-                </div>
+                <EditableField
+                  label="Business Address"
+                  value={settings.userAddress}
+                  onChange={(e) => setSettings(prev => ({ ...prev, userAddress: e.target.value }))}
+                  multiline
+                  rows={2}
+                  placeholder="123 Business Street, City, State 12345"
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={settings.userEmail}
-                    onChange={(e) => setSettings(prev => ({ ...prev, userEmail: e.target.value }))}
-                    onFocus={handleFieldFocus}
-                    onBlur={handleFieldBlur}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="contact@yourbusiness.com"
-                  />
-                </div>
+                <EditableField
+                  label="Email"
+                  type="email"
+                  value={settings.userEmail}
+                  onChange={(e) => setSettings(prev => ({ ...prev, userEmail: e.target.value }))}
+                  placeholder="contact@yourbusiness.com"
+                />
               </div>
             </div>
 
@@ -706,31 +658,19 @@ const InvoicePage = () => {
                 <User className="w-4 h-4 text-gray-400" />
                 Client Information
               </h3>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Client Name
-                </label>
-                <input
-                  type="text"
+              <div className="space-y-3">
+                <EditableField
+                  label="Client Name"
                   value={settings.clientName}
                   onChange={(e) => setSettings(prev => ({ ...prev, clientName: e.target.value }))}
-                  onFocus={handleFieldFocus}
-                  onBlur={handleFieldBlur}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                   placeholder="Enter client name"
                 />
-              </div>
 
-              <div className="mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Client Address
-                </label>
-                <textarea
+                <EditableField
+                  label="Client Address"
                   value={settings.clientAddress}
                   onChange={(e) => setSettings(prev => ({ ...prev, clientAddress: e.target.value }))}
-                  onFocus={handleFieldFocus}
-                  onBlur={handleFieldBlur}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+                  multiline
                   rows={3}
                   placeholder="Enter client address"
                 />
@@ -752,8 +692,6 @@ const InvoicePage = () => {
                     type="text"
                     value={settings.invoiceNumber}
                     onChange={(e) => setSettings(prev => ({ ...prev, invoiceNumber: e.target.value }))}
-                    onFocus={handleFieldFocus}
-                    onBlur={handleFieldBlur}
                     className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     placeholder="INV-001"
                   />
@@ -772,8 +710,6 @@ const InvoicePage = () => {
                         const { startDate, endDate } = validateAndClampDates(newStartDate, settings.endDate, 'start');
                         setSettings(prev => ({ ...prev, startDate, endDate }));
                       }}
-                      onFocus={handleFieldFocus}
-                      onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
@@ -790,8 +726,6 @@ const InvoicePage = () => {
                         const { startDate, endDate } = validateAndClampDates(settings.startDate, newEndDate, 'end');
                         setSettings(prev => ({ ...prev, startDate, endDate }));
                       }}
-                      onFocus={handleFieldFocus}
-                      onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
@@ -808,9 +742,7 @@ const InvoicePage = () => {
                         type="number"
                         value={settings.hourlyRate}
                         onChange={(e) => setSettings(prev => ({ ...prev, hourlyRate: parseFloat(e.target.value) || 0 }))}
-                        onFocus={handleFieldFocus}
-                        onBlur={handleFieldBlur}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
                         min="0"
                         step="0.01"
                       />
@@ -824,8 +756,6 @@ const InvoicePage = () => {
                     <select
                       value={settings.currency}
                       onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
-                      onFocus={handleFieldFocus}
-                      onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     >
                       {CURRENCIES.map(({ code }) => (
@@ -854,9 +784,7 @@ const InvoicePage = () => {
                               newList[index] = { ...newList[index], amount: parseFloat(e.target.value) || 0 };
                               setSettings(prev => ({ ...prev, additionalsList: newList }));
                             }}
-                            onFocus={handleFieldFocus}
-                            onBlur={handleFieldBlur}
-                            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+                            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
                             min="0"
                             step="0.01"
                             placeholder="0.00"
@@ -878,8 +806,6 @@ const InvoicePage = () => {
                               newList[index] = { ...newList[index], name: e.target.value };
                               setSettings(prev => ({ ...prev, additionalsList: newList }));
                             }}
-                            onFocus={handleFieldFocus}
-                            onBlur={handleFieldBlur}
                             className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                             placeholder="e.g. Bonus, Services, Task"
                             maxLength={30}
@@ -982,32 +908,16 @@ const InvoicePage = () => {
                 <h2 className="text-base font-semibold text-gray-900 tracking-tight">Invoice Preview</h2>
               </div>
 
-              {filterEntries.length > 0 && settings.clientName && !isAnyFieldFocused && (
-                <PDFDownloadLink
-                  document={
-                    <InvoicePDF
-                      invoiceData={pdfTotals}
-                      settings={debouncedSettings}
-                      entries={pdfEntries}
-                    />
-                  }
-                  fileName={generateFileName()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 transition-colors duration-150"
+              {filterEntries.length > 0 && settings.clientName && (
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={generatingPdf}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 transition-colors duration-150 disabled:opacity-60"
                 >
-                  {({ loading }) => (
-                    <>
-                      <Download className="w-4 h-4" />
-                      {loading ? 'Generating...' : 'Download PDF'}
-                    </>
-                  )}
-                </PDFDownloadLink>
-              )}
-
-              {isAnyFieldFocused && (
-                <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-200 text-gray-500 text-sm font-semibold rounded-xl shadow-xs cursor-not-allowed" title="Deselect any input field to continue">
                   <Download className="w-4 h-4" />
-                  Finish editing...
-                </div>
+                  {generatingPdf ? 'Generating...' : 'Download PDF'}
+                </button>
               )}
             </div>
 

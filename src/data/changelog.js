@@ -23,6 +23,16 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.9',
+    date: '2026-07-17',
+    title: 'Calmer invoice settings',
+    changes: [
+      { type: 'changed', description: 'Your Business Information and Client Information on the Invoice page are now click-to-edit: they read as plain text until you click one to change it, with a pencil hint appearing on hover. Empty fields keep a dashed outline so they\'re still easy to spot. Values are unchanged — it\'s the same fields, just quieter.' },
+      { type: 'changed', description: 'The Hourly Rate and Additionals Amount fields no longer show the browser\'s up/down spinner arrows, in every browser.' },
+      { type: 'fixed', description: 'The invoice PDF is now generated only when you click Download, instead of being continuously rebuilt in the background while you edit. This removes the lag it caused across the Invoice page — most noticeably the delay opening the currency dropdown — and the Download button no longer locks into "Finish editing..." while a field is focused.' },
+    ],
+  },
+  {
     version: '0.7.8',
     date: '2026-07-17',
     title: 'More currencies and timezones',
