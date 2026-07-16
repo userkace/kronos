@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.7.8',
+    date: '2026-07-17',
+    title: 'More invoice currencies',
+    changes: [
+      { type: 'added', description: 'The invoice currency picker now includes PHP (Philippine Peso) along with other common currencies: JPY, CNY, INR, KRW, AUD, CAD, SGD, HKD, NZD, and CHF.' },
+    ],
+  },
+  {
     version: '0.7.7',
     date: '2026-07-10',
     title: 'Kronos is on GitHub',

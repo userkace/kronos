@@ -32,16 +32,30 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
+// Supported invoice currencies. Drives both the settings dropdown and formatting.
+const CURRENCIES = [
+  { code: 'USD', symbol: '$' },
+  { code: 'EUR', symbol: '€' },
+  { code: 'GBP', symbol: '£' },
+  { code: 'PHP', symbol: '₱' },
+  { code: 'JPY', symbol: '¥' },
+  { code: 'CNY', symbol: 'CN¥' },
+  { code: 'INR', symbol: '₹' },
+  { code: 'KRW', symbol: '₩' },
+  { code: 'AUD', symbol: 'A$' },
+  { code: 'CAD', symbol: 'C$' },
+  { code: 'SGD', symbol: 'S$' },
+  { code: 'HKD', symbol: 'HK$' },
+  { code: 'NZD', symbol: 'NZ$' },
+  { code: 'CHF', symbol: 'CHF ' },
+];
+
 // Pure function for currency formatting
 const formatCurrency = (amount, currency) => {
-  const symbols = {
-    USD: '$',
-    EUR: '€',
-    GBP: '£'
-  };
+  const symbol = CURRENCIES.find(c => c.code === currency)?.symbol || `${currency} `;
   // Use Math.round to ensure proper rounding before toFixed to avoid floating-point precision issues
   const roundedAmount = Math.round((amount + Number.EPSILON) * 100) / 100;
-  return `${symbols[currency]}${roundedAmount.toFixed(2)}`;
+  return `${symbol}${roundedAmount.toFixed(2)}`;
 };
 
 // Utility function for calculating day total hours. Mirrors TimesheetTable's
@@ -814,9 +828,9 @@ const InvoicePage = () => {
                       onBlur={handleFieldBlur}
                       className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
                     >
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="GBP">GBP</option>
+                      {CURRENCIES.map(({ code }) => (
+                        <option key={code} value={code}>{code}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
