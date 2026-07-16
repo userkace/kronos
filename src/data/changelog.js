@@ -25,9 +25,11 @@ export const CHANGELOG = [
   {
     version: '0.7.8',
     date: '2026-07-17',
-    title: 'More invoice currencies',
+    title: 'More currencies and timezones',
     changes: [
       { type: 'added', description: 'The invoice currency picker now includes PHP (Philippine Peso) along with other common currencies: JPY, CNY, INR, KRW, AUD, CAD, SGD, HKD, NZD, and CHF.' },
+      { type: 'added', description: 'The timezone picker grew from 10 to 34 zones, covering every major UTC offset — including Manila, Singapore, Hong Kong, Seoul, Kolkata, Dubai, Berlin, São Paulo, Auckland, and more. All of them are selectable from the map or the dropdown.' },
+      { type: 'changed', description: 'The timezone map stays readable when zoomed out: it shows simple dots, with only your selected timezone labeled. City labels appear as you zoom in.' },
       { type: 'fixed', description: 'The sync conflict dialog used to show entry times in UTC. It now shows them in the workspace\'s timezone (or your device\'s local time if the workspace doesn\'t have one set), so the times match what you see everywhere else in the app.' },
     ],
   },
