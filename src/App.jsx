@@ -36,6 +36,13 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import SyncConflictModal from './components/SyncConflictModal';
 import './App.css';
 
+// Dev-only helpers (e.g. previewing onboarding from Settings) are enabled only
+// when the page is served from the exact host named in VITE_DEV_HOST
+// (.env.local, not committed) — e.g. localhost:5173.
+const IS_DEV_HOST =
+  Boolean(import.meta.env.VITE_DEV_HOST) &&
+  window.location.host === import.meta.env.VITE_DEV_HOST;
+
 function AppContent() {
   const { selectedTimezone, changeTimezone, isInitialized: timezoneInitialized } = useTimezone();
   const { changeWeekStart, changeWeekendDays } = useUserPreferences();
@@ -46,6 +53,9 @@ function AppContent() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger for refreshing weekly data
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // Dev-host-only walkthrough of the onboarding flow. Purely visual: completing
+  // (or exiting) it saves nothing — no timezone, week start, or onboarding flag.
+  const [previewingOnboarding, setPreviewingOnboarding] = useState(false);
   // Branded splash overlay. Shown on load for users who've already onboarded,
   // and again right after the onboarding flow completes. Self-dismisses.
   const [showSplash, setShowSplash] = useState(false);
@@ -236,11 +246,24 @@ function AppContent() {
       <AnimatePresence>
         {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       </AnimatePresence>
-      {showOnboarding ? (
-        <Onboarding
-          onComplete={handleOnboardingComplete}
-          initialTimezone={selectedTimezone}
-        />
+      {showOnboarding || previewingOnboarding ? (
+        <>
+          <Onboarding
+            onComplete={previewingOnboarding
+              ? () => setPreviewingOnboarding(false)
+              : handleOnboardingComplete}
+            initialTimezone={selectedTimezone}
+          />
+          {previewingOnboarding && (
+            <button
+              type="button"
+              onClick={() => setPreviewingOnboarding(false)}
+              className="fixed top-4 right-4 z-120 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-900/80 hover:bg-gray-900 text-white rounded-full shadow-lg backdrop-blur-sm transition-colors"
+            >
+              Exit preview
+            </button>
+          )}
+        </>
       ) : (
         <>
           {corruptionBanner}
@@ -290,7 +313,10 @@ function AppContent() {
               <InvoicePage />
             ) : currentView === 'settings' ? (
               // Settings View
-              <Settings onCorruptionResolved={recheckCorruption} />
+              <Settings
+                onCorruptionResolved={recheckCorruption}
+                onPreviewOnboarding={IS_DEV_HOST ? () => setPreviewingOnboarding(true) : undefined}
+              />
             ) : (
               // Data Management View
               <div className="p-6">

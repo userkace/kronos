@@ -16,7 +16,7 @@ import {
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
   AlertTriangle, Download, RefreshCcw, X, BarChart2, Plus, Building2,
-  Github, Star,
+  Github, Star, Eye,
 } from 'lucide-react';
 import { CHANGELOG } from '../data/changelog';
 
@@ -26,7 +26,7 @@ const formatBytes = (n) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const Settings = ({ onCorruptionResolved }) => {
+const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const {
     weekStart, changeWeekStart,
@@ -763,13 +763,27 @@ const Settings = ({ onCorruptionResolved }) => {
                   <p className="text-[13px] text-amber-700">Show the setup screen again on next app start</p>
                 </div>
               </div>
-              <button
-                onClick={handleResetOnboarding}
-                className="px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-amber-600/25 hover:bg-amber-500 active:bg-amber-700 transition-colors duration-150 flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Reset</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Dev-host-only (see VITE_DEV_HOST): walk through onboarding
+                    without saving anything. */}
+                {onPreviewOnboarding && (
+                  <button
+                    type="button"
+                    onClick={onPreviewOnboarding}
+                    className="px-4 py-2.5 bg-white border border-dashed border-amber-300 text-amber-700 text-sm font-semibold rounded-xl shadow-xs hover:bg-amber-50 transition-colors duration-150 flex items-center gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>View</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleResetOnboarding}
+                  className="px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-amber-600/25 hover:bg-amber-500 active:bg-amber-700 transition-colors duration-150 flex items-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Reset</span>
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-5 bg-red-50/80 border border-red-200/80 rounded-2xl">
