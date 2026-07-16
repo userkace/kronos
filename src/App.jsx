@@ -33,6 +33,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { PomodoroProvider } from './contexts/PomodoroContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import SyncConflictModal from './components/SyncConflictModal';
 import './App.css';
 
@@ -332,19 +333,21 @@ function AppContent() {
 
 function AppWrapper() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <WorkspaceProvider>
-          <TimezoneProvider>
-            <UserPreferencesProvider>
-              <PomodoroProvider>
-                <AppContent />
-              </PomodoroProvider>
-            </UserPreferencesProvider>
-          </TimezoneProvider>
-        </WorkspaceProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <WorkspaceProvider>
+            <TimezoneProvider>
+              <UserPreferencesProvider>
+                <PomodoroProvider>
+                  <AppContent />
+                </PomodoroProvider>
+              </UserPreferencesProvider>
+            </TimezoneProvider>
+          </WorkspaceProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
 

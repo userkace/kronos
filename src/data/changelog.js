@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.0',
+    date: '2026-07-17',
+    title: 'Dark mode',
+    changes: [
+      { type: 'added', description: 'Kronos now has a blue-tinted dark mode. Pick Light, Dark, or System in Settings → Appearance — System follows your device\'s theme and switches automatically. The choice is saved per device.' },
+    ],
+  },
+  {
     version: '0.7.9',
     date: '2026-07-17',
     title: 'Calmer invoice settings',

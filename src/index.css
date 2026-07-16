@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: `dark:` utilities apply when html has .dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -77,4 +80,151 @@ body {
   100% {
     transform: translateX(100%);
   }
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────────────────
+   Blue-tinted dark theme. Tailwind v4 utilities reference the palette through
+   CSS variables, so remapping them here restyles the whole app — no per-
+   component dark: classes needed. Shades 400–600 of the accent hues are left
+   untouched so solid buttons, icons, and focus rings keep their colors; the
+   pastel tints (50–300) become deep navy-tinted panels and the dark text
+   shades that sit on them (700–900) become light. */
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces: white cards → deep navy panels */
+  --color-white: #131c31;
+
+  /* Blue-tinted gray ramp, inverted */
+  --color-gray-50:  #0f1830;
+  --color-gray-100: #1c2845;
+  --color-gray-200: #283759;
+  --color-gray-300: #3a4c74;
+  --color-gray-400: #7488b3;
+  --color-gray-500: #91a3c9;
+  --color-gray-600: #aab9da;
+  --color-gray-700: #c4cfe9;
+  --color-gray-800: #dce4f5;
+  --color-gray-900: #eff3fc;
+
+  --color-slate-50:  #0b1322;
+  --color-slate-100: #1a2740;
+  --color-slate-200: #2b3b5e;
+
+  --color-blue-50:  #16294d;
+  --color-blue-100: #1d3660;
+  --color-blue-200: #274572;
+  --color-blue-300: #3b5c8f;
+  --color-blue-700: #8ab6f5;
+  --color-blue-800: #b3d1f8;
+  --color-blue-900: #d7e6fc;
+
+  --color-indigo-50:  #1c2450;
+  --color-indigo-200: #2e3a72;
+
+  --color-sky-50:  #132c44;
+  --color-sky-100: #1a3a57;
+
+  --color-emerald-50:  #0f2e26;
+  --color-emerald-100: #14382e;
+  --color-emerald-200: #1c4a3c;
+  --color-emerald-700: #5fd4a8;
+  --color-emerald-800: #8ce4c2;
+  --color-emerald-900: #bff2dd;
+
+  --color-green-50:  #10301d;
+  --color-green-100: #153a24;
+  --color-green-200: #1d4c2f;
+  --color-green-300: #27603c;
+  --color-green-700: #6fd693;
+  --color-green-800: #9ce6b4;
+  --color-green-900: #c8f4d7;
+
+  --color-amber-50:  #33270e;
+  --color-amber-100: #3f3012;
+  --color-amber-200: #544019;
+  --color-amber-300: #6d5421;
+  --color-amber-700: #f0c25c;
+  --color-amber-800: #f6d68e;
+  --color-amber-900: #fbe7bd;
+
+  --color-red-50:  #361518;
+  --color-red-100: #421a1e;
+  --color-red-200: #582327;
+  --color-red-700: #f29099;
+  --color-red-800: #f7b7bd;
+  --color-red-900: #fbd8db;
+
+  --color-orange-50:  #38220f;
+  --color-orange-100: #452a13;
+
+  --color-purple-50: #2a1c47;
+  --color-violet-50: #271c4d;
+  --color-rose-50:   #3a1626;
+}
+
+/* Base element styling for dark */
+.dark body {
+  background-color: #0b1322;
+  color: #eff3fc;
+}
+.dark ::selection {
+  background-color: rgb(59 91 219 / 0.45);
+  color: #e8eefc;
+}
+.dark * {
+  scrollbar-color: #33415e transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #33415e;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #475a80;
+}
+
+/* Utilities that must NOT follow the remapped variables */
+.dark .text-white {
+  color: #fff; /* text on solid colored buttons stays white */
+}
+.dark .bg-gray-900 {
+  background-color: #2b3a5e; /* dark tooltips keep a dark, elevated look */
+}
+.dark .bg-gray-900\/80 {
+  background-color: rgb(9 14 28 / 0.8);
+}
+.dark .hover\:bg-gray-900:hover {
+  background-color: #0b1322;
+}
+
+/* Icon/text accents that sit on tinted chip backgrounds: the 600 shades are
+   tuned for pastel tints and go muddy on the dark panels — lighten them. */
+.dark :is(.bg-blue-50, .bg-blue-100).text-blue-600,
+.dark :is(.bg-blue-50, .bg-blue-100) .text-blue-600 { color: #8ab6f5; }
+.dark .bg-indigo-50.text-indigo-600,
+.dark .bg-indigo-50 .text-indigo-600 { color: #a5b0f5; }
+.dark :is(.bg-sky-50, .bg-sky-100).text-sky-600,
+.dark :is(.bg-sky-50, .bg-sky-100) .text-sky-600 { color: #7cc4f0; }
+.dark :is(.bg-emerald-50, .bg-emerald-100).text-emerald-600,
+.dark :is(.bg-emerald-50, .bg-emerald-100) .text-emerald-600 { color: #5fd4a8; }
+.dark :is(.bg-green-50, .bg-green-100).text-green-600,
+.dark :is(.bg-green-50, .bg-green-100) .text-green-600 { color: #6fd693; }
+.dark :is(.bg-amber-50, .bg-amber-50\/80, .bg-amber-100, .bg-amber-100\/80).text-amber-600,
+.dark :is(.bg-amber-50, .bg-amber-50\/80, .bg-amber-100, .bg-amber-100\/80) .text-amber-600 { color: #f0c25c; }
+.dark :is(.bg-red-50, .bg-red-100, .bg-red-100\/80).text-red-600,
+.dark :is(.bg-red-50, .bg-red-100, .bg-red-100\/80) .text-red-600 { color: #f29099; }
+.dark .bg-orange-50.text-orange-600,
+.dark .bg-orange-50 .text-orange-600 { color: #f2a366; }
+.dark .bg-purple-50.text-purple-600,
+.dark .bg-purple-50 .text-purple-600 { color: #c9a7f5; }
+.dark .bg-violet-50.text-violet-600,
+.dark .bg-violet-50 .text-violet-600 { color: #bfa9f7; }
+.dark .bg-rose-50.text-rose-600,
+.dark .bg-rose-50 .text-rose-600 { color: #f59ab5; }
+
+/* Leaflet timezone map: dim + hue-shift the light tiles into the theme */
+.dark .leaflet-container {
+  background: #0f1830 !important;
+}
+.dark .leaflet-tile {
+  filter: invert(1) hue-rotate(200deg) saturate(0.45) brightness(0.9) contrast(0.9);
 }

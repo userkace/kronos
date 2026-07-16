@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import TimezoneSelect from './TimezoneSelect';
 import AccountSettings from './AccountSettings';
 import { useTimezone } from '../contexts/TimezoneContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useToast } from '../contexts/ToastContext';
 import {
@@ -16,7 +17,7 @@ import {
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
   AlertTriangle, Download, RefreshCcw, X, BarChart2, Plus, Building2,
-  Github, Star, Eye,
+  Github, Star, Eye, Sun, Moon, Monitor,
 } from 'lucide-react';
 import { CHANGELOG } from '../data/changelog';
 
@@ -28,6 +29,7 @@ const formatBytes = (n) => {
 
 const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
+  const { theme, setTheme } = useTheme();
   const {
     weekStart, changeWeekStart,
     clockFormat, changeClockFormat,
@@ -806,6 +808,44 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
               </button>
             </div>
           </div>
+
+        {/* Appearance */}
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+              <Moon className="w-[18px] h-[18px]" />
+            </div>
+            <div>
+              <h4 className="text-base font-semibold text-gray-900 tracking-tight">Appearance</h4>
+              <p className="text-[13px] text-gray-500">How Kronos looks on this device.</p>
+            </div>
+          </div>
+          <div className="grid max-w-sm grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1">
+            {[
+              { value: 'light', label: 'Light', icon: Sun },
+              { value: 'dark', label: 'Dark', icon: Moon },
+              { value: 'system', label: 'System', icon: Monitor },
+            ].map(({ value, label, icon: Icon }) => {
+              const isSelected = theme === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTheme(value)}
+                  aria-pressed={isSelected}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors duration-150 ${
+                    isSelected
+                      ? 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-200/70'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* About */}
         <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
