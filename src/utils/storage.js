@@ -429,6 +429,19 @@ export const loadTimezone = () => {
   }
 };
 
+// Load the saved timezone for a specific workspace (not necessarily the active
+// one) — the sync conflict dialog can show entries from any workspace. Falls
+// back to the device's local timezone when that workspace has none saved.
+export const loadTimezoneForWorkspace = (workspaceId) => {
+  try {
+    const stored = localStorage.getItem(wsKeyFor(STORAGE_KEYS.SELECTED_TIMEZONE, workspaceId));
+    if (stored) return stored;
+  } catch (error) {
+    console.error('Error loading workspace timezone:', error);
+  }
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+};
+
 // Save selected week to LocalStorage
 export const saveSelectedWeek = (date) => {
   try {

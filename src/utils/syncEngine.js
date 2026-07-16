@@ -21,11 +21,13 @@
 // present on only one side are copied to the other with no prompt.
 import { supabase } from '../lib/supabase';
 import { idbGet, idbSet, idbDelete } from './timesheetDB';
+import { formatInTimeZone } from 'date-fns-tz';
 import {
   wsKeyFor,
   loadWorkspaces,
   saveWorkspaces,
   getActiveWorkspaceId,
+  loadTimezoneForWorkspace,
   WORKSPACE_DEFAULT_ID,
 } from './storage';
 import storageEventSystem from './storageEvents';
@@ -249,10 +251,19 @@ const rebuildEntries = (map) => {
 };
 
 // Human label for an entry in the conflict dialog.
-const entryLabel = (e) => {
+const entryLabel = (e, timezone) => {
   if (!e) return 'entry';
   const desc = (e.description || '').trim() || 'Untitled';
-  const t = e.startTime ? e.startTime.slice(11, 16) : '';
+  let t = '';
+  if (e.startTime) {
+    // Stored times are UTC instants — show them in the workspace timezone
+    // (falling back to the raw UTC HH:MM on a malformed timestamp).
+    try {
+      t = formatInTimeZone(new Date(e.startTime), timezone, 'HH:mm');
+    } catch {
+      t = e.startTime.slice(11, 16);
+    }
+  }
   return t ? `${desc} · ${t}` : desc;
 };
 
