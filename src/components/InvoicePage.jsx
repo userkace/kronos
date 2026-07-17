@@ -110,12 +110,15 @@ const EditableField = ({ label, value, placeholder, onChange, onFocus, onBlur, m
   );
 };
 
+// Round to 2 decimals with half-up behavior matching Excel. Snapping to 12
+// significant digits first absorbs binary float error (e.g. 64.55 * 4.5 =
+// 290.47499999999996) so 290.475 rounds up to 290.48 instead of down.
+const roundToCents = (amount) => Math.round(Number((amount * 100).toPrecision(12))) / 100;
+
 // Pure function for currency formatting
 const formatCurrency = (amount, currency) => {
   const symbol = CURRENCIES.find(c => c.code === currency)?.symbol || `${currency} `;
-  // Use Math.round to ensure proper rounding before toFixed to avoid floating-point precision issues
-  const roundedAmount = Math.round((amount + Number.EPSILON) * 100) / 100;
-  return `${symbol}${roundedAmount.toFixed(2)}`;
+  return `${symbol}${roundToCents(amount).toFixed(2)}`;
 };
 
 // Utility function for calculating day total hours. Mirrors TimesheetTable's
@@ -540,7 +543,7 @@ const InvoicePage = () => {
       }
     });
 
-    const totalHoursRounded = Math.round((totalHours + Number.EPSILON) * 100) / 100;
+    const totalHoursRounded = roundToCents(totalHours);
     const subtotal = totalHoursRounded * settings.hourlyRate;
     
     // Calculate total additionals from the list
