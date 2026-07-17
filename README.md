@@ -6,6 +6,8 @@
 
 Track your daily tasks, manage work hours, stay focused with the Pomodoro technique, generate professional invoices, and keep full control of your data. Everything runs locally in your browser.
 
+**[🌐 kronos.kace.dev](https://kronos.kace.dev/)** · [mirror: kronos-eta.pages.dev](https://kronos-eta.pages.dev/)
+
 <br>
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
@@ -86,6 +88,13 @@ Track your daily tasks, manage work hours, stay focused with the Pomodoro techni
 ---
 
 ## Getting Started
+
+### Use It Online
+
+No installation needed — Kronos runs entirely in your browser:
+
+- **[kronos.kace.dev](https://kronos.kace.dev/)** (primary)
+- [kronos-eta.pages.dev](https://kronos-eta.pages.dev/) (alternative)
 
 ### Prerequisites
 - **Node.js** 18 or higher
