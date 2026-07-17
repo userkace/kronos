@@ -31,6 +31,7 @@ Track your daily tasks, manage work hours, stay focused with the Pomodoro techni
 - [Project Structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
+- [Support the Project](#support-the-project)
 - [Support](#support)
 
 ---
@@ -305,6 +306,14 @@ Contributions are welcome!
 7. Open a Pull Request with a clear description.
 
 Please test across different browsers and devices, and update documentation for any UI changes.
+
+---
+
+## Support the Project
+
+If Kronos helps you stay productive, consider **[upvoting it on App Builders PH](https://www.appbuildersph.com/apps/kronos)** — it helps more people discover the app. ⭐
+
+You can also star the repo on [GitHub](https://github.com/userkace/kronos)!
 
 ---
 
