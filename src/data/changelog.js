@@ -30,6 +30,7 @@ export const CHANGELOG = [
       { type: 'added', description: 'Fix a typo in the task you\'re currently tracking without touching the timer: click the name on the green active card and type the correction. Enter saves, Esc discards, Shift+Enter starts a new line — the same editing you already have on finished entries. Times on a running task stay locked until you stop it.' },
       { type: 'fixed', description: 'Invoice totals that land exactly on a half cent now round up the way Excel does. A floating-point quirk previously nudged some of them down by a cent.' },
       { type: 'fixed', description: 'With a timer running in dark mode, the total-time display\'s gentle pulse faded to black and disappeared into the background. It now pulses between a soft green and the regular text color, so it stays readable the whole way through.' },
+      { type: 'fixed', description: 'After cancelling a click-to-edit with Esc, the next edit\'s first save attempt was silently ignored — you had to press Enter twice. Cancelling no longer eats the following save.' },
       { type: 'changed', description: 'Refreshed the browser-compatibility data packages Kronos builds against (baseline-browser-mapping, caniuse-lite, and friends) to their latest published versions.' },
     ],
   },

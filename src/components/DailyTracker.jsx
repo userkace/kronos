@@ -1131,6 +1131,10 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
 
   const startInlineEdit = (entry, field) => {
     if (!entry || !field) return;
+    // Disarm any leftover Esc skip-flag: browsers don't fire blur when the
+    // focused textarea unmounts, so an Esc-cancel can leave the flag armed
+    // and silently swallow the NEXT edit's first commit.
+    skipNextBlurCommitRef.current = false;
     // Active entries can't have their times inline-edited (no endTime, and
     // mutating startTime mid-run is a footgun handled better by the modal).
     if ((field === 'startTime' || field === 'endTime') && (entry.isActive || !entry.endTime)) return;
