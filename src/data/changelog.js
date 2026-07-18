@@ -24,10 +24,13 @@ export const CHANGE_TYPES = {
 export const CHANGELOG = [
   {
     version: '0.8.1',
-    date: '2026-07-18',
-    title: 'Correct invoice rounding',
+    date: '2026-07-19',
+    title: 'Rename the running task in place',
     changes: [
+      { type: 'added', description: 'You can now rename the running task without stopping the timer — click its name on the active (green) card to edit it in place, just like finished entries. Enter saves, Esc cancels, and Shift+Enter adds a line break. Start/end times on the running task still aren\'t editable until it\'s stopped.' },
       { type: 'fixed', description: 'Invoice amounts landing exactly on a half cent (e.g. 64.55/hr × 4.5 hrs = 290.475) now round up to 290.48, matching Excel. Previously a floating-point quirk could round them down a cent.' },
+      { type: 'fixed', description: 'In dark mode, the Daily Tracker\'s total-time pulse (shown while a timer is running) used to fade from green to black, making it unreadable against the dark background. It now fades between a light green and the theme\'s normal text color.' },
+      { type: 'changed', description: 'Updated transitive browser compatibility packages (including baseline-browser-mapping and caniuse-lite) to their newer published versions, keeping browser-support data current.' },
     ],
   },
   {

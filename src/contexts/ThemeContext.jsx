@@ -23,8 +23,16 @@ const getStoredTheme = () => {
   }
 };
 
+const getResolvedDark = (theme) =>
+  theme === 'dark' ||
+  (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(getStoredTheme);
+  // The *effective* dark state ('system' resolved against the OS preference),
+  // for the rare styles that can't come from CSS — e.g. JS-driven animation
+  // keyframes, where inline styles would beat any .dark override.
+  const [isDark, setIsDark] = useState(() => getResolvedDark(getStoredTheme()));
 
   useEffect(() => {
     try {
@@ -37,6 +45,7 @@ export const ThemeProvider = ({ children }) => {
     const apply = () => {
       const dark = theme === 'dark' || (theme === 'system' && mq.matches);
       document.documentElement.classList.toggle('dark', dark);
+      setIsDark(dark);
     };
     apply();
     if (theme === 'system') {
@@ -46,7 +55,7 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, isDark }}>
       {children}
     </ThemeContext.Provider>
   );

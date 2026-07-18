@@ -10,6 +10,7 @@ import TimeEntryModal from './TimeEntryModal';
 import { useToast } from '../contexts/ToastContext';
 import { insertActiveEntryChronologically, generateEntryId } from '../utils/entryUtils';
 import { usePomodoro } from '../contexts/PomodoroContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useUnifiedDisplay } from '../hooks/useUnifiedDisplay';
 import { useMotionPreferences } from '../hooks/useMotionPreferences';
 import {
@@ -57,6 +58,7 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
   const { success, error, warning, actionToast } = useToast();
   const { isRunning: pomodoroIsRunning } = usePomodoro();
   const { getTransition, animations } = useMotionPreferences();
+  const { isDark } = useTheme();
 
   // Initialize favicon manager
   useEffect(() => {
@@ -1162,7 +1164,11 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     const editing = inlineEdit;
     setInlineEdit(null);
 
-    const entry = selectedDateEntries.find(e => e.id === editing.entryId);
+    // The active entry lives in selectedDateEntries only when the viewed day
+    // is the timer's start day — fall back to activeEntry so its name can be
+    // edited from any date the active card renders on.
+    const entry = selectedDateEntries.find(e => e.id === editing.entryId)
+      || (activeEntry?.id === editing.entryId ? activeEntry : null);
     if (!entry) return;
 
     let updated = null;
@@ -1230,12 +1236,21 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
       saveTimesheetData(allData);
     }
 
+    if (activeEntry?.id === entry.id) {
+      setActiveEntry(updated);
+    }
+
     setSelectedDateEntries(prev => {
       const next = prev.map(e => e.id === entry.id ? updated : e);
       return next.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
     });
 
-    autoSaveToWeeklyTimesheet([storageKey]);
+    // A running entry isn't part of the weekly sheet until it's stopped
+    // (handleStop writes it), so skip the auto-save — it would only re-save
+    // the day's completed entries and toast about it for no visible change.
+    if (!updated.isActive) {
+      autoSaveToWeeklyTimesheet([storageKey]);
+    }
   };
 
   // Remove from localStorage
@@ -1646,7 +1661,13 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                 <motion.div
                   className="flex items-baseline gap-2"
                   animate={{
-                    color: ["#16a34a", "#000000", "#16a34a"] // green-600 to black to green-600
+                    // Inline animated color can't be remapped by the .dark CSS
+                    // overrides, so branch here: green-600 ↔ black in light;
+                    // in dark, the theme's lightened green ↔ its body text
+                    // color — black would vanish against the navy background.
+                    color: isDark
+                      ? ["#6fd693", "#eff3fc", "#6fd693"]
+                      : ["#16a34a", "#000000", "#16a34a"]
                   }}
                   transition={{
                     duration: 10,
@@ -1875,9 +1896,39 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-gray-900 text-lg tracking-tight">
-                                {item.data.description}
-                              </h3>
+                              {/* Mirrors the completed-entry inline name editor below,
+                                  restyled for the green card. Times stay non-editable
+                                  here — see the guard in startInlineEdit. */}
+                              {inlineEdit?.entryId === item.data.id && inlineEdit.field === 'description' ? (
+                                <textarea
+                                  autoFocus
+                                  rows={1}
+                                  value={inlineEdit.value}
+                                  onChange={(e) => updateInlineValue(e.target.value)}
+                                  onBlur={commitInlineEdit}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitInlineEdit(); }
+                                    else if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
+                                  }}
+                                  onFocus={(e) => e.target.select()}
+                                  aria-label="Edit task name"
+                                  ref={(el) => {
+                                    if (el) {
+                                      el.style.height = 'auto';
+                                      el.style.height = `${el.scrollHeight}px`;
+                                    }
+                                  }}
+                                  className="font-semibold text-gray-900 text-lg tracking-tight bg-white/70 rounded outline-none ring-2 ring-green-400/60 resize-none leading-normal p-0 m-0 border-0 box-border block w-full align-top whitespace-pre-wrap wrap-break-word overflow-hidden"
+                                />
+                              ) : (
+                                <h3
+                                  className="font-semibold text-gray-900 text-lg tracking-tight cursor-text rounded hover:ring-1 hover:ring-green-300/80 hover:bg-white/50 inline-block text-wrap whitespace-pre-wrap wrap-break-word leading-normal p-0 m-0 border-0 box-border align-top transition-colors duration-150"
+                                  onClick={() => startInlineEdit(item.data, 'description')}
+                                  title="Click to edit"
+                                >
+                                  {item.data.description}
+                                </h3>
+                              )}
                             </div>
                             <p className="text-green-700 text-sm mb-2">
                               {item.data.project || ''}
