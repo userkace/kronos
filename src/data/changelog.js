@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.1',
+    date: '2026-07-18',
+    title: 'Correct invoice rounding',
+    changes: [
+      { type: 'fixed', description: 'Invoice amounts landing exactly on a half cent (e.g. 64.55/hr × 4.5 hrs = 290.475) now round up to 290.48, matching Excel. Previously a floating-point quirk could round them down a cent.' },
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-07-17',
     title: 'Dark mode',
