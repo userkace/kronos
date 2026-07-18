@@ -27,10 +27,10 @@ export const CHANGELOG = [
     date: '2026-07-19',
     title: 'Rename the running task in place',
     changes: [
-      { type: 'added', description: 'You can now rename the running task without stopping the timer — click its name on the active (green) card to edit it in place, just like finished entries. Enter saves, Esc cancels, and Shift+Enter adds a line break. Start/end times on the running task still aren\'t editable until it\'s stopped.' },
-      { type: 'fixed', description: 'Invoice amounts landing exactly on a half cent (e.g. 64.55/hr × 4.5 hrs = 290.475) now round up to 290.48, matching Excel. Previously a floating-point quirk could round them down a cent.' },
-      { type: 'fixed', description: 'In dark mode, the Daily Tracker\'s total-time pulse (shown while a timer is running) used to fade from green to black, making it unreadable against the dark background. It now fades between a light green and the theme\'s normal text color.' },
-      { type: 'changed', description: 'Updated transitive browser compatibility packages (including baseline-browser-mapping and caniuse-lite) to their newer published versions, keeping browser-support data current.' },
+      { type: 'added', description: 'Fix a typo in the task you\'re currently tracking without touching the timer: click the name on the green active card and type the correction. Enter saves, Esc discards, Shift+Enter starts a new line — the same editing you already have on finished entries. Times on a running task stay locked until you stop it.' },
+      { type: 'fixed', description: 'Invoice totals that land exactly on a half cent now round up the way Excel does. A floating-point quirk previously nudged some of them down by a cent.' },
+      { type: 'fixed', description: 'With a timer running in dark mode, the total-time display\'s gentle pulse faded to black and disappeared into the background. It now pulses between a soft green and the regular text color, so it stays readable the whole way through.' },
+      { type: 'changed', description: 'Refreshed the browser-compatibility data packages Kronos builds against (baseline-browser-mapping, caniuse-lite, and friends) to their latest published versions.' },
     ],
   },
   {
