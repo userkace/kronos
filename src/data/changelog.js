@@ -23,6 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.2',
+    date: '2026-07-24',
+    title: 'Set your theme during setup',
+    changes: [
+      { type: 'added', description: 'The welcome flow now has an Appearance picker — choose Light, Dark, or System on the first screen and it applies instantly, so onboarding itself and the rest of the app match your preference from the very start. You can still change it later in Settings → Appearance.' },
+      { type: 'changed', description: 'The onboarding screens are now fully dark-mode aware, so they no longer flash a bright white layout for people whose device is set to a dark theme.' },
+    ],
+  },
+  {
     version: '0.8.1',
     date: '2026-07-19',
     title: 'Rename the running task in place',

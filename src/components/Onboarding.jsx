@@ -12,31 +12,43 @@ import {
   Cloud,
   Mail,
   Loader2,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
 import { useMotionPreferences } from '../hooks/useMotionPreferences';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const FEATURES = [
   {
     icon: Globe,
-    tint: 'bg-blue-50 text-blue-600',
+    tint: 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400',
     title: 'Timezone aware',
     description: 'Hours are logged in your zone — or your company’s.',
   },
   {
     icon: CalendarRange,
-    tint: 'bg-indigo-50 text-indigo-600',
+    tint: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400',
     title: 'Weekly timesheets',
     description: 'Your week, summarized and ready to send.',
   },
   {
     icon: FileDown,
-    tint: 'bg-emerald-50 text-emerald-600',
+    tint: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400',
     title: 'Yours to keep',
     description: 'Everything lives on your device. Export anytime.',
   },
+];
+
+// Mirrors the Appearance control in Settings so the choice — and its wording —
+// is consistent the moment someone lands in the app.
+const THEME_OPTIONS = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Monitor },
 ];
 
 const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
@@ -47,6 +59,9 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
   // +1 when moving forward, -1 backward — drives the slide direction
   const [direction, setDirection] = useState(1);
   const { getTransition, shouldReduceMotion } = useMotionPreferences();
+  // Theme is device-local and applies live, so toggling it here restyles the
+  // onboarding itself as well as the rest of the app.
+  const { theme, setTheme } = useTheme();
 
   // Optional cloud sign-in step — only when Supabase is configured. Signing in
   // here is non-blocking: the magic link finishes the sign-in later (on click),
@@ -113,14 +128,14 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
     // edge to edge) with the navigation pinned to the bottom like a native
     // onboarding. From `sm` up it becomes the centered card on a soft backdrop.
     // min-h-dvh tracks the real visible height under mobile browser toolbars.
-    <div className="relative min-h-dvh bg-white sm:bg-slate-50 sm:flex sm:justify-center sm:p-6">
+    <div className="relative min-h-dvh bg-white dark:bg-gray-950 sm:bg-slate-50 sm:dark:bg-gray-950 sm:flex sm:justify-center sm:p-6">
       {/* Ambient backdrop (desktop only): faint dot grid + soft color washes.
           Fixed + clipped so the oversized blobs never create horizontal scroll. */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 hidden overflow-hidden sm:block">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(15_23_42/0.05)_1px,transparent_0)] bg-size-[26px_26px]" />
-        <div className="absolute -top-40 -left-32 h-120 w-120 rounded-full bg-blue-200/45 blur-3xl" />
-        <div className="absolute -bottom-48 -right-32 h-136 w-136 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="absolute top-1/3 right-1/4 h-72 w-72 rounded-full bg-sky-100/60 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(15_23_42/0.05)_1px,transparent_0)] dark:bg-[radial-gradient(circle_at_1px_1px,rgb(148_163_184/0.07)_1px,transparent_0)] bg-size-[26px_26px]" />
+        <div className="absolute -top-40 -left-32 h-120 w-120 rounded-full bg-blue-200/45 dark:bg-blue-500/10 blur-3xl" />
+        <div className="absolute -bottom-48 -right-32 h-136 w-136 rounded-full bg-indigo-200/40 dark:bg-indigo-500/10 blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 h-72 w-72 rounded-full bg-sky-100/60 dark:bg-sky-500/10 blur-3xl" />
       </div>
 
       <motion.div
@@ -133,10 +148,10 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
             sticky bottom nav. */}
         <form
           onSubmit={handleSubmit}
-          className="flex flex-1 flex-col bg-white sm:flex-none sm:overflow-hidden sm:rounded-3xl sm:border sm:border-gray-200/80 sm:bg-white/95 sm:shadow-xl sm:backdrop-blur-sm"
+          className="flex flex-1 flex-col bg-white dark:bg-gray-900 sm:flex-none sm:overflow-hidden sm:rounded-3xl sm:border sm:border-gray-200/80 sm:dark:border-gray-800 sm:bg-white/95 sm:dark:bg-gray-900/95 sm:shadow-xl sm:backdrop-blur-sm"
         >
           {/* Progress bar */}
-          <div className="h-1 bg-gray-100">
+          <div className="h-1 bg-gray-100 dark:bg-gray-800">
             <motion.div
               className="h-full rounded-r-full bg-linear-to-r from-blue-500 to-indigo-500"
               initial={false}
@@ -154,11 +169,11 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                 alt="Kronos"
                 className="h-8 w-8 shrink-0"
               />
-              <span className="font-display text-sm font-semibold lowercase tracking-wide text-gray-900">
+              <span className="font-display text-sm font-semibold lowercase tracking-wide text-gray-900 dark:text-gray-100">
                 kronos
               </span>
             </div>
-            <span className="text-xs font-medium tabular-nums text-gray-400">
+            <span className="text-xs font-medium tabular-nums text-gray-400 dark:text-gray-500">
               {currentStep + 1} / {TOTAL_STEPS}
             </span>
           </div>
@@ -178,13 +193,13 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   className="space-y-8"
                 >
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
                       Welcome
                     </p>
-                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 sm:text-[1.7rem]">
+                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 dark:text-gray-100 sm:text-[1.7rem]">
                       Time, tracked beautifully.
                     </h1>
-                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600">
+                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600 dark:text-gray-300">
                       Kronos keeps your hours, timesheets, and focus in one calm place.
                       Two quick questions and you&apos;re in.
                     </p>
@@ -194,17 +209,47 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                     {FEATURES.map(({ icon: Icon, tint, title, description }) => (
                       <div
                         key={title}
-                        className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 px-4 py-3.5"
+                        className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-gray-800/50 px-4 py-3.5"
                       >
                         <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tint}`}>
                           <Icon className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">{title}</p>
-                          <p className="text-sm text-gray-500">{description}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Appearance — set the theme up front; it applies live to
+                      onboarding and the rest of the app, and can be changed
+                      later in Settings. */}
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Appearance
+                    </p>
+                    <div className="grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
+                      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
+                        const isSelected = theme === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setTheme(value)}
+                            aria-pressed={isSelected}
+                            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors duration-150 ${
+                              isSelected
+                                ? 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-200/70 dark:bg-gray-700 dark:text-gray-100 dark:ring-gray-600'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -221,13 +266,13 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   className="space-y-6"
                 >
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
                       Timezone
                     </p>
-                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 sm:text-[1.7rem]">
+                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 dark:text-gray-100 sm:text-[1.7rem]">
                       Where does your day happen?
                     </h1>
-                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600">
+                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600 dark:text-gray-300">
                       Pick a city on the map or use the dropdown — every entry is logged in this zone.
                     </p>
                   </div>
@@ -237,9 +282,9 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                     onTimezoneChange={setSelectedTimezone}
                   />
 
-                  <div className="flex gap-3 rounded-xl border border-amber-200/80 bg-amber-50/80 px-4 py-3">
-                    <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                    <p className="text-xs leading-relaxed text-amber-800">
+                  <div className="flex gap-3 rounded-xl border border-amber-200/80 bg-amber-50/80 dark:border-amber-500/30 dark:bg-amber-500/10 px-4 py-3">
+                    <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
                       <span className="font-semibold">Working remotely?</span>{' '}
                       Set this to your company&apos;s location so tracked hours align with their
                       business hours instead of your local time.
@@ -260,22 +305,22 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   className="space-y-6"
                 >
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
                       Your week
                     </p>
-                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 sm:text-[1.7rem]">
+                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 dark:text-gray-100 sm:text-[1.7rem]">
                       Shape your week.
                     </h1>
-                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600">
+                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600 dark:text-gray-300">
                       This sets how weekly timesheets are laid out. You can change it anytime in Settings.
                     </p>
                   </div>
 
                   <div className="space-y-2.5">
-                    <label className="block text-sm font-semibold text-gray-900">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
                       Week starts on
                     </label>
-                    <div className="grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1">
+                    <div className="grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
                       {[
                         { value: 'sunday', label: 'Sunday' },
                         { value: 'monday', label: 'Monday' },
@@ -289,14 +334,14 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                             aria-pressed={isSelected}
                             className={`relative rounded-lg py-2.5 text-sm font-medium transition-colors duration-150 ${
                               isSelected
-                                ? 'text-gray-900'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-gray-900 dark:text-gray-100'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                             }`}
                           >
                             {isSelected && (
                               <motion.span
                                 layoutId="weekstart-thumb"
-                                className="absolute inset-0 rounded-lg bg-white shadow-xs ring-1 ring-gray-200/70"
+                                className="absolute inset-0 rounded-lg bg-white shadow-xs ring-1 ring-gray-200/70 dark:bg-gray-700 dark:ring-gray-600"
                                 transition={getTransition({ type: 'spring', stiffness: 400, damping: 32 })}
                               />
                             )}
@@ -308,7 +353,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   </div>
 
                   <div className="space-y-2.5">
-                    <label className="block text-sm font-semibold text-gray-900">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
                       Days you don&apos;t work
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -323,7 +368,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                             className={`min-w-13 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors duration-150 ${
                               isSelected
                                 ? 'border-blue-600 bg-blue-600 text-white shadow-sm shadow-blue-600/25'
-                                : 'border-gray-200 bg-white text-gray-600 shadow-xs hover:border-gray-300 hover:text-gray-900'
+                                : 'border-gray-200 bg-white text-gray-600 shadow-xs hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-100'
                             }`}
                           >
                             {label}
@@ -331,7 +376,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                         );
                       })}
                     </div>
-                    <p className="text-sm leading-relaxed text-gray-500">
+                    <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                       Skipping these days won&apos;t break your tracking streak.
                     </p>
                   </div>
@@ -350,41 +395,41 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                   className="space-y-6"
                 >
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
                       Sync · optional
                     </p>
-                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 sm:text-[1.7rem]">
+                    <h1 className="font-display text-2xl font-semibold leading-snug text-gray-900 dark:text-gray-100 sm:text-[1.7rem]">
                       Back up &amp; sync across devices?
                     </h1>
-                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600">
+                    <p className="max-w-md text-[15px] leading-relaxed text-gray-600 dark:text-gray-300">
                       Sign in with your email to back up your data and keep it in sync everywhere.
                       It&apos;s completely optional — Kronos works fully on this device without an account.
                     </p>
                   </div>
 
                   {user ? (
-                    <div className="flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3.5">
-                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <div className="flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-500/30 dark:bg-emerald-500/10 px-4 py-3.5">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                         <Check className="h-[18px] w-[18px]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-emerald-900">You&apos;re signed in</p>
-                        <p className="truncate text-[13px] text-emerald-700">{user.email}</p>
+                        <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">You&apos;re signed in</p>
+                        <p className="truncate text-[13px] text-emerald-700 dark:text-emerald-300">{user.email}</p>
                       </div>
                     </div>
                   ) : sent ? (
-                    <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3.5">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-emerald-900">
+                    <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-500/30 dark:bg-emerald-500/10 px-4 py-3.5">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-emerald-900 dark:text-emerald-200">
                         <Mail className="h-4 w-4" /> Check your inbox
                       </div>
-                      <p className="mt-1 text-[13px] leading-relaxed text-emerald-700">
+                      <p className="mt-1 text-[13px] leading-relaxed text-emerald-700 dark:text-emerald-300">
                         We sent a sign-in link to <span className="font-medium">{email}</span>. Open it on
                         this device any time to finish signing in — you can keep setting up now.
                       </p>
                       <button
                         type="button"
                         onClick={() => { setSent(false); setEmail(''); }}
-                        className="mt-2 text-xs font-medium text-emerald-700 underline hover:text-emerald-900"
+                        className="mt-2 text-xs font-medium text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-200"
                       >
                         Use a different email
                       </button>
@@ -393,7 +438,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                     <div className="space-y-3">
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <div className="relative flex-1">
-                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                           <input
                             type="email"
                             inputMode="email"
@@ -401,7 +446,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                             onChange={(e) => setEmail(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSendLink(); } }}
                             placeholder="you@example.com"
-                            className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                           />
                         </div>
                         <button
@@ -415,13 +460,13 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                         </button>
                       </div>
                       {sendError && (
-                        <p className="text-xs text-red-600">{sendError}</p>
+                        <p className="text-xs text-red-600 dark:text-red-400">{sendError}</p>
                       )}
-                      <div className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3">
-                        <Cloud className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-                        <p className="text-xs leading-relaxed text-gray-500">
+                      <div className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/60 dark:border-gray-800 dark:bg-gray-800/50 px-4 py-3">
+                        <Cloud className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                        <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                           Passwordless — we&apos;ll email you a one-time link. You can also do this later from
-                          <span className="font-medium text-gray-600"> Settings → Account &amp; Sync</span>.
+                          <span className="font-medium text-gray-600 dark:text-gray-300"> Settings → Account &amp; Sync</span>.
                         </p>
                       </div>
                     </div>
@@ -436,7 +481,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
               native app onboarding (sticky rides above scrolled content, with
               home-indicator safe-area padding). On desktop it's simply the
               card's footer. */}
-          <div className="sticky bottom-0 border-t border-gray-100 bg-white/95 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:static sm:border-0 sm:bg-transparent sm:px-10 sm:pb-8 sm:pt-8 sm:backdrop-blur-none">
+          <div className="sticky bottom-0 border-t border-gray-100 bg-white/95 dark:border-gray-800 dark:bg-gray-900/95 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:static sm:border-0 sm:bg-transparent sm:dark:bg-transparent sm:px-10 sm:pb-8 sm:pt-8 sm:backdrop-blur-none">
             {currentStep === 0 ? (
               <button
                 type="button"
@@ -451,7 +496,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-3.5 text-sm font-medium text-gray-600 shadow-xs transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-3.5 text-sm font-medium text-gray-600 shadow-xs transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
@@ -482,7 +527,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
                 )}
               </div>
             )}
-            <p className="mt-3 text-center text-xs text-gray-400 sm:hidden">
+            <p className="mt-3 text-center text-xs text-gray-400 dark:text-gray-500 sm:hidden">
               {isConfigured
                 ? 'Your data stays on this device — syncing is optional.'
                 : 'Your data never leaves this device.'}
@@ -490,7 +535,7 @@ const Onboarding = ({ onComplete, initialTimezone = 'UTC' }) => {
           </div>
         </form>
 
-        <p className="mt-5 hidden text-center text-xs text-gray-400 sm:block">
+        <p className="mt-5 hidden text-center text-xs text-gray-400 dark:text-gray-500 sm:block">
           {isConfigured
             ? 'Your data stays on this device — syncing is optional.'
             : 'Your data never leaves this device.'}
