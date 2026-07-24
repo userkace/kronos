@@ -135,3 +135,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 /dev-dist
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
