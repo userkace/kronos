@@ -41,11 +41,16 @@ const EditableField = ({ label, value, placeholder, onChange, onFocus, onBlur, m
   const [editing, setEditing] = useState(false);
   const fieldRef = useRef(null);
 
+  const SELECTABLE_TYPES = ['text', 'search', 'url', 'tel', 'password'];
+
   useEffect(() => {
     if (editing && fieldRef.current) {
       fieldRef.current.focus();
-      const len = fieldRef.current.value.length;
-      fieldRef.current.setSelectionRange(len, len);
+      const field = fieldRef.current;
+      if (field.tagName === 'TEXTAREA' || SELECTABLE_TYPES.includes(field.type)) {
+        const len = field.value.length;
+        field.setSelectionRange(len, len);
+      }
     }
   }, [editing]);
 
