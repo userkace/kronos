@@ -69,11 +69,19 @@ function AppContent() {
     setSettingsTarget({ category });
     setCurrentView('settings');
   };
-  // Any ordinary navigation drops a pending target, so opening Settings from
-  // the sidebar later still starts on its usual group rather than replaying
-  // wherever the last deep link went.
+  // Same idea for the tracker: clicking a day in Reports opens it there.
+  const [trackerTarget, setTrackerTarget] = useState(null);
+  const openTrackerDay = (dateKey) => {
+    setTrackerTarget({ dateKey });
+    setCurrentView('tracker');
+  };
+
+  // Any ordinary navigation drops a pending target, so opening Settings or the
+  // tracker from the sidebar later starts where it usually does rather than
+  // replaying wherever the last deep link went.
   const handleViewChange = (view) => {
     setSettingsTarget(null);
+    setTrackerTarget(null);
     setCurrentView(view);
   };
 
@@ -306,6 +314,7 @@ function AppContent() {
             {currentView === 'tracker' ? (
               // Daily Tracker View
               <DailyTracker
+                target={trackerTarget}
                 timezone={selectedTimezone}
                 timezoneInitialized={timezoneInitialized}
                 onTimezoneChange={changeTimezone}
@@ -325,7 +334,7 @@ function AppContent() {
                 />
               </div>
             ) : currentView === 'reports' ? (
-              <Reports />
+              <Reports onOpenDay={openTrackerDay} />
             ) : currentView === 'invoice' ? (
               // Invoice Generator View
               <InvoicePage />

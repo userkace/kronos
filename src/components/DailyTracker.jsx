@@ -54,7 +54,7 @@ const FUNNY_DEFAULT_TASKS = Object.freeze([
   "Productivity performance!"
 ]);
 
-const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
+const DailyTracker = ({ target, timezone, timezoneInitialized = false, onTimezoneChange, onWeeklyTimesheetSave = () => {} }) => {
   const { success, error, warning, actionToast } = useToast();
   const { isRunning: pomodoroIsRunning } = usePomodoro();
   const { getTransition, animations } = useMotionPreferences();
@@ -332,6 +332,20 @@ const DailyTracker = ({ timezone, timezoneInitialized = false, onTimezoneChange,
     // Keep the date as UTC, only format for display
     setSelectedDate(new Date());
   }, [timezone]);
+
+  // Arriving from elsewhere in the app (clicking a day in Reports) opens that
+  // day rather than today. Noon in the selected timezone, so the instant lands
+  // on the intended calendar day at any offset — midnight can fall either side
+  // of the boundary once it's converted. `target` is a new object per request,
+  // so clicking the same day twice still works, and this runs after the reset
+  // above so mounting into a request lands on the day, not on today.
+  //
+  // Deliberately keyed on `target` alone: changing the timezone should send you
+  // to today (the effect above), not replay an old request.
+  useEffect(() => {
+    if (!target?.dateKey || !timezone) return;
+    setSelectedDate(fromZonedTime(`${target.dateKey}T12:00:00`, timezone));
+  }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load data from localStorage on mount and when date changes
   useEffect(() => {

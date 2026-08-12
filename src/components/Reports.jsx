@@ -80,7 +80,10 @@ const RING_SIZE = 80;
 const RING_RADIUS = 32;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-const Reports = () => {
+// `onOpenDay(dateKey)` — supplied by App, opens that day in the tracker. Days
+// with tracked time are clickable in both the week bars and the heatmap; empty
+// days aren't, since there'd be nothing to look at when you got there.
+const Reports = ({ onOpenDay }) => {
   const { selectedTimezone: timezone, isInitialized: timezoneInitialized } = useTimezone();
   const { dailyHourGoal, weekStart, weekendDays, heatmapColors, goalRingColors } = useUserPreferences();
   const [range, setRange] = useState('week');
@@ -474,12 +477,16 @@ const Reports = () => {
         ) : range === 'week' ? (
           <div
             className="flex items-end gap-1 h-48"
-            role="img"
+            role="group"
             aria-label="Daily hours bar chart"
           >
             {dailySeries.map(b => {
               const heightPct = maxHours > 0 ? (b.hours / maxHours) * 100 : 0;
               const isToday = b.key === todayKey;
+              // A day you tracked nothing on stays a plain (zero-height) bar —
+              // there's no entry to open, and a 0px button is unclickable anyway.
+              const canOpen = b.seconds > 0 && Boolean(onOpenDay);
+              const Bar = canOpen ? 'button' : 'div';
               return (
                 <div
                   key={b.key}
@@ -492,14 +499,27 @@ const Reports = () => {
                     {b.hours.toFixed(1)}
                   </div>
                   <div className="w-full flex-1 flex items-end">
-                    <div
-                      className={`w-full rounded-t-md transition-[height] duration-300 ${
+                    <Bar
+                      {...(canOpen
+                        ? {
+                            type: 'button',
+                            onClick: () => onOpenDay(b.key),
+                            'aria-label': `Open ${format(b.date, 'EEEE, MMMM d')} in the tracker — ${b.hours.toFixed(2)} hours tracked`,
+                          }
+                        : {})}
+                      className={`w-full rounded-t-md transition-[height,background-color] duration-300 ${
                         isToday ? 'bg-blue-600' : 'bg-blue-400'
+                      } ${
+                        canOpen
+                          ? `cursor-pointer ${isToday ? 'hover:bg-blue-700' : 'hover:bg-blue-500'} focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1`
+                          : ''
                       }`}
                       style={{
                         height: `${b.hours > 0 ? Math.max(heightPct, 2) : 0}%`,
                       }}
-                      title={`${format(b.date, 'EEE MMM d')}: ${b.hours.toFixed(2)}h`}
+                      title={`${format(b.date, 'EEE MMM d')}: ${b.hours.toFixed(2)}h${
+                        canOpen ? ' — click to open this day' : ''
+                      }`}
                     />
                   </div>
                   <div className="text-[10px] text-gray-500 truncate w-full text-center">
@@ -515,6 +535,10 @@ const Reports = () => {
             const cellSize = isMonth ? 'w-6 h-6' : 'w-3.5 h-3.5';
             const labelSize = isMonth ? 'h-6' : 'h-3.5';
 
+            // A day is worth opening if something was actually tracked on it.
+            const cellCanOpen = (cell) =>
+              cell.status !== 'future' && cell.seconds > 0 && Boolean(onOpenDay);
+
             const handleCellEnter = (e, cell) => {
               const container = heatmapAreaRef.current;
               if (!container) return;
@@ -528,6 +552,7 @@ const Reports = () => {
                 top: cellRect.top - containerRect.top,
                 hoursLabel,
                 dateLabel: format(cell.date, 'EEE, MMM d, yyyy'),
+                canOpen: cellCanOpen(cell),
               });
             };
 
@@ -535,7 +560,7 @@ const Reports = () => {
               <div
                 ref={heatmapAreaRef}
                 className="relative"
-                role="img"
+                role="group"
                 aria-label="Daily activity heatmap"
               >
                 <div className="flex gap-2 overflow-x-auto pb-1">
@@ -560,15 +585,30 @@ const Reports = () => {
                             : getHeatmapStyle(cell.hours || 0, dailyHourGoal, heatmapColors);
                           const isToday = isInRange && cell.key === todayKey;
                           const dimClass = isInRange ? '' : 'opacity-40';
+                          const canOpen = cellCanOpen(cell);
+                          const Cell = canOpen ? 'button' : 'div';
                           return (
-                            <div
+                            <Cell
                               key={`${wIdx}-${dIdx}-${cell.key}`}
+                              {...(canOpen
+                                ? {
+                                    type: 'button',
+                                    onClick: () => onOpenDay(cell.key),
+                                    'aria-label': `Open ${format(cell.date, 'EEEE, MMMM d, yyyy')} in the tracker — ${cell.hours.toFixed(2)} hours tracked`,
+                                  }
+                                : {})}
                               className={`${cellSize} rounded-sm ${dimClass} ${
                                 isToday ? 'ring-2 ring-blue-600 ring-offset-1' : ''
+                              } ${
+                                canOpen
+                                  ? 'cursor-pointer hover:ring-2 hover:ring-gray-500 hover:ring-offset-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1'
+                                  : ''
                               }`}
                               style={bgStyle}
                               onMouseEnter={(e) => handleCellEnter(e, cell)}
                               onMouseLeave={() => setTooltip(null)}
+                              onFocus={(e) => handleCellEnter(e, cell)}
+                              onBlur={() => setTooltip(null)}
                             />
                           );
                         })}
@@ -584,6 +624,9 @@ const Reports = () => {
                   >
                     <div className="font-medium tabular-nums">{tooltip.hoursLabel}</div>
                     <div className="text-gray-300">{tooltip.dateLabel}</div>
+                    {tooltip.canOpen && (
+                      <div className="text-gray-400">Click to open this day</div>
+                    )}
                     <div className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
                   </div>
                 )}
