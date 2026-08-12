@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Menu, X, Globe, Database, Settings, Timer, FileText, Bell, BarChart3, Github } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Clock, Menu, X, Globe, Bell, Github } from 'lucide-react';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
+import { useSidebarItems } from '../hooks/useSidebarItems';
+import { useMotionPreferences } from '../hooks/useMotionPreferences';
 import { loadSidebarState, saveSidebarState } from '../utils/storage';
 import TimezoneSelect from './TimezoneSelect';
 import PomodoroProgressBar from './atoms/PomodoroProgressBar';
@@ -22,8 +25,15 @@ const formatTimezoneDisplay = (tz) => {
 
 const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUnseenChangelog }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
+  // Order and visibility come from Settings → Sidebar Items; the hook keeps
+  // this list in step with that editor while it's open.
+  const { visibleItems } = useSidebarItems();
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { clockFormat, dateFormat } = useUserPreferences();
+  const { getTransition } = useMotionPreferences();
+  // 0.3/easeOut is the timing the rest of the app's lists move at, and
+  // getTransition shortens it when the device or the user asks for less motion.
+  const navTransition = getTransition({ duration: 0.3, ease: 'easeOut' });
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Save sidebar state to localStorage whenever it changes
@@ -90,51 +100,6 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
     }
   };
 
-  const navigationItems = [
-    {
-      id: 'tracker',
-      label: 'Tracker',
-      icon: Clock,
-      description: 'Track time in real-time'
-    },
-    {
-      id: 'pomodoro',
-      label: 'Pomodoro',
-      icon: Timer,
-      description: 'Boost focus with intervals'
-    },
-    {
-      id: 'timesheet',
-      label: 'Timesheet',
-      icon: Calendar,
-      description: 'View weekly summary'
-    },
-    {
-      id: 'reports',
-      label: 'Reports',
-      icon: BarChart3,
-      description: 'Trends, streaks & goals'
-    },
-    {
-      id: 'invoice',
-      label: 'Invoice',
-      icon: FileText,
-      description: 'Generate PDF invoices'
-    },
-    {
-      id: 'data',
-      label: 'Data',
-      icon: Database,
-      description: 'Import/Export data'
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      description: 'App preferences'
-    }
-  ];
-
   return (
     <div className="flex h-screen bg-gray-50 relative">
       {/* Sidebar Overlay for Mobile */}
@@ -173,35 +138,53 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
           </div>
 
           {/* Navigation */}
+          {/* Reordering from Settings → Sidebar Items slides the entries to
+              their new places, and hiding one collapses it, rather than the
+              list snapping. `layout="position"` animates only the offset — the
+              full `layout` would scale the row while its height animates and
+              squash the label. initial={false} keeps the first paint still;
+              the 4px gap lives on the button so it collapses with the row
+              instead of leaving a hole behind. */}
           <nav className="flex-1 px-3 py-4">
-            <div className="space-y-1">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentView === item.id;
+            <div className="flex flex-col">
+              <AnimatePresence initial={false}>
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentView === item.id;
 
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onViewChange(item.id);
-                      if (window.innerWidth < 1024) {
-                        setSidebarOpen(false);
-                      }
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <div className="text-left">
-                      <div className="text-sm font-medium leading-5">{item.label}</div>
-                      <div className={`text-xs leading-4 ${isActive ? 'text-blue-600/70' : 'text-gray-400'}`}>{item.description}</div>
-                    </div>
-                  </button>
-                );
-              })}
+                  return (
+                    <motion.div
+                      key={item.id}
+                      layout="position"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={navTransition}
+                      className="overflow-hidden"
+                    >
+                      <button
+                        onClick={() => {
+                          onViewChange(item.id);
+                          if (window.innerWidth < 1024) {
+                            setSidebarOpen(false);
+                          }
+                        }}
+                        className={`w-full mb-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                        <div className="text-left">
+                          <div className="text-sm font-medium leading-5">{item.label}</div>
+                          <div className={`text-xs leading-4 ${isActive ? 'text-blue-600/70' : 'text-gray-400'}`}>{item.description}</div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           </nav>
 

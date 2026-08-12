@@ -1,4 +1,5 @@
-// Search index for the Settings page.
+// Index for the Settings page: what sections exist, what they're called, which
+// category they live under, and the words people would search for to find them.
 //
 // Each entry mirrors one top-level card in Settings.jsx, keyed by the `id` that
 // component passes to its `show()` helper. `keywords` exist so people can find
@@ -6,13 +7,49 @@
 // instead of only the heading it happens to live under, so it's worth listing
 // the field labels and synonyms, not just the title again.
 //
-// WHEN YOU ADD A SECTION to Settings.jsx, add it here too: an unindexed section
-// can never match, so it would vanish the moment anyone types in the search box.
+// WHEN YOU ADD A SECTION to Settings.jsx, add it here too, with a `category`:
+// an unindexed section can never match, so it would vanish the moment anyone
+// typed in the search box, and a section with no category would never be
+// reachable from the sidebar rail.
+
+// The groups the page is split into, in the order the rail lists them. Keeping
+// each group to a handful of cards is the point — the whole page as one column
+// was too much to scan.
+export const SETTINGS_CATEGORIES = [
+  {
+    id: 'general',
+    label: 'General',
+    description: 'Where you are, how time is shown, and the shape of your week.',
+  },
+  {
+    id: 'appearance',
+    label: 'Appearance',
+    description: 'Theme, sidebar layout, and the colors on your charts.',
+  },
+  {
+    id: 'account',
+    label: 'Account',
+    description: 'Optional cloud account and syncing across your devices.',
+  },
+  {
+    id: 'data',
+    label: 'Data',
+    description: 'Back up and restore your data, recover it, or start over.',
+  },
+  {
+    id: 'about',
+    label: 'About',
+    description: 'Version, source code, and credits.',
+  },
+];
+
+export const DEFAULT_SETTINGS_CATEGORY = 'general';
 
 export const SETTINGS_SECTIONS = [
   {
     id: 'account',
     title: 'Account & Sync',
+    category: 'account',
     keywords: [
       'account', 'sync', 'cloud', 'sign in', 'signin', 'log in', 'login', 'sign out',
       'email', 'magic link', 'password', 'supabase', 'backup', 'cross device',
@@ -22,6 +59,7 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'recovery',
     title: 'Data Recovery',
+    category: 'data',
     keywords: [
       'data recovery', 'recover', 'corrupt', 'corrupted', 'quarantine', 'quarantined',
       'restore', 'discard', 'backup', 'unparseable', 'broken', 'repair',
@@ -30,6 +68,7 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'timezone',
     title: 'Timezone Settings',
+    category: 'general',
     keywords: [
       'timezone', 'time zone', 'tz', 'utc', 'gmt', 'offset', 'region', 'country',
       'city', 'location', 'remote', 'local time', 'business hours',
@@ -38,6 +77,7 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'clock',
     title: 'Clock Format',
+    category: 'general',
     keywords: [
       'clock', 'clock format', 'time format', '12 hour', '24 hour', 'am pm', 'military time',
       'date format', 'date display', 'iso', 'numeric', 'day month year', 'weekday',
@@ -47,6 +87,7 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'schedule',
     title: 'Work Schedule',
+    category: 'general',
     keywords: [
       'work schedule', 'week start', 'start of week', 'first day of week', 'sunday', 'monday',
       'weekend', 'weekend days', 'non work days', 'days off', 'holiday', 'streak',
@@ -56,6 +97,7 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'heatmap',
     title: 'Heatmap Colors',
+    category: 'appearance',
     keywords: [
       'heatmap', 'heat map', 'colors', 'colours', 'color stops', 'progress stops',
       'gradient', 'palette', 'goal met', 'completion color', 'empty color',
@@ -65,6 +107,7 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'goalring',
     title: 'Goal Ring Colors',
+    category: 'appearance',
     keywords: [
       'goal ring', 'ring', 'progress ring', 'donut', 'colors', 'colours',
       'in progress color', 'completion color', 'goal met', 'reports', 'palette',
@@ -73,11 +116,25 @@ export const SETTINGS_SECTIONS = [
   {
     id: 'save',
     title: 'Save Changes',
+    category: 'general',
     keywords: ['save', 'save settings', 'apply', 'apply changes', 'confirm', 'unsaved'],
+  },
+  {
+    id: 'data-management',
+    title: 'Import & Export',
+    category: 'data',
+    keywords: [
+      'import', 'export', 'data management', 'backup', 'back up', 'restore', 'json',
+      'file', 'download', 'upload', 'save to file', 'merge', 'replace', 'revert',
+      'undo import', 'selective', 'weekly', 'daily', 'transfer', 'migrate',
+      'move to another device', 'clear all', 'clear entries', 'clear timesheet data',
+      'delete entries', 'timesheet data', 'tracker data',
+    ],
   },
   {
     id: 'reset-onboarding',
     title: 'Reset Onboarding',
+    category: 'data',
     keywords: [
       'onboarding', 'reset onboarding', 'setup', 'set up', 'welcome', 'welcome screen',
       'tutorial', 'walkthrough', 'intro', 'first run', 'getting started', 'preview',
@@ -85,24 +142,40 @@ export const SETTINGS_SECTIONS = [
   },
   {
     id: 'clear-data',
-    title: 'Clear All Data',
+    title: 'Reset Everything',
+    category: 'data',
     keywords: [
-      'clear all data', 'clear', 'delete', 'delete everything', 'erase', 'wipe',
-      'remove', 'reset app', 'factory reset', 'start over', 'entries', 'danger',
+      'reset everything', 'reset all', 'app wide', 'clear all data', 'clear', 'delete',
+      'delete everything', 'erase', 'wipe', 'remove', 'reset app', 'factory reset',
+      'start over', 'start fresh', 'preferences', 'settings', 'entries', 'danger',
       'destructive', 'nuke',
     ],
   },
   {
     id: 'appearance',
     title: 'Appearance',
+    category: 'appearance',
     keywords: [
       'appearance', 'theme', 'dark mode', 'darkmode', 'light mode', 'night mode',
       'system theme', 'color scheme', 'contrast', 'looks', 'style',
     ],
   },
   {
+    id: 'sidebar',
+    title: 'Sidebar Items',
+    category: 'appearance',
+    keywords: [
+      'sidebar', 'side bar', 'sidebar items', 'navigation', 'nav', 'nav items', 'menu',
+      'reorder', 'rearrange', 'order', 'sort', 'move', 'drag', 'drag and drop',
+      'hide', 'hidden', 'show', 'disable', 'enable', 'toggle', 'remove', 'customize',
+      'layout', 'tabs', 'views', 'pages', 'tracker', 'pomodoro', 'timesheet',
+      'reports', 'invoice', 'data',
+    ],
+  },
+  {
     id: 'about',
     title: 'About',
+    category: 'about',
     keywords: [
       'about', 'version', 'release', 'changelog', 'what is new', 'github', 'repo',
       'repository', 'source', 'open source', 'star', 'license', 'credits', 'author',
@@ -110,6 +183,15 @@ export const SETTINGS_SECTIONS = [
     ],
   },
 ];
+
+const CATEGORY_OF_SECTION = new Map(SETTINGS_SECTIONS.map(s => [s.id, s.category]));
+
+/** The category a section belongs to, or null if it isn't indexed. */
+export const sectionCategory = (id) => CATEGORY_OF_SECTION.get(id) ?? null;
+
+/** Ids of every section in a category, in page order. */
+export const sectionsInCategory = (categoryId) =>
+  SETTINGS_SECTIONS.filter(s => s.category === categoryId).map(s => s.id);
 
 // Punctuation and case are noise here: it lets "12-hour", "12 hour" and
 // "12hour"-adjacent typing all reach the same section.

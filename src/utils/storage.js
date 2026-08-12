@@ -187,6 +187,7 @@ const STORAGE_KEYS = {
   ONBOARDING_COMPLETED: 'kronos_onboarding_completed',
   CLOCK_FORMAT: 'kronos_clock_format',
   SIDEBAR_STATE: 'kronos_sidebar_state',
+  SIDEBAR_ITEMS: 'kronos_sidebar_items',
   SORT_ORDER: 'kronos_sort_order',
   SHOW_BREAKS: 'kronos_show_breaks',
   INVOICE_SETTINGS: 'kronos_invoice_settings',
@@ -610,6 +611,52 @@ export const loadSidebarState = () => {
   } catch (error) {
     console.error('Error loading sidebar state:', error);
     return true; // Default to open on error
+  }
+};
+
+// ── Sidebar items (order + hidden) ───────────────────────────────────────
+// App-wide and device-local by design, like the sidebar open/closed state and
+// the theme: this describes the chrome of the screen you're looking at, not
+// the client you're billing, so it's neither workspace-scoped nor in the sync
+// engine's allowlist.
+//
+// Stored as { order: [id, …], hidden: [id, …] }. Ids are kept opaque here —
+// reconciling them against the views this build ships is useSidebarItems'
+// job, so a downgrade/upgrade can't lose a customization the other version
+// still understands.
+export const SIDEBAR_ITEMS_KEY = STORAGE_KEYS.SIDEBAR_ITEMS;
+
+const sanitizeIdList = (value) => Array.from(new Set(
+  (Array.isArray(value) ? value : []).filter(id => typeof id === 'string' && id !== '')
+));
+
+export const saveSidebarItems = ({ order, hidden }) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_ITEMS, JSON.stringify({
+      order: sanitizeIdList(order),
+      hidden: sanitizeIdList(hidden),
+    }));
+  } catch (error) {
+    console.error('Error saving sidebar items:', error);
+  }
+};
+
+// Returns empty lists when nothing is stored or the value is unusable — an
+// empty order means "no customization", which callers read as the defaults.
+// Like the other preference keys, a bad value here is harmless enough to
+// replace with a default rather than quarantine.
+export const loadSidebarItems = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_ITEMS);
+    if (stored == null) return { order: [], hidden: [] };
+    const parsed = JSON.parse(stored);
+    return {
+      order: sanitizeIdList(parsed?.order),
+      hidden: sanitizeIdList(parsed?.hidden),
+    };
+  } catch (error) {
+    console.error('Error loading sidebar items:', error);
+    return { order: [], hidden: [] };
   }
 };
 

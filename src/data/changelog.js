@@ -23,6 +23,19 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.5',
+    date: '2026-08-12',
+    title: 'Make the sidebar yours',
+    changes: [
+      { type: 'added', description: 'Settings → Sidebar Items lets you rearrange the sidebar and switch off the views you don\'t use. Drag an entry by its handle to move it, or use the up/down arrows, and click the eye to hide it — the sidebar next to you updates as you go. Settings itself always stays put, since it\'s how you get back to this list. Hiding a view never deletes anything: turn it back on and your data is exactly where you left it. Your layout is saved on this device only, so each computer or phone can have its own arrangement, and Reset to default puts everything back.' },
+      { type: 'changed', description: 'The sidebar animates instead of jumping — entries slide into place when reordered, and collapse away when hidden. Shortened if your system prefers reduced motion.' },
+      { type: 'changed', description: 'Settings is grouped into General, Appearance, Account, Data, and About, listed down the side of the page — a few cards at a time instead of thirteen in one column. Search still covers every group and shows how many matches are in each.' },
+      { type: 'changed', description: 'Data Management moved out of the sidebar into Settings → Data, every control unchanged.' },
+      { type: 'changed', description: 'Settings → Data separates "Tracker & timesheet data" from "App-wide". The two buttons that both read Clear All Data are now Clear Timesheet Data (entries only, settings kept) and Reset Everything (entries and preferences, then restarts).' },
+      { type: 'changed', description: 'Save Changes and the Data Recovery notice now stay at the top of Settings whichever group you\'re in, easing in rather than appearing out of nowhere. The theme picker joins the sidebar and chart colors under Appearance.' },
+    ],
+  },
+  {
     version: '0.8.4',
     date: '2026-07-31',
     title: 'Editing an entry stays put',

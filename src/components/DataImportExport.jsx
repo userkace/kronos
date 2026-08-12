@@ -13,7 +13,10 @@ import { loadTimesheetData, loadWeeklyTimesheet, loadTimezone } from '../utils/s
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
-const DataImportExport = ({ onImportSuccess }) => {
+// `embedded` drops the page framing (its own heading and centered max-width)
+// for use inside Settings → Data, which supplies both. Every control below is
+// identical either way.
+const DataImportExport = ({ onImportSuccess, embedded = false }) => {
   const { success, error, warning } = useToast();
   const { weekStart } = useUserPreferences();
   const [isImporting, setIsImporting] = useState(false);
@@ -211,7 +214,11 @@ const DataImportExport = ({ onImportSuccess }) => {
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to delete ALL timesheet data? This action cannot be undone.')) {
+    if (window.confirm(
+      'Delete every time entry and weekly summary?\n\n' +
+      'Your settings, preferences, and invoice details are kept — use ' +
+      'Reset Everything under App-wide for those. This cannot be undone.'
+    )) {
       const success = clearAllData();
       if (success) {
         warning('All timesheet data has been cleared');
@@ -247,13 +254,15 @@ const DataImportExport = ({ onImportSuccess }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className={embedded ? '' : 'max-w-4xl mx-auto'}>
     <div>
+      {!embedded && (
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Your data</p>
         <h2 className="mt-1.5 font-display text-lg font-semibold text-gray-900">Data Management</h2>
         <p className="mt-1.5 text-sm text-gray-500">Back up, restore, and manage everything Kronos stores on this device.</p>
       </div>
+      )}
 
       <div className="space-y-5">
         {/* Export Section */}
@@ -574,8 +583,10 @@ const DataImportExport = ({ onImportSuccess }) => {
               <AlertTriangle className="w-[18px] h-[18px]" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-gray-900">Clear All Data</h4>
-              <p className="text-[13px] text-gray-500">Permanently delete all timesheet data</p>
+              <h4 className="text-sm font-semibold text-gray-900">Clear Timesheet Data</h4>
+              <p className="text-[13px] text-gray-500">
+                Permanently delete every entry and weekly summary
+              </p>
             </div>
           </div>
           <button
@@ -583,7 +594,7 @@ const DataImportExport = ({ onImportSuccess }) => {
             className="px-4 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-red-600/25 transition-colors duration-150 flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            <span>Clear All</span>
+            <span>Clear Entries</span>
           </button>
         </div>
 
@@ -596,7 +607,7 @@ const DataImportExport = ({ onImportSuccess }) => {
             <li><span className="font-medium text-gray-900">Simple Import</span> — restores all your data from a backup file</li>
             <li><span className="font-medium text-gray-900">Advanced Import</span> — restore only daily or only weekly data</li>
             <li><span className="font-medium text-gray-900">Revert</span> — undoes the last import operation</li>
-            <li><span className="font-medium text-gray-900">Clear All</span> — permanently deletes all data (cannot be undone)</li>
+            <li><span className="font-medium text-gray-900">Clear Entries</span> — permanently deletes your tracked time, keeping settings (cannot be undone)</li>
           </ul>
         </div>
       </div>

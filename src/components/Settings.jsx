@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import TimezoneSelect from './TimezoneSelect';
 import AccountSettings from './AccountSettings';
+import SidebarItemsSettings from './SidebarItemsSettings';
+import DataImportExport from './DataImportExport';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
@@ -20,7 +23,16 @@ import {
   Github, Star, Eye, Sun, Moon, Monitor, Search, SearchX,
 } from 'lucide-react';
 import { CHANGELOG } from '../data/changelog';
-import { SETTINGS_SECTIONS, matchSettingsSections } from '../utils/settingsSearch';
+import { useMotionPreferences } from '../hooks/useMotionPreferences';
+import SettingsNav from './SettingsNav';
+import {
+  SETTINGS_SECTIONS,
+  SETTINGS_CATEGORIES,
+  DEFAULT_SETTINGS_CATEGORY,
+  matchSettingsSections,
+  sectionCategory,
+  sectionsInCategory,
+} from '../utils/settingsSearch';
 
 const formatBytes = (n) => {
   if (n < 1024) return `${n} B`;
@@ -28,7 +40,7 @@ const formatBytes = (n) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
+const Settings = ({ onCorruptionResolved, onPreviewOnboarding, onImportSuccess }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { theme, setTheme } = useTheme();
   const {
@@ -213,7 +225,12 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
   };
 
   const handleClearAllData = () => {
-    if (window.confirm('Are you sure you want to clear all data? This will delete all your timesheet entries and cannot be undone.')) {
+    if (window.confirm(
+      'Reset everything?\n\n' +
+      'This deletes this workspace\'s entries AND every setting and preference — ' +
+      'timezone, schedule, colors, sidebar layout, invoice details — then restarts ' +
+      'the app. To delete only your tracked time, use Clear Timesheet Data instead.'
+    )) {
       if (window.confirm('This action is permanent. Are you absolutely sure?')) {
         try {
           setIsResetting(true);
@@ -243,8 +260,9 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Search ────────────────────────────────────────────────────────────────
+  // ── Search & categories ───────────────────────────────────────────────────
   const [query, setQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState(DEFAULT_SETTINGS_CATEGORY);
   const searchInputRef = useRef(null);
   const isSearching = query.trim().length > 0;
   const matchedIds = useMemo(() => matchSettingsSections(query), [query]);
@@ -256,9 +274,78 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
   );
   const matchCount = searchableSections.filter(s => matchedIds.has(s.id)).length;
 
-  // The Save card is the only way to commit the pending edits from the page, so
-  // an active search never hides it while there are unsaved changes.
-  const show = (id) => matchedIds.has(id) || (id === 'save' && hasUnsaved);
+  // Per-category tallies, so a search can point at the group holding the
+  // matches instead of leaving the rail looking inert.
+  const categoryMatchCounts = searchableSections.reduce((counts, s) => {
+    if (matchedIds.has(s.id)) counts[s.category] = (counts[s.category] ?? 0) + 1;
+    return counts;
+  }, {});
+
+  // Two cards ignore the rail and sit above the groups: Data Recovery, because
+  // unresolved corruption is urgent wherever you are, and Save Changes, because
+  // it's the only way to commit pending edits and a search must never hide it.
+  const isPinnedSection = (id) => id === 'recovery' || id === 'save';
+
+  // Both pinned cards appear in response to something you just did (an edit, a
+  // failed load), so they ease in and push the groups down rather than making
+  // the page jump. 0.3/easeOut matches the sidebar and the tracker's lists.
+  const { getTransition } = useMotionPreferences();
+  const pinnedTransition = getTransition({ duration: 0.3, ease: 'easeOut' });
+  const pinnedMotion = {
+    initial: { opacity: 0, height: 0, y: -8 },
+    animate: { opacity: 1, height: 'auto', y: 0 },
+    exit: { opacity: 0, height: 0, y: -8 },
+    transition: pinnedTransition,
+    // The gap below each card lives inside the collapsing wrapper, so it
+    // closes up with the card instead of leaving a hole that snaps shut.
+    className: 'overflow-hidden',
+  };
+
+  const show = (id) => {
+    if (id === 'save') return hasUnsaved || (isSearching && matchedIds.has('save'));
+    if (!matchedIds.has(id)) return false;
+    // A search reaches across every category, exactly as it did before the page
+    // was split into groups; otherwise the rail decides what's on screen.
+    if (isSearching || isPinnedSection(id)) return true;
+    return sectionCategory(id) === activeCategory;
+  };
+
+  // Whether a group has anything to show, so its heading doesn't strand itself
+  // above an empty stretch of page.
+  const groupHasVisible = (categoryId) =>
+    sectionsInCategory(categoryId).some(id => !isPinnedSection(id) && show(id));
+
+  const handleCategorySelect = (id) => {
+    // Picking a group while searching means "take me there", so the query goes.
+    if (isSearching) setQuery('');
+    setActiveCategory(id);
+  };
+
+  const GroupHeading = ({ categoryId }) => {
+    const category = SETTINGS_CATEGORIES.find(c => c.id === categoryId);
+    if (!category) return null;
+    return (
+      <div className="pt-1">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+          {category.label}
+        </h3>
+        <p className="mt-1 text-[13px] text-gray-500">{category.description}</p>
+      </div>
+    );
+  };
+
+  // Divides a group where the cards act on genuinely different things — Data
+  // holds both "your entries" and "the whole app", and two cards that both
+  // said "Clear All Data" gave no clue which was which.
+  const SubHeading = ({ title, description }) => (
+    <div className="pt-2">
+      <div className="flex items-center gap-3">
+        <h4 className="shrink-0 text-sm font-semibold text-gray-700">{title}</h4>
+        <span aria-hidden="true" className="h-px flex-1 bg-gray-200/70" />
+      </div>
+      <p className="mt-1 text-[13px] text-gray-500">{description}</p>
+    </div>
+  );
 
   // `/` jumps to the search box, the way it does in most web apps. Ignored
   // while typing so it never eats a literal slash (e.g. a date format).
@@ -285,7 +372,7 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
     <div>
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Preferences</p>
@@ -340,33 +427,25 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
         </p>
       </div>
 
-      <div className="space-y-5">
-        {/* No matches — offer the way back rather than a bare dead end. */}
-        {isSearching && matchCount === 0 && (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white/60 px-6 py-12 text-center">
-            <div className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-gray-100 text-gray-400">
-              <SearchX className="h-5 w-5" />
-            </div>
-            <p className="mt-3.5 text-sm font-semibold text-gray-900">No settings match “{query.trim()}”</p>
-            <p className="mt-1 text-[13px] text-gray-500">
-              Try a shorter phrase, or browse everything from the top.
-            </p>
-            <button
-              type="button"
-              onClick={() => { setQuery(''); searchInputRef.current?.focus(); }}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-xs transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
-            >
-              <X className="h-4 w-4" />
-              Clear search
-            </button>
-          </div>
-        )}
+      {/* Rail beside the cards on desktop, chips above them on narrow screens.
+          Only one group is on screen at a time unless a search is running, which
+          is the whole point — the page used to be thirteen cards in one column. */}
+      <div className="lg:flex lg:items-start lg:gap-8">
+        <SettingsNav
+          activeCategory={activeCategory}
+          onSelect={handleCategorySelect}
+          isSearching={isSearching}
+          matchCounts={categoryMatchCounts}
+        />
 
-        {/* Account & Sync — optional cloud accounts and cross-device sync. */}
-        {show('account') && <AccountSettings />}
-
-        {/* Data Recovery — only rendered when there are quarantined backups. */}
-        {backups.length > 0 && show('recovery') && (
+      <div className="min-w-0 flex-1">
+        {/* Pinned cards, outside the groups' spacing so their own gap collapses
+            with them and the groups below slide up as they go. */}
+        <AnimatePresence initial={false}>
+          {backups.length > 0 && show('recovery') && (
+            <motion.div key="recovery" {...pinnedMotion}>
+              <div className="pb-8">
+          {/* Data Recovery — only rendered when there are quarantined backups. */}
           <div className="border border-amber-200/80 rounded-2xl p-6 bg-amber-50/80">
             <div className="flex items-center gap-3 mb-3">
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100/80 text-amber-600">
@@ -427,7 +506,66 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
               ))}
             </div>
           </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Save Changes — pinned so pending edits are always one click from
+              being committed, whichever group you're looking at. */}
+          {show('save') && (
+            <motion.div key="save" {...pinnedMotion}>
+              <div className="pb-8">
+          <div className="border border-blue-200/80 rounded-2xl p-5 bg-blue-50/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-100/80 text-blue-600">
+                  <SettingsIcon className="w-[18px] h-[18px]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-900 tracking-tight">Save Changes</h4>
+                  <p className="text-[13px] text-blue-700">Apply your updated settings</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSaveSettings}
+                className="px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 hover:bg-blue-500 active:bg-blue-700 transition-colors duration-150 flex items-center gap-2"
+              >
+                <SettingsIcon className="w-4 h-4" />
+                <span>Save Settings</span>
+              </button>
+            </div>
+          </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      <div className="space-y-8">
+        {/* No matches — offer the way back rather than a bare dead end. */}
+        {isSearching && matchCount === 0 && (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white/60 px-6 py-12 text-center">
+            <div className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-gray-100 text-gray-400">
+              <SearchX className="h-5 w-5" />
+            </div>
+            <p className="mt-3.5 text-sm font-semibold text-gray-900">No settings match “{query.trim()}”</p>
+            <p className="mt-1 text-[13px] text-gray-500">
+              Try a shorter phrase, or browse everything from the top.
+            </p>
+            <button
+              type="button"
+              onClick={() => { setQuery(''); searchInputRef.current?.focus(); }}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-xs transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
+            >
+              <X className="h-4 w-4" />
+              Clear search
+            </button>
+          </div>
         )}
+
+        {/* ── General ─────────────────────────────────────────────────────── */}
+        {groupHasVisible('general') && (
+        <section className="space-y-5">
+        <GroupHeading categoryId="general" />
 
         {/* Timezone Settings */}
         {show('timezone') && (
@@ -595,6 +733,57 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
         </div>
 
         )}
+        </section>
+        )}
+
+        {/* ── Appearance ──────────────────────────────────────────────────── */}
+        {groupHasVisible('appearance') && (
+        <section className="space-y-5">
+        <GroupHeading categoryId="appearance" />
+
+        {/* Appearance */}
+        {show('appearance') && (
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+              <Moon className="w-[18px] h-[18px]" />
+            </div>
+            <div>
+              <h4 className="text-base font-semibold text-gray-900 tracking-tight">Theme</h4>
+              <p className="text-[13px] text-gray-500">How Kronos looks on this device.</p>
+            </div>
+          </div>
+          <div className="grid max-w-sm grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1">
+            {[
+              { value: 'light', label: 'Light', icon: Sun },
+              { value: 'dark', label: 'Dark', icon: Moon },
+              { value: 'system', label: 'System', icon: Monitor },
+            ].map(({ value, label, icon: Icon }) => {
+              const isSelected = theme === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTheme(value)}
+                  aria-pressed={isSelected}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors duration-150 ${
+                    isSelected
+                      ? 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-200/70'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        )}
+
+        {/* Sidebar Items — device-local, like the theme above it. */}
+        {show('sidebar') && <SidebarItemsSettings />}
 
         {/* Heatmap Colors */}
         {show('heatmap') && (
@@ -853,30 +1042,46 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
         </div>
 
         )}
+        </section>
+        )}
 
-        {/* Save Settings Button */}
-        {show('save') && (
-        <div className="border border-blue-200/80 rounded-2xl p-5 bg-blue-50/60">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-100/80 text-blue-600">
-                <SettingsIcon className="w-[18px] h-[18px]" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-blue-900 tracking-tight">Save Changes</h4>
-                <p className="text-[13px] text-blue-700">Apply your updated settings</p>
-              </div>
-            </div>
-            <button
-              onClick={handleSaveSettings}
-              className="px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 hover:bg-blue-500 active:bg-blue-700 transition-colors duration-150 flex items-center gap-2"
-            >
-              <SettingsIcon className="w-4 h-4" />
-              <span>Save Settings</span>
-            </button>
-          </div>
-        </div>
+        {/* ── Account ─────────────────────────────────────────────────────── */}
+        {groupHasVisible('account') && (
+        <section className="space-y-5">
+        <GroupHeading categoryId="account" />
 
+        {/* Account & Sync — optional cloud accounts and cross-device sync. */}
+        {show('account') && <AccountSettings />}
+        </section>
+        )}
+
+        {/* ── Data ────────────────────────────────────────────────────────── */}
+        {groupHasVisible('data') && (
+        <section className="space-y-5">
+        <GroupHeading categoryId="data" />
+
+        {/* Your entries — everything here acts on tracked time only and leaves
+            settings alone, including its Clear Timesheet Data card. */}
+        {show('data-management') && (
+          <SubHeading
+            title="Tracker & timesheet data"
+            description="Your time entries and weekly summaries. Settings and preferences aren't touched by anything here."
+          />
+        )}
+
+        {/* Import/Export — the whole of the old Data Management view, moved in
+            here unchanged; `embedded` just drops its page heading. */}
+        {show('data-management') && (
+          <DataImportExport embedded onImportSuccess={onImportSuccess} />
+        )}
+
+        {/* The whole app — these two reach past your entries into preferences
+            and the app's own state, which is why they're kept apart. */}
+        {(show('reset-onboarding') || show('clear-data')) && (
+          <SubHeading
+            title="App-wide"
+            description="Preferences, setup, and Kronos itself — not just your tracked time."
+          />
         )}
 
         {/* Reset Options — the wrapper only exists for the inner spacing, so it
@@ -925,8 +1130,11 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
                   <Trash2 className="w-[18px] h-[18px]" />
                 </div>
                 <div>
-                  <h5 className="text-sm font-semibold text-red-900">Clear All Data</h5>
-                  <p className="text-[13px] text-red-700">Delete all timesheet entries and reset app</p>
+                  <h5 className="text-sm font-semibold text-red-900">Reset Everything</h5>
+                  <p className="text-[13px] text-red-700">
+                    Delete this workspace's entries <span className="font-semibold">and</span> every setting and
+                    preference
+                  </p>
                 </div>
               </div>
               <button
@@ -935,53 +1143,19 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
                 className="px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-red-600/25 hover:bg-red-500 active:bg-red-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>{isResetting ? 'Clearing...' : 'Clear All'}</span>
+                <span>{isResetting ? 'Resetting...' : 'Reset All'}</span>
               </button>
             </div>
             )}
           </div>
         )}
-
-        {/* Appearance */}
-        {show('appearance') && (
-        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
-              <Moon className="w-[18px] h-[18px]" />
-            </div>
-            <div>
-              <h4 className="text-base font-semibold text-gray-900 tracking-tight">Appearance</h4>
-              <p className="text-[13px] text-gray-500">How Kronos looks on this device.</p>
-            </div>
-          </div>
-          <div className="grid max-w-sm grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1">
-            {[
-              { value: 'light', label: 'Light', icon: Sun },
-              { value: 'dark', label: 'Dark', icon: Moon },
-              { value: 'system', label: 'System', icon: Monitor },
-            ].map(({ value, label, icon: Icon }) => {
-              const isSelected = theme === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setTheme(value)}
-                  aria-pressed={isSelected}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors duration-150 ${
-                    isSelected
-                      ? 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-200/70'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
+        </section>
         )}
+
+        {/* ── About ───────────────────────────────────────────────────────── */}
+        {groupHasVisible('about') && (
+        <section className="space-y-5">
+        <GroupHeading categoryId="about" />
 
         {/* About */}
         {show('about') && (
@@ -1023,7 +1197,11 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding }) => {
           </div>
         </div>
         )}
+        </section>
+        )}
 
+      </div>
+      </div>
       </div>
     </div>
     </div>

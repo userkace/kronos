@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import TimesheetTable from './components/TimesheetTable';
 import DailyTracker from './components/DailyTracker';
 import AppLayout from './components/AppLayout';
-import DataImportExport from './components/DataImportExport';
 import Onboarding from './components/Onboarding';
 import SplashScreen from './components/SplashScreen';
 import { AnimatePresence } from 'framer-motion';
@@ -312,17 +311,15 @@ function AppContent() {
             ) : currentView === 'invoice' ? (
               // Invoice Generator View
               <InvoicePage />
-            ) : currentView === 'settings' ? (
-              // Settings View
+            ) : (
+              // Settings View — also the home of import/export, which used to be
+              // its own Data view, so any other value (a stale 'data') lands
+              // where that lives now instead of on a blank page.
               <Settings
                 onCorruptionResolved={recheckCorruption}
                 onPreviewOnboarding={IS_DEV_HOST ? () => setPreviewingOnboarding(true) : undefined}
+                onImportSuccess={handleImportSuccess}
               />
-            ) : (
-              // Data Management View
-              <div className="p-6">
-                <DataImportExport onImportSuccess={handleImportSuccess} />
-              </div>
             )}
           </AppLayout>
         </>
