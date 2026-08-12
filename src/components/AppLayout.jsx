@@ -270,8 +270,14 @@ const AppLayout = ({ children, currentView, onViewChange, onManageWorkspaces, on
           </div>
         </header>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto">
+        {/* Main Content Area.
+            scrollbar-gutter keeps the 8px scrollbar's space reserved whether or
+            not the view actually scrolls. Without it, moving between Settings
+            groups (or between views) makes the scrollbar come and go with the
+            content's height, and every centered page shifts and narrows by the
+            width of it — short groups like Account and About sat at a different
+            width from the tall ones. */}
+        <main className="flex-1 overflow-auto [scrollbar-gutter:stable]">
           {children}
         </main>
       </div>

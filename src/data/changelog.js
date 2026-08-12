@@ -28,6 +28,7 @@ export const CHANGELOG = [
     title: 'Release notes and workspaces, in Settings',
     changes: [
       { type: 'added', description: 'Settings → About now ends with Release Notes: the same history the "What\'s new" popup shows, readable whenever you want it. The three most recent releases are there as soon as you open the group, and one click unfolds the rest — so looking up when something changed no longer means waiting for an update to announce itself.' },
+      { type: 'fixed', description: 'Pages no longer shift and narrow as you move around. The scrollbar takes up real space, so it appearing on a long page and vanishing on a short one moved everything below it by its own width — most visible stepping between Settings groups, where Account and About sat at a slightly different width from the longer ones. Its space is now always reserved, so every page lines up.' },
       { type: 'changed', description: 'Managing your workspaces is now a section of Settings → Account instead of a dialog over the sidebar. Rename, switch, and delete are all there in one list, with the active workspace marked, and you can create a new one from the same place. "Manage workspaces" in the sidebar switcher takes you straight to it; the switcher still handles quick switching, as before.' },
     ],
   },
