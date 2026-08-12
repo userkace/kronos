@@ -60,6 +60,23 @@ function AppContent() {
   // and again right after the onboarding flow completes. Self-dismisses.
   const [showSplash, setShowSplash] = useState(false);
 
+  // Deep link into one of Settings' groups — the sidebar's "Manage workspaces"
+  // opens Settings → Account rather than a dialog of its own. A fresh object
+  // every time, so asking for the same group again still moves the page even
+  // when Settings is already on screen.
+  const [settingsTarget, setSettingsTarget] = useState(null);
+  const openSettingsCategory = (category) => {
+    setSettingsTarget({ category });
+    setCurrentView('settings');
+  };
+  // Any ordinary navigation drops a pending target, so opening Settings from
+  // the sidebar later still starts on its usual group rather than replaying
+  // wherever the last deep link went.
+  const handleViewChange = (view) => {
+    setSettingsTarget(null);
+    setCurrentView(view);
+  };
+
   // Tracks keys with unresolved corruption. Saves to those keys are refused
   // by the storage layer; the banner here surfaces it persistently and the
   // Data Recovery section in Settings resolves it.
@@ -207,7 +224,7 @@ function AppContent() {
   const corruptionBanner = corruptPendingKeys.length > 0 ? (
     <button
       type="button"
-      onClick={() => setCurrentView('settings')}
+      onClick={() => handleViewChange('settings')}
       className="sticky top-0 z-40 w-full flex items-center gap-3 px-4 py-3 bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors text-left"
     >
       <AlertTriangle className="w-5 h-5 shrink-0" />
@@ -281,7 +298,8 @@ function AppContent() {
           </AnimatePresence>
           <AppLayout
             currentView={currentView}
-            onViewChange={setCurrentView}
+            onViewChange={handleViewChange}
+            onManageWorkspaces={() => openSettingsCategory('account')}
             onShowChangelog={openChangelog}
             hasUnseenChangelog={hasUnseenChangelog}
           >
@@ -316,6 +334,7 @@ function AppContent() {
               // its own Data view, so any other value (a stale 'data') lands
               // where that lives now instead of on a blank page.
               <Settings
+                target={settingsTarget}
                 onCorruptionResolved={recheckCorruption}
                 onPreviewOnboarding={IS_DEV_HOST ? () => setPreviewingOnboarding(true) : undefined}
                 onImportSuccess={handleImportSuccess}

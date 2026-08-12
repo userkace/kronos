@@ -29,7 +29,7 @@ export const SETTINGS_CATEGORIES = [
   {
     id: 'account',
     label: 'Account',
-    description: 'Optional cloud account and syncing across your devices.',
+    description: 'Your workspaces, an optional cloud account, and syncing across devices.',
   },
   {
     id: 'data',
@@ -39,7 +39,7 @@ export const SETTINGS_CATEGORIES = [
   {
     id: 'about',
     label: 'About',
-    description: 'Version, source code, and credits.',
+    description: 'Version, release notes, source code, and credits.',
   },
 ];
 
@@ -54,6 +54,17 @@ export const SETTINGS_SECTIONS = [
       'account', 'sync', 'cloud', 'sign in', 'signin', 'log in', 'login', 'sign out',
       'email', 'magic link', 'password', 'supabase', 'backup', 'cross device',
       'devices', 'online', 'offline',
+    ],
+  },
+  {
+    id: 'workspaces',
+    title: 'Workspaces',
+    category: 'account',
+    keywords: [
+      'workspace', 'workspaces', 'manage workspaces', 'switch workspace', 'rename workspace',
+      'delete workspace', 'new workspace', 'create workspace', 'client', 'clients', 'project',
+      'projects', 'profile', 'profiles', 'separate', 'multiple', 'job', 'jobs', 'company',
+      'switcher', 'active workspace',
     ],
   },
   {
@@ -180,6 +191,15 @@ export const SETTINGS_SECTIONS = [
       'about', 'version', 'release', 'changelog', 'what is new', 'github', 'repo',
       'repository', 'source', 'open source', 'star', 'license', 'credits', 'author',
       'userkace', 'kronos',
+    ],
+  },
+  {
+    id: 'release-notes',
+    title: 'Release Notes',
+    category: 'about',
+    keywords: [
+      'release notes', 'releases', 'changelog', 'change log', 'what is new', 'whats new',
+      'updates', 'update', 'version history', 'history', 'new features', 'fixes', 'patch notes',
     ],
   },
 ];

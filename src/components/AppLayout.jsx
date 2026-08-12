@@ -23,7 +23,7 @@ const formatTimezoneDisplay = (tz) => {
   }
 };
 
-const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUnseenChangelog }) => {
+const AppLayout = ({ children, currentView, onViewChange, onManageWorkspaces, onShowChangelog, hasUnseenChangelog }) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => loadSidebarState());
   // Order and visibility come from Settings → Sidebar Items; the hook keeps
   // this list in step with that editor while it's open.
@@ -134,7 +134,7 @@ const AppLayout = ({ children, currentView, onViewChange, onShowChangelog, hasUn
 
           {/* Workspace switcher */}
           <div className="px-3 pt-4">
-            <WorkspaceSwitcher />
+            <WorkspaceSwitcher onManage={onManageWorkspaces} />
           </div>
 
           {/* Navigation */}

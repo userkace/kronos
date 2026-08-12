@@ -23,6 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.6',
+    date: '2026-08-13',
+    title: 'Release notes and workspaces, in Settings',
+    changes: [
+      { type: 'added', description: 'Settings → About now ends with Release Notes: the same history the "What\'s new" popup shows, readable whenever you want it. The three most recent releases are there as soon as you open the group, and one click unfolds the rest — so looking up when something changed no longer means waiting for an update to announce itself.' },
+      { type: 'changed', description: 'Managing your workspaces is now a section of Settings → Account instead of a dialog over the sidebar. Rename, switch, and delete are all there in one list, with the active workspace marked, and you can create a new one from the same place. "Manage workspaces" in the sidebar switcher takes you straight to it; the switcher still handles quick switching, as before.' },
+    ],
+  },
+  {
     version: '0.8.5',
     date: '2026-08-12',
     title: 'Make the sidebar yours',

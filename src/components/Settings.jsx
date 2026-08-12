@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TimezoneSelect from './TimezoneSelect';
 import AccountSettings from './AccountSettings';
 import SidebarItemsSettings from './SidebarItemsSettings';
+import WorkspaceSettings from './WorkspaceSettings';
+import ReleaseNotesSettings from './ReleaseNotesSettings';
 import DataImportExport from './DataImportExport';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -40,7 +42,7 @@ const formatBytes = (n) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const Settings = ({ onCorruptionResolved, onPreviewOnboarding, onImportSuccess }) => {
+const Settings = ({ target, onCorruptionResolved, onPreviewOnboarding, onImportSuccess }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { theme, setTheme } = useTheme();
   const {
@@ -266,6 +268,16 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding, onImportSuccess }
   const searchInputRef = useRef(null);
   const isSearching = query.trim().length > 0;
   const matchedIds = useMemo(() => matchSettingsSections(query), [query]);
+
+  // Arriving from elsewhere in the app (the sidebar's "Manage workspaces")
+  // opens the group that was asked for. `target` is a new object per request,
+  // so repeating the same request still lands, and any live search is cleared —
+  // otherwise the matches, not the group, would decide what's on screen.
+  useEffect(() => {
+    if (!target?.category) return;
+    setQuery('');
+    setActiveCategory(target.category);
+  }, [target]);
 
   // Data Recovery only exists when something was quarantined, so it shouldn't
   // count towards "n of m" or keep the empty state away when nothing matches.
@@ -1052,6 +1064,10 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding, onImportSuccess }
 
         {/* Account & Sync — optional cloud accounts and cross-device sync. */}
         {show('account') && <AccountSettings />}
+
+        {/* Workspaces — the whole of the old "Manage workspaces" modal, now a
+            section of the page. The sidebar switcher links here. */}
+        {show('workspaces') && <WorkspaceSettings />}
         </section>
         )}
 
@@ -1197,6 +1213,10 @@ const Settings = ({ onCorruptionResolved, onPreviewOnboarding, onImportSuccess }
           </div>
         </div>
         )}
+
+        {/* Release notes — the full history, at the end of About, so looking up
+            what changed doesn't mean waiting for the "What's new" modal. */}
+        {show('release-notes') && <ReleaseNotesSettings />}
         </section>
         )}
 
