@@ -58,7 +58,7 @@ const DailyTracker = ({ target, timezone, timezoneInitialized = false, onTimezon
   const { success, error, warning, actionToast } = useToast();
   const { isRunning: pomodoroIsRunning } = usePomodoro();
   const { getTransition, animations } = useMotionPreferences();
-  const { isDark } = useTheme();
+  const { isDark, darkTone } = useTheme();
 
   // Initialize favicon manager
   useEffect(() => {
@@ -1758,7 +1758,9 @@ const DailyTracker = ({ target, timezone, timezoneInitialized = false, onTimezon
                     // in dark, the theme's lightened green ↔ its body text
                     // color — black would vanish against the navy background.
                     color: isDark
-                      ? ["#6fd693", "#eff3fc", "#6fd693"]
+                      ? darkTone === 'charcoal'
+                        ? ["#6fd693", "#f5f5f5", "#6fd693"]
+                        : ["#6fd693", "#eff3fc", "#6fd693"]
                       : ["#16a34a", "#000000", "#16a34a"]
                   }}
                   transition={{

@@ -23,6 +23,14 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.7',
+    date: '2026-09-04',
+    title: 'A dark mode without the blue',
+    changes: [
+      { type: 'added', description: 'Dark mode now comes in two styles. Midnight is the blue-tinted one you already know; Charcoal drops the tint for a near-black page with neutral grey panels, which reads calmer at night and looks better on OLED screens. Pick one under Settings → Theme → Dark style — it appears as soon as your theme is Dark or System, and like the theme itself it is remembered per device rather than synced. Status colours stay recognisable in both: greens still read as good, reds as a problem, just grounded on grey instead of navy.' },
+    ],
+  },
+  {
     version: '0.8.6',
     date: '2026-08-13',
     title: 'Jump straight to a day from Reports',

@@ -228,3 +228,115 @@ body {
 .dark .leaflet-tile {
   filter: invert(1) hue-rotate(200deg) saturate(0.45) brightness(0.9) contrast(0.9);
 }
+
+/* Dark-tone preview swatches (Settings → Theme → Dark style). The fills are
+   near-black by nature, so the outline — not the fill — is what separates them
+   from whatever they sit on: dark hairline on light surfaces, light on dark. */
+.tone-swatch {
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 0.25);
+}
+.dark .tone-swatch {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+
+/* ── Dark mode: charcoal tone ───────────────────────────────────────────────
+   Opt-in neutral variant of the dark theme (Settings → Theme → Dark style).
+   Same structure as `.dark` above, with the blue cast taken out: near-black
+   backgrounds and a pure-gray ramp. Accent tints keep just enough hue to stay
+   readable as status colors (green = good, red = problem) without tinting the
+   whole app. Selectors are `.dark.tone-charcoal`, so they outrank the `.dark`
+   values they replace and only apply while dark is actually in effect. */
+.dark.tone-charcoal {
+  /* Surfaces: cards sit one step above the near-black page */
+  --color-white: #171717;
+
+  --color-gray-50:  #0f0f0f;
+  --color-gray-100: #1f1f1f;
+  --color-gray-200: #2e2e2e;
+  --color-gray-300: #454545;
+  --color-gray-400: #8a8a8a;
+  --color-gray-500: #a3a3a3;
+  --color-gray-600: #bdbdbd;
+  --color-gray-700: #d4d4d4;
+  --color-gray-800: #e5e5e5;
+  --color-gray-900: #f5f5f5;
+
+  --color-slate-50:  #0a0a0a;
+  --color-slate-100: #1c1c1c;
+  --color-slate-200: #303030;
+
+  --color-blue-50:  #131b26;
+  --color-blue-100: #18222f;
+  --color-blue-200: #21303f;
+  --color-blue-300: #33455a;
+
+  --color-indigo-50:  #1a1a2a;
+  --color-indigo-200: #2a2a3d;
+
+  --color-sky-50:  #111d26;
+  --color-sky-100: #16262f;
+
+  --color-emerald-50:  #0e1f19;
+  --color-emerald-100: #132a22;
+  --color-emerald-200: #1b3a30;
+
+  --color-green-50:  #0f2015;
+  --color-green-100: #142a1c;
+  --color-green-200: #1c3a26;
+  --color-green-300: #26502f;
+
+  --color-amber-50:  #241d0f;
+  --color-amber-100: #2e2513;
+  --color-amber-200: #40331a;
+  --color-amber-300: #554523;
+
+  --color-red-50:  #281416;
+  --color-red-100: #32191b;
+  --color-red-200: #452325;
+
+  --color-orange-50:  #281a0f;
+  --color-orange-100: #322213;
+
+  --color-purple-50: #1f1830;
+  --color-violet-50: #1d1834;
+  --color-rose-50:   #2a1620;
+}
+
+.dark.tone-charcoal body {
+  background-color: #0a0a0a;
+  color: #f5f5f5;
+}
+.dark.tone-charcoal ::selection {
+  background-color: rgb(115 115 115 / 0.5);
+  color: #fafafa;
+}
+.dark.tone-charcoal * {
+  scrollbar-color: #3a3a3a transparent;
+}
+.dark.tone-charcoal ::-webkit-scrollbar-thumb {
+  background-color: #3a3a3a;
+}
+.dark.tone-charcoal ::-webkit-scrollbar-thumb:hover {
+  background-color: #525252;
+}
+.dark.tone-charcoal :focus-visible {
+  outline-color: #60a5fa;
+}
+
+.dark.tone-charcoal .bg-gray-900 {
+  background-color: #2e2e2e; /* tooltips stay a step above their surface */
+}
+.dark.tone-charcoal .bg-gray-900\/80 {
+  background-color: rgb(5 5 5 / 0.85);
+}
+.dark.tone-charcoal .hover\:bg-gray-900:hover {
+  background-color: #0a0a0a;
+}
+
+/* Leaflet timezone map: desaturate rather than hue-shift to match */
+.dark.tone-charcoal .leaflet-container {
+  background: #0f0f0f !important;
+}
+.dark.tone-charcoal .leaflet-tile {
+  filter: invert(1) grayscale(0.85) brightness(0.85) contrast(0.95);
+}

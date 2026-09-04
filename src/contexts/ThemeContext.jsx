@@ -3,6 +3,10 @@ import { createContext, useContext, useEffect, useState } from 'react';
 // App-wide (not workspace-scoped) and device-local by design: theme is a
 // property of the screen you're looking at, so it's never cloud-synced.
 const STORAGE_KEY = 'kronos_theme'; // 'light' | 'dark' | 'system'
+// Which flavour of dark to use once dark is in effect: 'midnight' is the
+// blue-tinted original, 'charcoal' the neutral near-black one.
+const TONE_STORAGE_KEY = 'kronos_dark_tone'; // 'midnight' | 'charcoal'
+const DARK_TONES = ['midnight', 'charcoal'];
 
 const ThemeContext = createContext(null);
 
@@ -23,6 +27,15 @@ const getStoredTheme = () => {
   }
 };
 
+const getStoredDarkTone = () => {
+  try {
+    const stored = localStorage.getItem(TONE_STORAGE_KEY);
+    return DARK_TONES.includes(stored) ? stored : 'midnight';
+  } catch {
+    return 'midnight';
+  }
+};
+
 const getResolvedDark = (theme) =>
   theme === 'dark' ||
   (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -33,6 +46,7 @@ export const ThemeProvider = ({ children }) => {
   // for the rare styles that can't come from CSS — e.g. JS-driven animation
   // keyframes, where inline styles would beat any .dark override.
   const [isDark, setIsDark] = useState(() => getResolvedDark(getStoredTheme()));
+  const [darkTone, setDarkTone] = useState(getStoredDarkTone);
 
   useEffect(() => {
     try {
@@ -54,8 +68,18 @@ export const ThemeProvider = ({ children }) => {
     }
   }, [theme]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(TONE_STORAGE_KEY, darkTone);
+    } catch {
+      // Storage unavailable — tone still applies for this session.
+    }
+    // Harmless in light mode: the charcoal rules are all scoped to `.dark`.
+    document.documentElement.classList.toggle('tone-charcoal', darkTone === 'charcoal');
+  }, [darkTone]);
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isDark }}>
+    <ThemeContext.Provider value={{ theme, setTheme, isDark, darkTone, setDarkTone }}>
       {children}
     </ThemeContext.Provider>
   );

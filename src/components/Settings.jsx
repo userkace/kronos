@@ -44,7 +44,7 @@ const formatBytes = (n) => {
 
 const Settings = ({ target, onCorruptionResolved, onPreviewOnboarding, onImportSuccess }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, darkTone, setDarkTone } = useTheme();
   const {
     weekStart, changeWeekStart,
     clockFormat, changeClockFormat,
@@ -790,6 +790,47 @@ const Settings = ({ target, onCorruptionResolved, onPreviewOnboarding, onImportS
               );
             })}
           </div>
+
+          {/* Dark style — only meaningful once dark can be in effect, so it
+              stays hidden while the theme is pinned to Light. */}
+          {theme !== 'light' && (
+            <div className="mt-5 pt-5 border-t border-gray-200/70">
+              <p className="text-sm font-medium text-gray-900">Dark style</p>
+              <p className="text-[13px] text-gray-500 mb-3">
+                Midnight leans blue; Charcoal is neutral near-black.
+              </p>
+              <div className="grid max-w-sm grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1">
+                {[
+                  // A flat fill of the tone's own card color would be invisible
+                  // on the selected pill (which *is* that color once the tone is
+                  // live), so each swatch samples the tone: page bg → panel edge.
+                  { value: 'midnight', label: 'Midnight', swatch: 'linear-gradient(135deg, #0b1322 0%, #0b1322 45%, #3a4c74 100%)' },
+                  { value: 'charcoal', label: 'Charcoal', swatch: 'linear-gradient(135deg, #0a0a0a 0%, #0a0a0a 45%, #525252 100%)' },
+                ].map(({ value, label, swatch }) => {
+                  const isSelected = darkTone === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setDarkTone(value)}
+                      aria-pressed={isSelected}
+                      className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-colors duration-150 ${
+                        isSelected
+                          ? 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-200/70'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <span
+                        className="tone-swatch h-3.5 w-3.5 shrink-0 rounded-full"
+                        style={{ background: swatch }}
+                      />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         )}

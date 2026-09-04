@@ -169,6 +169,8 @@ export const SETTINGS_SECTIONS = [
     keywords: [
       'appearance', 'theme', 'dark mode', 'darkmode', 'light mode', 'night mode',
       'system theme', 'color scheme', 'contrast', 'looks', 'style',
+      'dark style', 'dark tone', 'midnight', 'charcoal', 'black', 'true black',
+      'amoled', 'oled', 'gray', 'grey', 'neutral', 'blue tint', 'tinted',
     ],
   },
   {
