@@ -115,6 +115,7 @@ const WORKSPACE_SCOPED_LS_KEYS = [
   'kronos_heatmap_colors',
   'kronos_goal_ring_colors',
   'kronos_date_format',
+  'kronos_goal_alert_last_fired',
 ];
 
 // Permanently delete every scoped store belonging to a workspace. Used when a
@@ -197,6 +198,15 @@ const STORAGE_KEYS = {
   HEATMAP_COLORS: 'kronos_heatmap_colors',
   GOAL_RING_COLORS: 'kronos_goal_ring_colors',
   DATE_FORMAT: 'kronos_date_format',
+  // Deliberately absent from WORKSPACE_SCOPED_LS_KEYS: which sound plays out
+  // of these speakers is a device preference, like the theme, not a per-client
+  // one. The uploaded audio itself lives in IndexedDB (see goalAlertSound.js).
+  GOAL_ALERT: 'kronos_goal_alert',
+  // Which day the goal chime last fired for, so a reload — or simply leaving
+  // the tab open past the goal — doesn't ping again. Workspace-scoped, unlike
+  // the settings above: the goal and the hours behind it are per-client, so
+  // hitting it for one workspace mustn't silence another. See useDailyGoalAlert.
+  GOAL_ALERT_LAST_FIRED: 'kronos_goal_alert_last_fired',
 };
 
 // Day-of-week numbers (0=Sun..6=Sat) that don't break the streak when zero.
@@ -752,6 +762,80 @@ export const loadHeatmapColors = () => {
   } catch (error) {
     console.error('Error loading heatmap colors:', error);
     return JSON.parse(JSON.stringify(DEFAULT_HEATMAP_COLORS));
+  }
+};
+
+// ── Daily goal alert ──────────────────────────────────────────────────────
+// Whether to chime when the daily hours goal is reached, which sound, and how
+// loud. Off by default: an app that starts making noise unprompted is a worse
+// first impression than one you have to switch on.
+export const DEFAULT_GOAL_ALERT = {
+  enabled: false,
+  soundId: 'chime',
+  volume: 0.7,
+  // A second nudge if you keep working past the goal, in minutes. 0 = off.
+  repeatMinutes: 0,
+};
+
+const sanitizeGoalAlert = (raw) => {
+  const base = { ...DEFAULT_GOAL_ALERT };
+  if (!raw || typeof raw !== 'object') return base;
+  return {
+    enabled: typeof raw.enabled === 'boolean' ? raw.enabled : base.enabled,
+    // Sound ids aren't validated against the preset table here: storage
+    // shouldn't need to know the catalogue, and playGoalAlert already falls
+    // back to the default for an id it doesn't recognise.
+    soundId: typeof raw.soundId === 'string' && raw.soundId ? raw.soundId : base.soundId,
+    volume: Number.isFinite(raw.volume)
+      ? Math.max(0, Math.min(1, raw.volume))
+      : base.volume,
+    repeatMinutes: Number.isFinite(raw.repeatMinutes) && raw.repeatMinutes >= 0
+      ? Math.min(240, Math.round(raw.repeatMinutes))
+      : base.repeatMinutes,
+  };
+};
+
+export const saveGoalAlert = (settings) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.GOAL_ALERT, JSON.stringify(sanitizeGoalAlert(settings)));
+  } catch (error) {
+    console.error('Error saving goal alert settings:', error);
+  }
+};
+
+export const loadGoalAlert = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.GOAL_ALERT);
+    if (stored == null) return { ...DEFAULT_GOAL_ALERT };
+    return sanitizeGoalAlert(JSON.parse(stored));
+  } catch (error) {
+    console.error('Error loading goal alert settings:', error);
+    return { ...DEFAULT_GOAL_ALERT };
+  }
+};
+
+/**
+ * The yyyy-MM-dd the goal chime last fired for, or null. Persisted rather than
+ * held in memory so a refresh at 8h01m doesn't ping you a second time.
+ */
+export const loadGoalAlertLastFired = () => {
+  try {
+    return localStorage.getItem(wsKey(STORAGE_KEYS.GOAL_ALERT_LAST_FIRED));
+  } catch (error) {
+    console.error('Error loading goal alert marker:', error);
+    return null;
+  }
+};
+
+export const saveGoalAlertLastFired = (dateKey) => {
+  try {
+    if (dateKey == null) {
+      localStorage.removeItem(wsKey(STORAGE_KEYS.GOAL_ALERT_LAST_FIRED));
+    } else {
+      localStorage.setItem(wsKey(STORAGE_KEYS.GOAL_ALERT_LAST_FIRED), dateKey);
+    }
+  } catch (error) {
+    console.error('Error saving goal alert marker:', error);
   }
 };
 

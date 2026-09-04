@@ -20,6 +20,9 @@ import {
   loadGoalRingColors,
   saveGoalRingColors,
   DEFAULT_GOAL_RING_COLORS,
+  loadGoalAlert,
+  saveGoalAlert,
+  DEFAULT_GOAL_ALERT,
 } from '../utils/storage';
 
 const UserPreferencesContext = createContext();
@@ -42,6 +45,7 @@ export const UserPreferencesProvider = ({ children }) => {
   const [weekendDays, setWeekendDays] = useState([0, 6]);
   const [heatmapColors, setHeatmapColors] = useState(DEFAULT_HEATMAP_COLORS);
   const [goalRingColors, setGoalRingColors] = useState(DEFAULT_GOAL_RING_COLORS);
+  const [goalAlert, setGoalAlert] = useState(DEFAULT_GOAL_ALERT);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load preferences from localStorage on mount
@@ -55,6 +59,7 @@ export const UserPreferencesProvider = ({ children }) => {
     setWeekendDays(loadWeekendDays());
     setHeatmapColors(loadHeatmapColors());
     setGoalRingColors(loadGoalRingColors());
+    setGoalAlert(loadGoalAlert());
     setIsInitialized(true);
   }, []);
 
@@ -101,6 +106,10 @@ export const UserPreferencesProvider = ({ children }) => {
     if (isInitialized) saveGoalRingColors(goalRingColors);
   }, [goalRingColors, isInitialized]);
 
+  useEffect(() => {
+    if (isInitialized) saveGoalAlert(goalAlert);
+  }, [goalAlert, isInitialized]);
+
   const changeWeekStart = (newWeekStart) => setWeekStart(newWeekStart);
   const changeClockFormat = (newClockFormat) => setClockFormat(newClockFormat);
   const changeDateFormat = (newDateFormat) => setDateFormat(newDateFormat);
@@ -112,6 +121,11 @@ export const UserPreferencesProvider = ({ children }) => {
   };
   const changeHeatmapColors = (colors) => setHeatmapColors(colors);
   const changeGoalRingColors = (colors) => setGoalRingColors(colors);
+
+  // Merges rather than replaces, so a caller can flip one field ("enabled")
+  // without having to restate the sound and volume alongside it.
+  const changeGoalAlert = (patch) =>
+    setGoalAlert(prev => ({ ...prev, ...(patch || {}) }));
 
   const changeWeekendDays = (days) => {
     if (!Array.isArray(days)) return;
@@ -142,6 +156,8 @@ export const UserPreferencesProvider = ({ children }) => {
     changeHeatmapColors,
     goalRingColors,
     changeGoalRingColors,
+    goalAlert,
+    changeGoalAlert,
   };
 
   return (

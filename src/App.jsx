@@ -33,6 +33,7 @@ import { PomodoroProvider } from './contexts/PomodoroContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { useDailyGoalAlert } from './hooks/useDailyGoalAlert';
 import SyncConflictModal from './components/SyncConflictModal';
 import './App.css';
 
@@ -47,6 +48,10 @@ function AppContent() {
   const { selectedTimezone, changeTimezone, isInitialized: timezoneInitialized } = useTimezone();
   const { changeWeekStart, changeWeekendDays } = useUserPreferences();
   const { conflicts, resolveConflicts } = useAuth();
+  // Lives at the root, not in the tracker: the point of a sound is that it
+  // reaches you on whichever view you happen to be on. Returns the same
+  // routine it fires on a real crossing, which the dev-host preview reuses.
+  const fireGoalAlert = useDailyGoalAlert();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timesheetData, setTimesheetData] = useState({});
   const [currentView, setCurrentView] = useState('tracker'); // 'tracker', 'timesheet', or 'data'
@@ -346,6 +351,7 @@ function AppContent() {
                 target={settingsTarget}
                 onCorruptionResolved={recheckCorruption}
                 onPreviewOnboarding={IS_DEV_HOST ? () => setPreviewingOnboarding(true) : undefined}
+                onPreviewGoalAlert={IS_DEV_HOST ? fireGoalAlert : undefined}
                 onImportSuccess={handleImportSuccess}
               />
             )}

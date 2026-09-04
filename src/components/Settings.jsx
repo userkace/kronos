@@ -5,6 +5,7 @@ import AccountSettings from './AccountSettings';
 import SidebarItemsSettings from './SidebarItemsSettings';
 import WorkspaceSettings from './WorkspaceSettings';
 import ReleaseNotesSettings from './ReleaseNotesSettings';
+import GoalAlertSettings from './GoalAlertSettings';
 import DataImportExport from './DataImportExport';
 import { useTimezone } from '../contexts/TimezoneContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -42,7 +43,13 @@ const formatBytes = (n) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const Settings = ({ target, onCorruptionResolved, onPreviewOnboarding, onImportSuccess }) => {
+const Settings = ({
+  target,
+  onCorruptionResolved,
+  onPreviewOnboarding,
+  onPreviewGoalAlert,
+  onImportSuccess,
+}) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { theme, setTheme, darkTone, setDarkTone } = useTheme();
   const {
@@ -738,12 +745,20 @@ const Settings = ({ target, onCorruptionResolved, onPreviewOnboarding, onImportS
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
               />
               <p className="mt-1.5 text-[13px] text-gray-500">
-                Target tracked hours per day. Drives the goal ring on the Reports view.
+                Target tracked hours per day. Drives the goal ring on the Reports view
+                and the Goal Alert below.
               </p>
             </div>
           </div>
         </div>
 
+        )}
+
+        {/* Goal Alert — the chime for hitting the Daily Hours Goal above.
+            Applies as you touch it rather than joining the Save Changes batch;
+            see the note in GoalAlertSettings. */}
+        {show('goal-alert') && (
+          <GoalAlertSettings onPreviewGoalAlert={onPreviewGoalAlert} />
         )}
         </section>
         )}

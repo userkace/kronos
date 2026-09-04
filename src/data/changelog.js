@@ -23,6 +23,15 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.8',
+    date: '2026-09-04',
+    title: 'Kronos tells you when you\'re done',
+    changes: [
+      { type: 'added', description: 'Kronos can now make a sound the moment you reach your daily hours goal, so you find out while you\'re working instead of the next time you glance at the tracker. Switch it on under Settings → Goal Alert, pick from five built-in sounds — Chime, Ping, Marimba, Arcade, or Gong — and click any of them to hear it. It plays once a day, wherever you are in the app, and a message appears alongside it in case your speakers are off.' },
+      { type: 'added', description: 'You can use your own sound instead. Upload any MP3, WAV, OGG, or M4A up to 2MB in the same place and it becomes your goal alert. The file stays on the device you uploaded it to — it isn\'t synced between devices or included in exports — and Remove puts you back on a built-in sound. There\'s a volume slider too, and an option to nudge you again every 15, 30, or 60 minutes if you carry on working past your goal.' },
+    ],
+  },
+  {
     version: '0.8.7',
     date: '2026-09-04',
     title: 'A dark mode without the blue',

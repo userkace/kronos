@@ -106,6 +106,18 @@ export const SETTINGS_SECTIONS = [
     ],
   },
   {
+    id: 'goal-alert',
+    title: 'Goal Alert',
+    category: 'general',
+    keywords: [
+      'goal alert', 'alert', 'alarm', 'sound', 'sounds', 'chime', 'ping', 'bell',
+      'beep', 'notify', 'notification', 'notifications', 'audio', 'noise', 'tone',
+      'ringtone', 'volume', 'mute', 'silent', 'play', 'custom sound', 'upload sound',
+      'sound file', 'mp3', 'wav', 'daily goal', 'hour goal', 'goal reached',
+      'reminder', 'remind me', 'overtime', 'repeat',
+    ],
+  },
+  {
     id: 'heatmap',
     title: 'Heatmap Colors',
     category: 'appearance',
