@@ -29,6 +29,7 @@ import {
   getActiveWorkspaceId,
   loadTimezoneForWorkspace,
   WORKSPACE_DEFAULT_ID,
+  WORKSPACE_SHELL_ID,
 } from './storage';
 import storageEventSystem from './storageEvents';
 
@@ -462,7 +463,16 @@ const mergeWorkspaces = (base, localList, cloudRows) => {
 const syncWorkspaces = async () => {
   const cloud = await fetchCloudWorkspaces();
   const base = await loadWsBase();
-  const { merged, toDeleteCloud, changedLocal } = mergeWorkspaces(base, loadWorkspaces(), cloud);
+  // Belt and braces: the shell workspace is a Screenshot Studio artefact.
+  // loadWorkspaces() already hides it outside the studio, but it must never be
+  // pushed to the cloud, and a row for it left behind by an older build must
+  // never be pulled back into the local list.
+  const notShell = (w) => w.id !== WORKSPACE_SHELL_ID;
+  const { merged, toDeleteCloud, changedLocal } = mergeWorkspaces(
+    base?.filter(notShell) ?? base,
+    loadWorkspaces().filter(notShell),
+    cloud.filter(notShell),
+  );
 
   if (changedLocal) {
     // Suppress the storage-event push echo while we write the merged list.
@@ -794,7 +804,10 @@ const subscribePush = () => {
     _unsubs.push(storageEventSystem.subscribe(baseKey, () => markDirty(GLOBAL_WS, baseKey)));
   }
   _unsubs.push(storageEventSystem.subscribe('kronos_workspaces', () => {
-    if (_applyingRemote) return;
+    // `_pushPaused` matters as much as `_applyingRemote` here: without it a
+    // Screenshot Studio fixture sets this flag, and setPushPaused(false) on
+    // studio exit deliberately re-fires the flush that reads it.
+    if (_applyingRemote || _pushPaused) return;
     _pushWorkspaces = true;
     scheduleFlush();
   }));

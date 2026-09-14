@@ -73,7 +73,25 @@ export const exitStorageSandbox = () => {
 // (never namespaced), as are onboarding, sidebar, changelog, and Pomodoro
 // state — those are app-wide, not per-client.
 export const WORKSPACE_DEFAULT_ID = 'default';
+// The Screenshot Studio's own workspace. Fixtures are written under this id so
+// every fixture key is namespaced (`<key>__ws___shell__`) and cannot collide
+// with a real workspace's keys — which makes the localStorage overlay in
+// src/dev/sandbox.js a second line of defence rather than the only one. Never
+// shown in the switcher, never synced.
+export const WORKSPACE_SHELL_ID = '__shell__';
 const WORKSPACES_KEY = 'kronos_workspaces';
+
+// The workspace LIST is a global key — it is not namespaced by workspace, so
+// putting the studio on a shell workspace does not by itself keep its fixture
+// list away from the real one. Give the shell its own list key as well, so a
+// scenario writing workspaces can never overwrite the user's real list even if
+// the localStorage overlay in src/dev/sandbox.js were bypassed entirely. This
+// matters more than the data keys: the sync engine treats a workspace missing
+// from this list as deleted and hard-deletes it from the cloud.
+const workspacesKey = () =>
+  getActiveWorkspaceId() === WORKSPACE_SHELL_ID
+    ? wsKeyFor(WORKSPACES_KEY, WORKSPACE_SHELL_ID)
+    : WORKSPACES_KEY;
 const ACTIVE_WORKSPACE_KEY = 'kronos_active_workspace';
 
 // Cached so the synchronous key resolver doesn't hit localStorage on every
@@ -92,6 +110,17 @@ export const getActiveWorkspaceId = () => {
 
 // Resolve a base storage key to the active workspace. Default workspace keeps
 // the bare key (retroactive adoption of existing data); others get suffixed.
+
+// Dev-only: point the key resolver at another workspace WITHOUT persisting the
+// choice or reloading IndexedDB (setActiveWorkspace does both). The Screenshot
+// Studio uses this to divert every fixture write into the shell workspace, and
+// to put the real id back on exit. Returns the previous value so the caller can
+// restore it; `null` means "not yet resolved", which is a valid thing to restore.
+export const setActiveWorkspaceIdEphemeral = (id) => {
+  const previous = _activeWorkspaceId;
+  _activeWorkspaceId = id;
+  return previous;
+};
 const wsKey = (baseKey) => wsKeyFor(baseKey, getActiveWorkspaceId());
 // Exported so the sync engine can compute the on-disk key for any workspace
 // (including non-active ones) when pulling cloud data into local storage.
@@ -100,13 +129,21 @@ export const wsKeyFor = (baseKey, id) =>
 
 export const loadWorkspaces = () => {
   try {
-    const raw = localStorage.getItem(WORKSPACES_KEY);
+    const raw = localStorage.getItem(workspacesKey());
     if (!raw) return [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
     const parsed = JSON.parse(raw);
     const cleaned = Array.isArray(parsed)
       ? parsed.filter(w => w && typeof w.id === 'string' && typeof w.name === 'string')
       : [];
-    return cleaned.length > 0 ? cleaned : [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
+    // The Screenshot Studio's shell workspace is real storage like any other,
+    // but it must never surface in the switcher — or, more importantly, in the
+    // list the sync engine diffs against the cloud, where an unknown id would
+    // be pushed and a missing real one treated as deleted. Inside the studio
+    // it stays visible, because that is the name being photographed.
+    const visible = isStorageSandboxed()
+      ? cleaned
+      : cleaned.filter(w => w.id !== WORKSPACE_SHELL_ID);
+    return visible.length > 0 ? visible : [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
   } catch (e) {
     console.error('Error loading workspaces:', e);
     return [{ id: WORKSPACE_DEFAULT_ID, name: 'Default workspace' }];
@@ -115,7 +152,7 @@ export const loadWorkspaces = () => {
 
 export const saveWorkspaces = (list) => {
   try {
-    localStorage.setItem(WORKSPACES_KEY, JSON.stringify(list));
+    localStorage.setItem(workspacesKey(), JSON.stringify(list));
   } catch (e) {
     console.error('Error saving workspaces:', e);
   }

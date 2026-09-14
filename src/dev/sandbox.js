@@ -28,6 +28,8 @@ import {
   exitStorageSandbox,
   isStorageSandboxed,
   getActiveWorkspaceId,
+  WORKSPACE_SHELL_ID,
+  setActiveWorkspaceIdEphemeral,
 } from '../utils/storage';
 import { setPushPaused } from '../utils/syncEngine';
 
@@ -40,6 +42,7 @@ const isOurs = (key) => key.startsWith('kronos_') || key.startsWith('__kronos_')
 // makes each scenario start from the app's own defaults.
 const overlay = new Map();
 
+let realWorkspaceId = null; // the id displaced by the shell workspace, for exit
 let patched = null; // the Storage.prototype members we replaced
 
 const isLocal = (store) => store === window.localStorage;
@@ -71,6 +74,10 @@ export const enterSandbox = () => {
   // memoized on first read, and a first read taken through the overlay would
   // pin every key to the default workspace for the rest of the session.
   getActiveWorkspaceId();
+  // ...then divert to the studio's own workspace, so every key a scenario
+  // writes is namespaced to the shell and cannot collide with a real one even
+  // if the overlay above were bypassed entirely.
+  realWorkspaceId = setActiveWorkspaceIdEphemeral(WORKSPACE_SHELL_ID);
 
   const proto = Storage.prototype;
   patched = {
@@ -166,6 +173,11 @@ export const exitSandbox = () => {
 
   overlay.clear();
   patched = null;
+
+  // Put the real workspace id back before the caches are reattached, so any
+  // re-read triggered by exitStorageSandbox() resolves real keys again.
+  setActiveWorkspaceIdEphemeral(realWorkspaceId);
+  realWorkspaceId = null;
 
   exitStorageSandbox();
   setPushPaused(false);

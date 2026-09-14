@@ -41,7 +41,7 @@ import {
   saveChangelogLastSeenVersion,
   saveInvoiceSettings,
   saveWorkspaces,
-  getActiveWorkspaceId,
+  WORKSPACE_SHELL_ID,
 } from '../utils/storage';
 import { writeWeeklyTimesheetForDates } from '../utils/weeklyTimesheet';
 import { CHANGELOG, getLatestChangelogVersion } from '../data/changelog';
@@ -81,7 +81,10 @@ export const seedBaseline = (timezone) => {
   saveSortOrder('desc');
   saveSidebarState(true);
   saveSelectedWeek(new Date());
-  saveWorkspaces([{ id: getActiveWorkspaceId(), name: 'Meridian Labs' }]);
+  // The shell workspace, never the real active one: this list is what the sync
+  // engine diffs against the cloud, and naming a real id here would rename that
+  // workspace (and mark every other one deleted) if it ever escaped the overlay.
+  saveWorkspaces([{ id: WORKSPACE_SHELL_ID, name: 'Meridian Labs' }]);
   saveTimesheetData({});
   saveWeeklyTimesheet({});
 };
