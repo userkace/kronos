@@ -23,6 +23,16 @@ export const CHANGE_TYPES = {
 // Newest first.
 export const CHANGELOG = [
   {
+    version: '0.8.9',
+    date: '2026-09-14',
+    title: 'A studio for screenshots',
+    changes: [
+      { type: 'added', description: 'Kronos now has a developer mode, and it is unlocked the way your phone does it: open Settings → About and tap the version number ten times. From the fifth tap on, a message counts you down the last few. Once it is on, a Developer group appears at the bottom of the settings rail; turning it off again is a single button there, and the version line will let you back in whenever you like. It is remembered per device and changes nothing about your data.' },
+      { type: 'added', description: 'Inside it is the Screenshot Studio — a gallery of the app in situations that are otherwise a nuisance to set up. A timer mid-run with the afternoon already logged, a quarter of history behind the heatmap, an eight-hour day that hit its goal, a first day with nothing on it, an invoice ready to export, the sync conflict screen, onboarding, and the awkward one with task names too long for their rows. Pick a scenario from the gallery, or step through them with the arrow keys once you are in one.' },
+      { type: 'added', description: 'Each scenario is the real screen, not a picture of one, so you can click around inside it. Frame it as a desktop, laptop, tablet or phone, switch between light, midnight and charcoal, drop the sidebar and header for a close-up, put it on a plain or gradient backdrop, then hit Capture to clear everything else off the screen for the shot. The invented time entries live in a throwaway copy of your storage: nothing is written to disk, nothing is synced to your account, and your own data is back the moment you close the studio.' },
+    ],
+  },
+  {
     version: '0.8.8',
     date: '2026-09-04',
     title: 'Kronos tells you when you\'re done',

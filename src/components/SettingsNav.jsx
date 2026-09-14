@@ -1,5 +1,5 @@
-import { Sliders, Palette, Cloud, Database, Info } from 'lucide-react';
-import { SETTINGS_CATEGORIES } from '../utils/settingsSearch';
+import { Sliders, Palette, Cloud, Database, Info, FlaskConical } from 'lucide-react';
+import { visibleCategories } from '../utils/settingsSearch';
 
 const CATEGORY_ICONS = {
   general: Sliders,
@@ -7,6 +7,7 @@ const CATEGORY_ICONS = {
   account: Cloud,
   data: Database,
   about: Info,
+  developer: FlaskConical,
 };
 
 /**
@@ -19,7 +20,9 @@ const CATEGORY_ICONS = {
  * search rather than intersecting with it — an intersection can dead-end on
  * "no matches here" while matches sit in the group you can't see.
  */
-const SettingsNav = ({ activeCategory, onSelect, isSearching, matchCounts }) => {
+const SettingsNav = ({ activeCategory, onSelect, isSearching, matchCounts, developerMode = false }) => {
+  const categories = visibleCategories(developerMode);
+
   const itemState = (id) => {
     const isActive = !isSearching && id === activeCategory;
     const count = matchCounts?.[id] ?? 0;
@@ -34,7 +37,7 @@ const SettingsNav = ({ activeCategory, onSelect, isSearching, matchCounts }) => 
         className="hidden lg:block lg:sticky lg:top-20 w-52 shrink-0"
       >
         <ul className="space-y-0.5">
-          {SETTINGS_CATEGORIES.map(({ id, label }) => {
+          {categories.map(({ id, label }) => {
             const Icon = CATEGORY_ICONS[id];
             const { isActive, count, dimmed } = itemState(id);
             return (
@@ -71,7 +74,7 @@ const SettingsNav = ({ activeCategory, onSelect, isSearching, matchCounts }) => 
           aria-label="Settings categories"
           className="flex w-max items-center gap-1.5"
         >
-          {SETTINGS_CATEGORIES.map(({ id, label }) => {
+          {categories.map(({ id, label }) => {
             const Icon = CATEGORY_ICONS[id];
             const { isActive, count, dimmed } = itemState(id);
             return (

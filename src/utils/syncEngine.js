@@ -691,6 +691,17 @@ export const resolveConflicts = async (conflicts, choices) => {
 };
 
 // ── Push (on change) ───────────────────────────────────────────────────────
+
+// Dev-only: the Screenshot Studio fills storage with invented entries, and
+// those writes emit the same storage events a real edit does. Pausing keeps
+// them out of the dirty set — and defers any genuine change that was already
+// queued — so fixtures can never reach the user's account.
+let _pushPaused = false;
+export const setPushPaused = (paused) => {
+  _pushPaused = Boolean(paused);
+  if (!_pushPaused && (_dirty.size > 0 || _pushWorkspaces)) scheduleFlush();
+};
+
 const scheduleFlush = () => {
   if (_pushTimer) clearTimeout(_pushTimer);
   _pushTimer = setTimeout(flush, PUSH_DEBOUNCE_MS);
@@ -698,6 +709,8 @@ const scheduleFlush = () => {
 
 const flush = async () => {
   _pushTimer = null;
+  // Paused: hold whatever is queued and try again once the studio closes.
+  if (_pushPaused) return;
   if (!supabase || !_userId) return;
   const batch = [..._dirty];
   _dirty.clear();
@@ -756,7 +769,7 @@ const flush = async () => {
 };
 
 const markDirty = (wsId, baseKey) => {
-  if (_applyingRemote) return;
+  if (_applyingRemote || _pushPaused) return;
   const id = docId(wsId, baseKey);
   if (_conflicted.has(id)) return; // frozen until the user resolves the conflict
   _dirty.add(id);

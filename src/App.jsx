@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import TimesheetTable from './components/TimesheetTable';
 import DailyTracker from './components/DailyTracker';
 import AppLayout from './components/AppLayout';
@@ -44,6 +44,11 @@ const IS_DEV_HOST =
   Boolean(import.meta.env.VITE_DEV_HOST) &&
   window.location.host === import.meta.env.VITE_DEV_HOST;
 
+// The Screenshot Studio ships to everyone, behind developer mode (Settings →
+// About, tap the version). Loaded on demand so the scenarios and their fixture
+// data cost nothing until somebody actually opens it.
+const ScreenshotStudio = lazy(() => import('./dev/ScreenshotStudio'));
+
 function AppContent() {
   const { selectedTimezone, changeTimezone, isInitialized: timezoneInitialized } = useTimezone();
   const { changeWeekStart, changeWeekendDays } = useUserPreferences();
@@ -64,6 +69,9 @@ function AppContent() {
   // Branded splash overlay. Shown on load for users who've already onboarded,
   // and again right after the onboarding flow completes. Self-dismisses.
   const [showSplash, setShowSplash] = useState(false);
+  // Screenshot Studio (Settings → Developer). Rendered at the root rather than
+  // inside the layout so it can photograph the sidebar and header themselves.
+  const [studioOpen, setStudioOpen] = useState(false);
 
   // Deep link into one of Settings' groups — the sidebar's "Manage workspaces"
   // opens Settings → Account rather than a dialog of its own. A fresh object
@@ -352,11 +360,20 @@ function AppContent() {
                 onCorruptionResolved={recheckCorruption}
                 onPreviewOnboarding={IS_DEV_HOST ? () => setPreviewingOnboarding(true) : undefined}
                 onPreviewGoalAlert={IS_DEV_HOST ? fireGoalAlert : undefined}
+                onOpenScreenshotStudio={() => setStudioOpen(true)}
                 onImportSuccess={handleImportSuccess}
               />
             )}
           </AppLayout>
         </>
+      )}
+
+      {/* Above everything, including onboarding — the studio has scenarios for
+          the flows that would otherwise be covering the screen. */}
+      {studioOpen && (
+        <Suspense fallback={null}>
+          <ScreenshotStudio onClose={() => setStudioOpen(false)} />
+        </Suspense>
       )}
     </>
   );

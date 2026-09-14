@@ -23,7 +23,7 @@ import {
 import {
   Globe, Calendar, Clock, RotateCcw, Trash2, Settings as SettingsIcon,
   AlertTriangle, Download, RefreshCcw, X, BarChart2, Plus, Building2,
-  Github, Star, Eye, Sun, Moon, Monitor, Search, SearchX,
+  Github, Star, Eye, Sun, Moon, Monitor, Search, SearchX, Camera, FlaskConical,
 } from 'lucide-react';
 import { CHANGELOG } from '../data/changelog';
 import { useMotionPreferences } from '../hooks/useMotionPreferences';
@@ -36,6 +36,19 @@ import {
   sectionCategory,
   sectionsInCategory,
 } from '../utils/settingsSearch';
+import {
+  useDeveloperMode,
+  setDeveloperMode,
+  describeTap,
+  TAPS_TO_UNLOCK,
+} from '../dev/developerMode';
+
+// Sections that only exist once developer mode is unlocked. Kept as a set so
+// the search can pretend they aren't there at all while it's off — a hidden
+// section that still turned up in the results would be a strange thing.
+const DEVELOPER_ONLY_SECTIONS = new Set(
+  SETTINGS_SECTIONS.filter(s => s.developerOnly).map(s => s.id)
+);
 
 const formatBytes = (n) => {
   if (n < 1024) return `${n} B`;
@@ -49,6 +62,11 @@ const Settings = ({
   onPreviewOnboarding,
   onPreviewGoalAlert,
   onImportSuccess,
+  // Opens the Screenshot Studio. Its presence is also what makes the version
+  // line in About tappable and the Developer group reachable, which is how the
+  // copy of Settings the studio itself photographs — mounted without this prop
+  // — stays the ordinary page, with no developer anything in the picture.
+  onOpenScreenshotStudio,
 }) => {
   const { selectedTimezone, changeTimezone } = useTimezone();
   const { theme, setTheme, darkTone, setDarkTone } = useTheme();
@@ -269,6 +287,53 @@ const Settings = ({
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Developer mode ────────────────────────────────────────────────────────
+  // Off by default and unlocked by tapping the version line in About ten
+  // times, Android-style, with a countdown over the last five. The tally lives
+  // here rather than in the store, so walking away from Settings resets it.
+  const devToolsAvailable = Boolean(onOpenScreenshotStudio);
+  const developerMode = useDeveloperMode();
+  const developerVisible = devToolsAvailable && developerMode;
+  const [versionTaps, setVersionTaps] = useState(0);
+  const tapToastRef = useRef(null);
+
+  const handleVersionTap = () => {
+    if (!devToolsAvailable) return; // no studio to open: the version is just text
+    const count = versionTaps + 1;
+    setVersionTaps(count);
+
+    const result = describeTap(count);
+    if (result.kind === 'quiet') return;
+
+    // One toast that keeps being replaced, not a stack of ten.
+    if (tapToastRef.current !== null) removeToast(tapToastRef.current);
+    tapToastRef.current = null;
+
+    if (result.kind === 'already') {
+      tapToastRef.current = addToast('No need, you are already a developer.', 'info', 2000);
+      return;
+    }
+    if (result.kind === 'countdown') {
+      const n = result.remaining;
+      tapToastRef.current = addToast(
+        `You are now ${n} step${n === 1 ? '' : 's'} away from being a developer.`,
+        'info',
+        2000
+      );
+      return;
+    }
+
+    setDeveloperMode(true);
+    setVersionTaps(0);
+    success('You are now a developer! Settings → Developer is unlocked.');
+  };
+
+  const handleDeveloperOff = () => {
+    setDeveloperMode(false);
+    setVersionTaps(0);
+    warning(`Developer mode off. Tap the version ${TAPS_TO_UNLOCK} times to bring it back.`);
+  };
+
   // ── Search & categories ───────────────────────────────────────────────────
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(DEFAULT_SETTINGS_CATEGORY);
@@ -286,11 +351,14 @@ const Settings = ({
     setActiveCategory(target.category);
   }, [target]);
 
-  // Data Recovery only exists when something was quarantined, so it shouldn't
-  // count towards "n of m" or keep the empty state away when nothing matches.
-  const searchableSections = SETTINGS_SECTIONS.filter(
-    s => s.id !== 'recovery' || backups.length > 0
-  );
+  // Data Recovery only exists when something was quarantined, and the
+  // developer sections only once that's unlocked — neither should count
+  // towards "n of m" or keep the empty state away when nothing matches.
+  const searchableSections = SETTINGS_SECTIONS.filter(s => {
+    if (s.id === 'recovery') return backups.length > 0;
+    if (DEVELOPER_ONLY_SECTIONS.has(s.id)) return developerVisible;
+    return true;
+  });
   const matchCount = searchableSections.filter(s => matchedIds.has(s.id)).length;
 
   // Per-category tallies, so a search can point at the group holding the
@@ -321,6 +389,7 @@ const Settings = ({
   };
 
   const show = (id) => {
+    if (DEVELOPER_ONLY_SECTIONS.has(id) && !developerVisible) return false;
     if (id === 'save') return hasUnsaved || (isSearching && matchedIds.has('save'));
     if (!matchedIds.has(id)) return false;
     // A search reaches across every category, exactly as it did before the page
@@ -333,6 +402,14 @@ const Settings = ({
   // above an empty stretch of page.
   const groupHasVisible = (categoryId) =>
     sectionsInCategory(categoryId).some(id => !isPinnedSection(id) && show(id));
+
+  // Switching developer mode off while its group is open would otherwise leave
+  // the page on a category the rail no longer lists.
+  useEffect(() => {
+    if (!developerVisible && activeCategory === 'developer') {
+      setActiveCategory(DEFAULT_SETTINGS_CATEGORY);
+    }
+  }, [developerVisible, activeCategory]);
 
   const handleCategorySelect = (id) => {
     // Picking a group while searching means "take me there", so the query goes.
@@ -455,6 +532,7 @@ const Settings = ({
           onSelect={handleCategorySelect}
           isSearching={isSearching}
           matchCounts={categoryMatchCounts}
+          developerMode={developerVisible}
         />
 
       <div className="min-w-0 flex-1">
@@ -1240,7 +1318,21 @@ const Settings = ({
               <div>
                 <h4 className="text-base font-semibold text-gray-900 tracking-tight">
                   kronos{' '}
-                  <span className="text-sm font-normal text-gray-400 tabular-nums">
+                  {/* Tap ten times to unlock Settings → Developer.
+                      Deliberately styled as plain text: a gesture you're told
+                      about, not a button anyone trips over. */}
+                  <span
+                    onClick={handleVersionTap}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return;
+                      e.preventDefault();
+                      handleVersionTap();
+                    }}
+                    role={devToolsAvailable ? 'button' : undefined}
+                    tabIndex={devToolsAvailable ? 0 : undefined}
+                    aria-label={devToolsAvailable ? 'App version — tap repeatedly to unlock developer mode' : undefined}
+                    className="text-sm font-normal text-gray-400 tabular-nums select-none outline-none"
+                  >
                     v{CHANGELOG[0].version}
                   </span>
                 </h4>
@@ -1273,6 +1365,74 @@ const Settings = ({
         {/* Release notes — the full history, at the end of About, so looking up
             what changed doesn't mean waiting for the "What's new" modal. */}
         {show('release-notes') && <ReleaseNotesSettings />}
+        </section>
+        )}
+
+        {/* ── Developer ───────────────────────────────────────────────────
+            Hidden until the version line above has been tapped ten times.
+            Nothing here is part of tracking your time — it's for working on
+            Kronos itself, or for anyone who wants to see it. */}
+        {developerVisible && groupHasVisible('developer') && (
+        <section className="space-y-5">
+        <GroupHeading categoryId="developer" />
+
+        {show('screenshot-studio') && (
+        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xs p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600">
+                <Camera className="w-[18px] h-[18px]" />
+              </div>
+              <div className="max-w-xl">
+                <h4 className="text-base font-semibold text-gray-900 tracking-tight">Screenshot Studio</h4>
+                <p className="mt-1 text-[13px] leading-relaxed text-gray-500">
+                  Every view, mounted for real against invented data — a running timer, a
+                  quarter of history, an empty first day, a sync conflict. Browse the
+                  scenarios as a gallery, then frame one as a desktop, tablet or phone in
+                  either theme and capture it.
+                </p>
+                <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
+                  It runs on a throwaway copy of your storage: the entries it invents are
+                  never written to disk or synced to your account, and your own data is
+                  back the moment you close it.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenScreenshotStudio}
+              className="px-4 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-violet-600/25 hover:bg-violet-500 active:bg-violet-700 transition-colors duration-150 flex items-center gap-2"
+            >
+              <Camera className="w-4 h-4" />
+              <span>Open Studio</span>
+            </button>
+          </div>
+        </div>
+        )}
+
+        {show('developer-mode') && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-5 bg-gray-50 border border-dashed border-gray-300 rounded-2xl">
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gray-200/70 text-gray-600">
+              <FlaskConical className="w-[18px] h-[18px]" />
+            </div>
+            <div>
+              <h5 className="text-sm font-semibold text-gray-900">Developer Mode</h5>
+              <p className="text-[13px] text-gray-500">
+                On for this device. Turning it off hides this group — tap the version
+                in About {TAPS_TO_UNLOCK} times to get it back.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleDeveloperOff}
+            className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl shadow-xs hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150"
+          >
+            Turn off
+          </button>
+        </div>
+        )}
         </section>
         )}
 

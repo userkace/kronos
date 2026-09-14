@@ -83,10 +83,12 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 // `onOpenDay(dateKey)` — supplied by App, opens that day in the tracker. Days
 // with tracked time are clickable in both the week bars and the heatmap; empty
 // days aren't, since there'd be nothing to look at when you got there.
-const Reports = ({ onOpenDay }) => {
+// `initialRange` only exists so the Screenshot Studio can open this view on
+// the month or quarter heatmap directly; in the app it's always the default.
+const Reports = ({ onOpenDay, initialRange = 'week' }) => {
   const { selectedTimezone: timezone, isInitialized: timezoneInitialized } = useTimezone();
   const { dailyHourGoal, weekStart, weekendDays, heatmapColors, goalRingColors } = useUserPreferences();
-  const [range, setRange] = useState('week');
+  const [range, setRange] = useState(initialRange);
   const [timesheet, setTimesheet] = useState(() => loadTimesheetData());
   const [now, setNow] = useState(() => new Date());
   const [tooltip, setTooltip] = useState(null);

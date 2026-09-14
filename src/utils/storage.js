@@ -23,6 +23,45 @@ let _weeklyLastEmittedJson = null;
 const IDB_KEY_TIMESHEET = 'kronos_timesheet_data';
 const IDB_KEY_WEEKLY    = 'kronos_weekly_timesheet';
 
+// ── Dev-only sandbox ──────────────────────────────────────────────────────
+// The Screenshot Studio (Settings → Admin, dev builds only) mounts the real
+// views against invented data. While it's open this module runs "detached":
+// the in-memory caches hold fixture data and nothing is flushed to IndexedDB,
+// so a studio session can neither persist its fakes nor delete what's really
+// there. localStorage is sandboxed separately, by src/dev/sandbox.js.
+//
+// Reads are deliberately NOT rerouted — the caches ARE the read path, so
+// swapping their contents is all it takes for every component to see the
+// fixtures without a single component knowing about any of this.
+let _sandboxSnapshot = null;
+
+export const isStorageSandboxed = () => _sandboxSnapshot !== null;
+
+/** Detach the caches from IndexedDB, remembering the real contents. */
+export const enterStorageSandbox = () => {
+  if (_sandboxSnapshot) return;
+  _sandboxSnapshot = {
+    timesheet: _timesheetCache,
+    weekly: _weeklyCache,
+    timesheetJson: _timesheetLastEmittedJson,
+    weeklyJson: _weeklyLastEmittedJson,
+  };
+};
+
+/** Reattach, restore the real contents, and tell subscribers to re-read. */
+export const exitStorageSandbox = () => {
+  if (!_sandboxSnapshot) return;
+  _timesheetCache = _sandboxSnapshot.timesheet;
+  _weeklyCache = _sandboxSnapshot.weekly;
+  _timesheetLastEmittedJson = _sandboxSnapshot.timesheetJson;
+  _weeklyLastEmittedJson = _sandboxSnapshot.weeklyJson;
+  _sandboxSnapshot = null;
+  queueMicrotask(() => {
+    storageEventSystem.emit(IDB_KEY_TIMESHEET, { key: IDB_KEY_TIMESHEET, oldValue: null, newValue: null });
+    storageEventSystem.emit(IDB_KEY_WEEKLY, { key: IDB_KEY_WEEKLY, oldValue: null, newValue: null });
+  });
+};
+
 // ── Workspaces ───────────────────────────────────────────────────────────
 // A workspace isolates one freelancer-client's data — time logs, weekly
 // summary, invoice settings, timezone, and display preferences. The DEFAULT
@@ -122,6 +161,7 @@ const WORKSPACE_SCOPED_LS_KEYS = [
 // workspace is deleted. The default workspace's data lives in the bare keys,
 // so wsKeyFor handles both the suffixed and un-suffixed cases.
 export const deleteWorkspaceData = async (id) => {
+  if (_sandboxSnapshot) return;
   try {
     WORKSPACE_SCOPED_LS_KEYS.forEach(base => {
       localStorage.removeItem(wsKeyFor(base, id));
@@ -393,7 +433,7 @@ export const discardQuarantine = (backupKey) => {
 
 // Save timesheet data to IndexedDB (write-behind cache)
 export const saveTimesheetData = (data) => {
-  if (isKeyCorruptPending(STORAGE_KEYS.TIMESHEET_DATA)) {
+  if (!_sandboxSnapshot && isKeyCorruptPending(STORAGE_KEYS.TIMESHEET_DATA)) {
     console.warn(
       'Refused saveTimesheetData: corruption pending for ' +
       STORAGE_KEYS.TIMESHEET_DATA + '. Resolve in Settings → Data Recovery.'
@@ -404,9 +444,11 @@ export const saveTimesheetData = (data) => {
   // reference inequality (callers often mutate the object they got from
   // loadTimesheetData() before passing it back here, keeping the same ref).
   _timesheetCache = data === _timesheetCache ? { ...data } : data;
-  idbSet(wsKey(STORAGE_KEYS.TIMESHEET_DATA), _timesheetCache).catch(err =>
-    console.error('IDB write failed for timesheet data:', err)
-  );
+  if (!_sandboxSnapshot) {
+    idbSet(wsKey(STORAGE_KEYS.TIMESHEET_DATA), _timesheetCache).catch(err =>
+      console.error('IDB write failed for timesheet data:', err)
+    );
+  }
   const json = JSON.stringify(_timesheetCache);
   if (json !== _timesheetLastEmittedJson) {
     _timesheetLastEmittedJson = json;
@@ -475,6 +517,13 @@ export const loadSelectedWeek = () => {
 
 // Clear all application data from localStorage and IndexedDB
 export const clearAllData = () => {
+  // "Reset Everything" is one of the Screenshot Studio's scenarios; the
+  // localStorage half is already sandboxed, and this stops the IDB half.
+  if (_sandboxSnapshot) {
+    _timesheetCache = {};
+    _weeklyCache = {};
+    return;
+  }
   try {
     // Scoped keys are cleared for the active workspace only; global keys
     // (onboarding, sidebar, changelog) are cleared outright.
@@ -498,7 +547,7 @@ export const clearAllData = () => {
 
 // Save weekly timesheet data to IndexedDB (write-behind cache)
 export const saveWeeklyTimesheet = (data) => {
-  if (isKeyCorruptPending(STORAGE_KEYS.WEEKLY_TIMESHEET)) {
+  if (!_sandboxSnapshot && isKeyCorruptPending(STORAGE_KEYS.WEEKLY_TIMESHEET)) {
     console.warn(
       'Refused saveWeeklyTimesheet: corruption pending for ' +
       STORAGE_KEYS.WEEKLY_TIMESHEET + '. Resolve in Settings → Data Recovery.'
@@ -506,9 +555,11 @@ export const saveWeeklyTimesheet = (data) => {
     return false;
   }
   _weeklyCache = data === _weeklyCache ? { ...data } : data;
-  idbSet(wsKey(STORAGE_KEYS.WEEKLY_TIMESHEET), _weeklyCache).catch(err =>
-    console.error('IDB write failed for weekly timesheet:', err)
-  );
+  if (!_sandboxSnapshot) {
+    idbSet(wsKey(STORAGE_KEYS.WEEKLY_TIMESHEET), _weeklyCache).catch(err =>
+      console.error('IDB write failed for weekly timesheet:', err)
+    );
+  }
   const json = JSON.stringify(_weeklyCache);
   if (json !== _weeklyLastEmittedJson) {
     _weeklyLastEmittedJson = json;

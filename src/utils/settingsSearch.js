@@ -41,7 +41,20 @@ export const SETTINGS_CATEGORIES = [
     label: 'About',
     description: 'Version, release notes, source code, and credits.',
   },
+  {
+    // Hidden until developer mode is unlocked (tap the version line in About
+    // ten times); Settings filters it out until then, the same way Data
+    // Recovery only appears when there's something to recover.
+    id: 'developer',
+    label: 'Developer',
+    description: 'Tools for working on Kronos itself. Not part of the app proper.',
+    developerOnly: true,
+  },
 ];
+
+/** The categories to show, given whether developer mode is unlocked. */
+export const visibleCategories = (developerMode) =>
+  SETTINGS_CATEGORIES.filter(c => !c.developerOnly || developerMode);
 
 export const DEFAULT_SETTINGS_CATEGORY = 'general';
 
@@ -205,6 +218,27 @@ export const SETTINGS_SECTIONS = [
       'about', 'version', 'release', 'changelog', 'what is new', 'github', 'repo',
       'repository', 'source', 'open source', 'star', 'license', 'credits', 'author',
       'userkace', 'kronos',
+    ],
+  },
+  {
+    id: 'screenshot-studio',
+    title: 'Screenshot Studio',
+    category: 'developer',
+    developerOnly: true,
+    keywords: [
+      'screenshot', 'screenshots', 'studio', 'gallery', 'scenarios', 'mockup',
+      'preview', 'capture', 'marketing', 'press', 'readme', 'fixtures', 'fake data',
+      'demo', 'demo data', 'device frames', 'viewport', 'developer', 'dev',
+    ],
+  },
+  {
+    id: 'developer-mode',
+    title: 'Developer Mode',
+    category: 'developer',
+    developerOnly: true,
+    keywords: [
+      'developer', 'developer mode', 'dev mode', 'debug', 'internal', 'tools',
+      'turn off developer mode', 'disable developer',
     ],
   },
   {
