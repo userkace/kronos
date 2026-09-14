@@ -121,17 +121,43 @@ const TimezoneSelect = ({ timezone, onTimezoneChange }) => {
       minZoom: 1,
       maxZoom: 6,
       zoomControl: false,
-      attributionControl: false,
+      attributionControl: true,
       scrollWheelZoom: true,
       maxBounds: [[-90, -180], [90, 180]],
       maxBoundsViscosity: 1.0,
     });
 
-    // CartoDB Positron — clean, minimal tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      noWrap: true,
-    }).addTo(map);
+    // Esri "World Light Gray Base" — keyless raster canvas, and the closest
+    // visual match to the CartoDB Positron layer this replaced. CARTO now
+    // gates its keyless basemap endpoints and substitutes an "API KEY
+    // REQUIRED" watermark tile, which arrives as a perfectly valid 200 /
+    // image/png — so nothing in Leaflet or the browser reports an error; the
+    // map simply stops being a map. Three template rules specific to Esri:
+    //   - axis order is {z}/{y}/{x}, NOT {z}/{x}/{y} (swapping them yields a
+    //     convincing map of the wrong place)
+    //   - no @2x variant exists, so Leaflet's {r} retina suffix must be left
+    //     out or high-DPI screens alone get 404s
+    //   - no subdomain rotation, so no {s} and no `subdomains` option
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      {
+        noWrap: true,
+        // `noWrap` only stops Leaflet WRAPPING coordinates — it still asks for
+        // tiles either side of the world when the box is wider than the map is
+        // at this zoom (at z1 the world is 512px inside a ~676px box, so it
+        // requested x=-1 and x=2). Esri answers those with a 200 and a "map
+        // data not yet available" placeholder image, which then renders in the
+        // gutters. `bounds` makes Leaflet reject those coordinates outright, so
+        // the gutters fall through to the container background below.
+        bounds: [[-90, -180], [90, 180]],
+        maxZoom: 16, // the service's own ceiling; the map caps at 6 anyway
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+      }
+    ).addTo(map);
+
+    // Credit is a licensing condition of the tiles, not decoration, so the
+    // control is on — just without Leaflet's own "Leaflet" prefix.
+    map.attributionControl.setPrefix(false);
 
     const showLabels = map.getZoom() >= LABEL_ZOOM;
     TIMEZONES.forEach((tz) => {
@@ -194,7 +220,11 @@ const TimezoneSelect = ({ timezone, onTimezoneChange }) => {
         ref={mapRef}
         className="h-48 sm:h-60 w-full rounded-xl overflow-hidden border border-gray-200/80 shadow-xs"
         style={{
-          background: '#d4dadc',
+          // Esri's ocean, sampled from a rendered tile — at zoom 1 the world is
+          // narrower than this box, so the gutters either side fall through to
+          // this and should not show a seam. The dark tones override it in
+          // index.css with the post-filter equivalents.
+          background: '#d0cfd4',
           isolation: 'isolate',
         }}
       />

@@ -223,10 +223,28 @@ body {
 
 /* Leaflet timezone map: dim + hue-shift the light tiles into the theme */
 .dark .leaflet-container {
-  background: #0f1830 !important;
+  /* Esri's ocean as it renders AFTER the tile filter below, so the zoom-1
+     gutters either side of the world match the water instead of seaming. */
+  background: #343335 !important;
 }
 .dark .leaflet-tile {
   filter: invert(1) hue-rotate(200deg) saturate(0.45) brightness(0.9) contrast(0.9);
+}
+
+/* Tile credit (an Esri licensing condition, so it stays visible). It sits
+   outside .leaflet-tile, so the dark-mode filter above never reaches it —
+   left alone it renders as a bright white chip on a dark map. Kept tiny so
+   it reads as a footnote on a map this small. */
+.leaflet-control-attribution {
+  background: rgb(255 255 255 / 0.7) !important;
+  font-size: 9px;
+  line-height: 1.5;
+  padding: 0 4px;
+  color: #6b7280;
+}
+.dark .leaflet-control-attribution {
+  background: rgb(15 24 48 / 0.7) !important;
+  color: #8b98ad;
 }
 
 /* Dark-tone preview swatches (Settings → Theme → Dark style). The fills are
@@ -335,8 +353,11 @@ body {
 
 /* Leaflet timezone map: desaturate rather than hue-shift to match */
 .dark.tone-charcoal .leaflet-container {
-  background: #0f0f0f !important;
+  background: #2d2d2c !important;
 }
 .dark.tone-charcoal .leaflet-tile {
   filter: invert(1) grayscale(0.85) brightness(0.85) contrast(0.95);
+}
+.dark.tone-charcoal .leaflet-control-attribution {
+  background: rgb(10 10 10 / 0.7) !important;
 }
